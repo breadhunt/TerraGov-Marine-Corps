@@ -158,7 +158,7 @@
 /mob/living/silicon/ai/proc/create_eye()
 	if(!QDELETED(eyeobj))
 		return
-	eyeobj = new /mob/camera/aiEye()
+	eyeobj = new /mob/camera/aiEye/hud()
 	all_eyes += eyeobj
 	eyeobj.ai = src
 	eyeobj.setLoc(loc)

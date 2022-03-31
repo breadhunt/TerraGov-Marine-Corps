@@ -410,6 +410,9 @@
 	link_with_vehicle(new_vehicle)
 	ai.controlling = TRUE
 
+	var/mob/camera/aiEye/hud/eyeobj = ai.eyeobj
+	eyeobj.loc = ai.loc
+
 /// Signal handler to clear vehicle and stop remote control
 /datum/action/control_vehicle/proc/clear_vehicle()
 	SIGNAL_HANDLER
