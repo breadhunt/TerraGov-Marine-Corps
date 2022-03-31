@@ -284,6 +284,24 @@
 	else
 		sprint = initial
 
+//Version of CAS eye that's added to marine HUD. Not visible to xenos but visible to marines
+/mob/camera/aiEye/remote/cas
+	icon_state = "nothing"
+	var/icon_state_on = "cas_camera"
+	hud_possible = list(SQUAD_HUD_TERRAGOV)
+
+/mob/camera/aiEye/remote/cas/Initialize()
+	. = ..()
+	prepare_huds()
+	var/datum/atom_hud/squad/squad_hud = GLOB.huds[DATA_HUD_SQUAD_TERRAGOV]
+	squad_hud.add_to_hud(src)
+
+	var/image/holder = hud_list[SQUAD_HUD_TERRAGOV]
+	if(!holder)
+		return
+	holder.icon = icon
+	holder.icon_state = icon_state_on
+	hud_list[hud_type] = holder
 
 /datum/action/innate/camera_off
 	name = "End Camera View"

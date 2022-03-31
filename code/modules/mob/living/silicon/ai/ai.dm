@@ -17,7 +17,7 @@
 	var/list/available_networks = list("marinemainship", "marine", "dropship1", "dropship2")
 	var/obj/machinery/camera/current
 
-	var/mob/camera/aiEye/eyeobj
+	var/mob/camera/aiEye/hud/eyeobj
 	var/sprint = 10
 	var/cooldown = 0
 	var/acceleration = FALSE
