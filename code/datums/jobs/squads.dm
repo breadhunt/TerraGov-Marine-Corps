@@ -206,7 +206,6 @@
 
 /datum/squad/New()
 	. = ..()
-
 	tracking_id = SSdirection.init_squad(name, squad_leader)
 
 
