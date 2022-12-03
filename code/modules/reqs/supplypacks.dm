@@ -139,7 +139,7 @@ OPERATIONS
 	available_against_xeno_only = TRUE
 
 /datum/supply_packs/operations/cash
-	name = "200 dollars"
+	name = "500 dollars"
 	contains = list(/obj/item/spacecash/c500)
 	cost = 5
 
