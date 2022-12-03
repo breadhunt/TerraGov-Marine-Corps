@@ -660,32 +660,25 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 /datum/game_mode/proc/set_valid_squads()
 	var/max_squad_num = min(squads_max_number, SSmapping.configs[SHIP_MAP].squads_max_num)
 	SSjob.active_squads[FACTION_TERRAGOV] = list()
+
 	if(max_squad_num == 0)
 		return TRUE
-	var/list/preferred_squads = list()
-	for(var/key in shuffle(SSjob.squads))
-		var/datum/squad/squad = SSjob.squads[key]
-		if(squad.faction == FACTION_TERRAGOV)
-			preferred_squads[squad.name] = 0
-	if(!length(preferred_squads))
+
+	for(var/key in SSjob.starting_squads)
+		if(length(SSjob.active_squads) >= max_squad_num)
+			continue
+
+		var/datum/squad/squad = SSjob.starting_squads[key]
+
+		if(squad.faction != FACTION_TERRAGOV)
+			continue
+		SSjob.active_squads[FACTION_TERRAGOV] += squad
+
+	if(!length(SSjob.active_squads[FACTION_TERRAGOV]))
 		to_chat(world, span_boldnotice("Error, no squads found."))
 		return FALSE
-	for(var/mob/new_player/player AS in GLOB.new_player_list)
-		if(!player.ready || !player.client?.prefs?.preferred_squad)
-			continue
-		var/squad_choice = player.client.prefs.preferred_squad
-		if(squad_choice == "None")
-			continue
-		if(isnull(preferred_squads[squad_choice]))
-			stack_trace("[player.client] has in its prefs [squad_choice] for a squad. Not valid.")
-			continue
-		preferred_squads[squad_choice]++
-	sortTim(preferred_squads, cmp=/proc/cmp_numeric_dsc, associative = TRUE)
 
-	preferred_squads.len = max_squad_num
-	SSjob.active_squads[FACTION_TERRAGOV] = list()
-	for(var/name in preferred_squads) //Back from weight to instantiate var
-		SSjob.active_squads[FACTION_TERRAGOV] += LAZYACCESSASSOC(SSjob.squads_by_name, FACTION_TERRAGOV, name)
+	sortTim(SSjob.active_squads[FACTION_TERRAGOV], cmp=/proc/cmp_numeric_dsc, associative = TRUE)
 	return TRUE
 
 
