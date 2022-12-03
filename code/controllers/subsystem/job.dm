@@ -13,7 +13,7 @@ SUBSYSTEM_DEF(job)
 	var/list/datum/job/name_occupations = list()	//Dict of all jobs, keys are titles.
 	var/list/type_occupations = list()	//Dict of all jobs, keys are types.
 
-	var/list/squads = list()			//List of potential squads.
+	var/list/starting_squads = list()			//List of squads we start with
 	///Assoc list of all joinable squads, categorised by faction
 	var/list/active_squads = list()
 	///assoc list of squad_name_string->squad_reference for easy lookup, categorised in factions
@@ -36,9 +36,9 @@ SUBSYSTEM_DEF(job)
 	occupations.Cut()
 	joinable_occupations.Cut()
 	GLOB.jobs_command.Cut()
-	squads.Cut()
+	starting_squads.Cut()
 	var/list/all_jobs = subtypesof(/datum/job)
-	var/list/all_squads = subtypesof(/datum/squad)
+	var/list/all_starting_squads = subtypesof(/datum/squad)
 	if(!length(all_jobs))
 		to_chat(world, span_boldnotice("Error setting up jobs, no job datums found"))
 		return FALSE
@@ -64,12 +64,9 @@ SUBSYSTEM_DEF(job)
 		if(job.job_flags & JOB_FLAG_ISCOMMAND)
 			GLOB.jobs_command[job.title] = job
 
-	for(var/S in all_squads)
+	for(var/S in all_starting_squads)
 		var/datum/squad/squad = new S()
-		if(!squad)
-			continue
-		squads[squad.id] = squad
-		LAZYSET(squads_by_name[squad.faction], squad.name, squad)
+		starting_squads[squad.id] = squad
 	return TRUE
 
 

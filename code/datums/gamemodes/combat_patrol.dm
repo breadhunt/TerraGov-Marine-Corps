@@ -64,8 +64,8 @@
 /datum/game_mode/combat_patrol/set_valid_squads()
 	SSjob.active_squads[FACTION_TERRAGOV] = list()
 	SSjob.active_squads[FACTION_SOM] = list()
-	for(var/key in SSjob.squads)
-		var/datum/squad/squad = SSjob.squads[key]
+	for(var/key in SSjob.starting_squads)
+		var/datum/squad/squad = SSjob.starting_squads[key]
 		if(squad.faction == FACTION_TERRAGOV || squad.faction == FACTION_SOM) //We only want Marine and SOM squads, future proofs if more faction squads are added
 			SSjob.active_squads[squad.faction] += squad
 	return TRUE

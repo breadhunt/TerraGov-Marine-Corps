@@ -331,7 +331,7 @@
 	circuit = /obj/item/circuitboard/computer/card/centcom
 	req_access = list(ACCESS_NT_CORPORATE)
 
-
+//TODO: this is BAD
 //This console changes a marine's squad. It's very simple.
 //It also does not: change or increment the squad count (used in the login randomizer), nor does it check for jobs.
 //Which means you could get sillyiness like "Alpha Sulaco Chief Medical Officer" or "Delta Logistics Officer".
@@ -431,7 +431,7 @@
 						break
 
 				//First, remove any existing squad access and clear the card.
-				for(var/datum/squad/Q in SSjob.squads)
+				for(var/datum/squad/Q in SSjob.starting_squads) //TODO
 					if(findtext(modify.assignment, Q.name)) //Found one!
 						modify.access -= Q.access //Remove any access found.
 						to_chat(usr, "Old squad access removed.")

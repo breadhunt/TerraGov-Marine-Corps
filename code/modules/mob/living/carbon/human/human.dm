@@ -1191,7 +1191,7 @@
 	if(!squad || !ismarinejob(job))
 		return FALSE
 
-	var/datum/squad/S = SSjob.squads[squad]
+	var/datum/squad/S = SSjob.active_squads[faction][squad]
 
 	if(!mind)
 		assigned_squad = S
