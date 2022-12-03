@@ -21,11 +21,9 @@
 	var/mob/living/carbon/human/squad_leader
 	var/mob/living/carbon/human/overwatch_officer
 
-	var/supply_cooldown = 0 //Cooldown for supply drops
 	var/primary_objective = null //Text strings
 	var/secondary_objective = null
 
-	var/list/squad_orbital_beacons = list()
 	var/list/squad_laser_targets = list()
 	///Faction of that squad
 	var/faction = FACTION_TERRAGOV
@@ -205,12 +203,6 @@
 		SOM_SQUAD_MARINE = -1,
 		SOM_SQUAD_LEADER = 1,
 )
-
-GLOBAL_LIST_EMPTY(glovemarkings)
-GLOBAL_LIST_EMPTY(armormarkings)
-GLOBAL_LIST_EMPTY(armormarkings_sl)
-GLOBAL_LIST_EMPTY(helmetmarkings)
-GLOBAL_LIST_EMPTY(helmetmarkings_sl)
 
 /datum/squad/New()
 	. = ..()
