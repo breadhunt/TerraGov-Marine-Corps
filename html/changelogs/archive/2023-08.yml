@@ -128,3 +128,15 @@
   - bugfix: fixed the XH-L upper plating sprite being misaligned with its visor
   forestbbbbbbb:
   - bugfix: CMO and minions have icons in orbit menu
+2023-08-10:
+  Redory:
+  - imageadd: added mini_icons for (hopefully) all mags.
+  - imageadd: redid the compact magazine labels with correct weapon naming conventions.
+  - imagedel: deleted one or two outdated mini_icons.
+  Sanuki357:
+  - imageadd: New progressive sprites for empty belts and pouches which responses
+      to how empty they are
+  - imageadd: Changed the grenade pouch sprite
+  'Sprites: Ocelot':
+  - rscadd: R-76 magnum is now available in gold, silver and nickle flavours via black
+      market lootboxes in req
