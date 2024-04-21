@@ -21,6 +21,10 @@
 	var/start_time = 15 SECONDS
 	///Time to print a disk
 	var/printing_time = 15 SECONDS
+	///How much faster disk generators get while the colony power speed boost is active
+	var/power_multiplier = 3
+	///Whether the power boost is active or not
+	var/power_multiplier_active = false
 
 	///Total number of times the hack is required
 	var/total_segments = 5
@@ -73,7 +77,7 @@
 	. = ..()
 	if(. || !current_timer)
 		if(running)
-			seconds_elapsed += 2
+			seconds_elapsed += power_multiplier_active ? 2*power_multiplier : 2
 		return
 
 	seconds_elapsed = (segment_time/10) * completed_segments
@@ -161,7 +165,7 @@
 
 			busy = FALSE
 
-			current_timer = addtimer(CALLBACK(src, PROC_REF(complete_segment)), segment_time, TIMER_STOPPABLE)
+			current_timer = addtimer(CALLBACK(src, PROC_REF(complete_segment)), power_multiplier_active ? (segment_time / power_multiplier) : segment_time, TIMER_STOPPABLE)
 			update_minimap_icon()
 			running = TRUE
 
@@ -186,6 +190,22 @@
 /obj/machinery/computer/nuke_disk_generator/proc/update_minimap_icon()
 	SSminimaps.remove_marker(src)
 	SSminimaps.add_marker(src, MINIMAP_FLAG_ALL, image('icons/UI_icons/map_blips_large.dmi', null, "[disk_color]_disk[current_timer ? "_on" : "_off"]", VERY_HIGH_FLOAT_LAYER))
+
+///Applies the overclock boost when colony power is active
+/obj/machinery/computer/nuke_disk_generator/proc/start_power_overclocking()
+	power_multiplier_active = true
+	if(current_timer)
+		qdeltimer(current_timer)
+		var/seconds_remaining = seconds_elapsed - (segment_time/10)*completed_segments
+		current_timer = addtimer(CALLBACK(src, PROC_REF(complete_segment)), (segment_time-seconds_remaining)/power_multiplier, TIMER_STOPPABLE)
+
+///Stops the overclock boost; called when xenos take down colony power again
+/obj/machinery/computer/nuke_disk_generator/proc/stop_power_overclocking()
+	power_multiplier_active = false
+	if(current_timer)
+		qdeltimer(current_timer)
+		var/seconds_remaining = seconds_elapsed - (segment_time/10)*completed_segments
+		current_timer = addtimer(CALLBACK(src, PROC_REF(complete_segment)), segment_time-seconds_remaining, TIMER_STOPPABLE)
 
 /obj/machinery/computer/nuke_disk_generator/red
 	name = "red nuke disk generator"

@@ -16,7 +16,7 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 	var/power_gen_percent = 0 //100,000W at full capacity
 	var/power_generation_max = 100000 //Full capacity
 	var/buildstate = GEOTHERMAL_HEAVY_DAMAGE //What state of building it are we on, 0-3, 1 is "broken", the default
-	var/is_on = FALSE  //Is this damn thing on or what?
+	var/is_on = FALSE T //Is this damn thing on or what?
 	///% chance of failure each fail_tick check
 	var/fail_rate = 0
 	var/fail_check_ticks = 100 //Check for failure every this many ticks
