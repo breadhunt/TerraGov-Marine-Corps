@@ -340,6 +340,18 @@
 			var/datum/personal_statistics/personal_statistics = GLOB.personal_statistics_list[X.ckey]
 			personal_statistics.miner_sabotages_performed++
 
+	if(X.do_actions)
+		return balloon_alert(X, "busy")
+	if(!do_after(X, 3 SECONDS, NONE, src, BUSY_ICON_DANGER, BUSY_ICON_HOSTILE))
+		return
+	X.do_attack_animation(src, ATTACK_EFFECT_CLAW)
+	X.visible_message(span_danger("[X] slashes \the [miner_upgrade_type] into pieces, destroying it!"), \
+	span_danger("We slash \the [miner_upgrade_type] into pieces, destroying it!"), null, 5)
+	playsound(loc, "alien_claw_metal", 25, TRUE)
+	playsound(loc, "sound/effects/metal_crash.ogg", 25, TRUE)
+	qdel(miner_upgrade_type)
+	set_miner_status()
+
 /obj/machinery/miner/proc/set_miner_status()
 	var/health_percent = round((miner_integrity / max_miner_integrity) * 100)
 	switch(health_percent)
