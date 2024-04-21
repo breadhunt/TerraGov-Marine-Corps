@@ -77,6 +77,10 @@
 	. = ..()
 	switch(miner_status)
 		if(MINER_RUNNING)
+			if(!miner_upgrade_type)
+				icon_state = "mining_drill_inactive_"
+				set_light(MINER_LIGHT_SDAMAGE, MINER_LIGHT_SDAMAGE)
+				return
 			icon_state = "mining_drill_active_[miner_upgrade_type]"
 			set_light(MINER_LIGHT_RUNNING, MINER_LIGHT_RUNNING)
 		if(MINER_SMALL_DAMAGE)
@@ -121,7 +125,9 @@
 				stored_mineral = 0
 				start_processing()
 	miner_upgrade_type = upgrade.uptype
-	user.visible_message(span_notice("[user] attaches the [miner_upgrade_type] to the [src]!"))
+	user.visible_message(span_notice("[user] attaches the [miner_upgrade_type] to the [src], and it begins whirring away!"))
+	start_processing()
+	faction = user.faction
 	qdel(upgrade)
 	playsound(loc,'sound/items/screwdriver.ogg', 25, TRUE)
 	update_icon()
@@ -240,8 +246,6 @@
 	set_miner_status()
 	user.visible_message(span_notice("[user] repairs [src]'s tubing and plating."),
 	span_notice("You repair [src]'s tubing and plating."))
-	start_processing()
-	faction = user.faction
 	record_miner_repair(user)
 	return TRUE
 
