@@ -180,6 +180,15 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 		return
 	if(buildstate)
 		return
+
+	/* TODO:
+	- Xenomorphs windup & slash the generator
+	- When this is done three times...
+	- Set generator effects (warning symbols, exploding state, klaxon sound)
+	- Loudspeakers around the facility
+	- Explode
+	*/
+
 	xeno_attacker.do_attack_animation(src, ATTACK_EFFECT_CLAW)
 	play_attack_sound(1)
 	xeno_attacker.visible_message(span_danger("\The [xeno_attacker] slashes at \the [src], tearing at it's components!"),
@@ -348,6 +357,79 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 	icon_state = "off"
 	update_icon()
 	start_processing()
+
+/* Thermo-electric generator -- the main, big boy generator that engineers need to be concerned with
+* While active -- Generates a shitton of power and overclocks disk generation speed
+* Xenos can disable it after a short windup, which if the generator is past 50%, triggers a massive explosion
+*/
+/obj/machinery/power/geothermal/teg
+	name = "\improper Thermo-electric Generator"
+	icon = "icons/obj/machines/teg.dmi"
+	var/list/connected_turbines = list() //
+
+/obj/machinery/geothermal/teg/Initialize()
+	for(var/direction in GLOB.cardinals)
+		var/obj/machinery/power/teg_turbine/potential_turbine = locate(/obj/machinery/power/teg_turbine, get_step(src, direction)))
+		if(!potential_turbine)
+			continue
+		connected_turbines += potential_turbine
+		potential_turbine.connected = src
+
+
+/// TEG turbine, attached to the central TEG engine, no unique functionality (for now)
+/obj/machinery/power/teg_turbine
+	name = "\improper Generator Turbine"
+	desc = "A generator turbine attached to the colony's thermo-electric generator."
+	icon = "icons/obj/machines/teg.dmi"
+	var/obj/machinery/power/geothermal/teg/connected //The generator we are connected to
+	var/icon_type = "neutral" //What type of turbine this is (neutral, cold or heat); controls which icon state is used and nothing else
+
+/obj/machinery/power/teg_turbine/update_icon_state()
+	if(!connected)
+		return
+
+	if(connected.buildstate != GEOTHERMAL_NO_DAMAGE)
+		icon_state = "circ-weld"
+		return
+
+	if(!connected.is_on)
+		icon_state = "circ-off"
+		return
+
+	switch(connected.power_gen_percent)
+		if(25)
+			icon_state = "circ-on25"
+		if(50)
+			icon_state = "circ-on50"
+		if(75)
+			icon_state = "circ-on75-[icon_type]"
+		if(100)
+			icon_state = "circ-on100-[icon_type]"
+
+// Forward all repair/xeno attack actions to the central TEG engine
+/obj/machinery/power/teg_turbine/welder_act/(mob/living/user, obj/item/I)
+	if(connected)
+		connected.welder_act(user, I)
+
+/obj/machinery/power/teg_turbine/wirecutter_act(mob/living/user, obj/item/I)
+	if(connected)
+		connected.welder_act(user, I)
+
+/obj/machinery/power/teg_turbine/wrench_act(mob/living/user, obj/item/I)
+	if(connected)
+		connected.welder_act(user, I)
+
+/obj/machinery/power/geothermal/attack_alien(mob/living/carbon/xenomorph/xeno_attacker, damage_amount = xeno_attacker.xeno_caste.melee_damage, damage_type = BRUTE, armor_type = MELEE, effects = TRUE, armor_penetration = xeno_attacker.xeno_caste.melee_ap, isrightclick = FALSE)
+	if(connected)
+		connected.attack_alien(xeno_attacker, damage_amount,  damage_type, armor_type, effects, armor_penetration, isrightclick)
+
+// Hot/cold turbine loops, these should be used in mapping rather than the generic class because they have more visual feedback
+
+/obj/machinery/power/teg_turbine/heat
+	icon-type = "heat"
+
+/obj/machinery/power/teg_turbine/cold
+	icon_type = "cold"
 
 /obj/machinery/power/geothermal/bigred //used on big red
 	name = "\improper Reactor Turbine"
