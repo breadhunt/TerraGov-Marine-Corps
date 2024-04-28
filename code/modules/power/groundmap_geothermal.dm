@@ -364,12 +364,13 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 */
 /obj/machinery/power/geothermal/teg
 	name = "\improper Thermo-electric Generator"
-	icon = "icons/obj/machines/teg.dmi"
+	icon = 'icons/obj/machines/teg.dmi'
 	var/list/connected_turbines = list() //
 
-/obj/machinery/geothermal/teg/Initialize()
+/obj/machinery/power/geothermal/teg/Initialize()
+	. = ..()
 	for(var/direction in GLOB.cardinals)
-		var/obj/machinery/power/teg_turbine/potential_turbine = locate(/obj/machinery/power/teg_turbine, get_step(src, direction)))
+		var/obj/machinery/power/teg_turbine/potential_turbine = locate(/obj/machinery/power/teg_turbine, get_step(src, direction))
 		if(!potential_turbine)
 			continue
 		connected_turbines += potential_turbine
@@ -380,7 +381,7 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 /obj/machinery/power/teg_turbine
 	name = "\improper Generator Turbine"
 	desc = "A generator turbine attached to the colony's thermo-electric generator."
-	icon = "icons/obj/machines/teg.dmi"
+	icon = 'icons/obj/machines/teg.dmi'
 	var/obj/machinery/power/geothermal/teg/connected //The generator we are connected to
 	var/icon_type = "neutral" //What type of turbine this is (neutral, cold or heat); controls which icon state is used and nothing else
 
@@ -413,20 +414,20 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 
 /obj/machinery/power/teg_turbine/wirecutter_act(mob/living/user, obj/item/I)
 	if(connected)
-		connected.welder_act(user, I)
+		connected.wirecutter_act(user, I)
 
 /obj/machinery/power/teg_turbine/wrench_act(mob/living/user, obj/item/I)
 	if(connected)
-		connected.welder_act(user, I)
+		connected.wrench_act(user, I)
 
-/obj/machinery/power/geothermal/attack_alien(mob/living/carbon/xenomorph/xeno_attacker, damage_amount = xeno_attacker.xeno_caste.melee_damage, damage_type = BRUTE, armor_type = MELEE, effects = TRUE, armor_penetration = xeno_attacker.xeno_caste.melee_ap, isrightclick = FALSE)
+/obj/machinery/power/teg_turbine/attack_alien(mob/living/carbon/xenomorph/xeno_attacker, damage_amount = xeno_attacker.xeno_caste.melee_damage, damage_type = BRUTE, armor_type = MELEE, effects = TRUE, armor_penetration = xeno_attacker.xeno_caste.melee_ap, isrightclick = FALSE)
 	if(connected)
 		connected.attack_alien(xeno_attacker, damage_amount,  damage_type, armor_type, effects, armor_penetration, isrightclick)
 
 // Hot/cold turbine loops, these should be used in mapping rather than the generic class because they have more visual feedback
 
 /obj/machinery/power/teg_turbine/heat
-	icon-type = "heat"
+	icon_type = "heat"
 
 /obj/machinery/power/teg_turbine/cold
 	icon_type = "cold"

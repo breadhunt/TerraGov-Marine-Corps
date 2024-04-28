@@ -24,7 +24,7 @@
 	///How much faster disk generators get while the colony power speed boost is active
 	var/power_multiplier = 3
 	///Whether the power boost is active or not
-	var/power_multiplier_active = false
+	var/power_multiplier_active = FALSE
 
 	///Total number of times the hack is required
 	var/total_segments = 5
@@ -193,17 +193,17 @@
 
 ///Applies the overclock boost when colony power is active
 /obj/machinery/computer/nuke_disk_generator/proc/start_power_overclocking()
-	power_multiplier_active = true
+	power_multiplier_active = TRUE
 	if(current_timer)
-		qdeltimer(current_timer)
+		deltimer(current_timer)
 		var/seconds_remaining = seconds_elapsed - (segment_time/10)*completed_segments
 		current_timer = addtimer(CALLBACK(src, PROC_REF(complete_segment)), (segment_time-seconds_remaining)/power_multiplier, TIMER_STOPPABLE)
 
 ///Stops the overclock boost; called when xenos take down colony power again
 /obj/machinery/computer/nuke_disk_generator/proc/stop_power_overclocking()
-	power_multiplier_active = false
+	power_multiplier_active = FALSE
 	if(current_timer)
-		qdeltimer(current_timer)
+		deltimer(current_timer)
 		var/seconds_remaining = seconds_elapsed - (segment_time/10)*completed_segments
 		current_timer = addtimer(CALLBACK(src, PROC_REF(complete_segment)), segment_time-seconds_remaining, TIMER_STOPPABLE)
 
