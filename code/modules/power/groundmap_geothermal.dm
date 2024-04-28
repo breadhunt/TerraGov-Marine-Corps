@@ -131,11 +131,11 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 			update_icon()
 			switch(power_gen_percent)
 				if(10)
-					visible_message("[icon2html(src, viewers(src))] [span_notice("<b>[src]</b> begins to whirr as it powers up.")]")
+					balloon_alert_to_viewers("[src] begins to whirr as it powers up.")
 				if(50)
-					visible_message("[icon2html(src, viewers(src))] [span_notice("<b>[src]</b> begins to hum loudly as it reaches half capacity.")]")
+					balloon_alert_to_viewers("[src] begins to hum loudly as it reaches half capacity.")
 				if(100)
-					visible_message("[icon2html(src, viewers(src))] [span_notice("<b>[src]</b> rumbles loudly as the combustion and thermal chambers reach full strength.")]")
+					balloon_alert_to_viewers("[src] rumbles loudly as the combustion and thermal chambers reach full strength.")
 		add_avail(power_generation_max * (power_gen_percent / 100) ) //Nope, all good, just add the power
 
 /obj/machinery/power/geothermal/proc/check_failure()
@@ -180,15 +180,6 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 		return
 	if(buildstate)
 		return
-
-	/* TODO:
-	- Xenomorphs windup & slash the generator
-	- When this is done three times...
-	- Set generator effects (warning symbols, exploding state, klaxon sound)
-	- Loudspeakers around the facility
-	- Explode
-	*/
-
 	xeno_attacker.do_attack_animation(src, ATTACK_EFFECT_CLAW)
 	play_attack_sound(1)
 	xeno_attacker.visible_message(span_danger("\The [xeno_attacker] slashes at \the [src], tearing at it's components!"),
@@ -227,14 +218,14 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 		to_chat(usr, "<span class='info'>Use a wrench to repair it.")
 		return FALSE
 	if(is_on)
-		visible_message("[icon2html(src, viewers(src))] <span class='warning'><b>[src]</b> beeps softly and the humming stops as [usr] shuts off the turbines.")
+		balloon_alert_to_viewers("[src] beeps softly and the humming stops as the turbines wind down")
 		is_on = FALSE
 		power_gen_percent = 0
 		cur_tick = 0
 		icon_state = "off"
 		stop_processing()
 		return TRUE
-	visible_message("[icon2html(src, viewers(src))] <span class='warning'><b>[src]</b> beeps loudly as [usr] turns on the turbines and the generator begins spinning up.")
+	balloon_alert_to_viewers("[src] beeps loudly as the generator begins spinning up")
 	icon_state = "on10"
 	is_on = TRUE
 	cur_tick = 0
@@ -247,6 +238,7 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 		if(user.skills.getRating(SKILL_ENGINEER) < SKILL_ENGINEER_ENGI)
 			user.visible_message(span_notice("[user] fumbles around figuring out the resin tendrils on [src]."),
 			span_notice("You fumble around figuring out the resin tendrils on [src]."))
+			user.balloon_alert(user, "You fumble around figuring out the resin tendrils on [src].")
 			var/fumbling_time = 10 SECONDS - 2 SECONDS * user.skills.getRating(SKILL_ENGINEER)
 			if(!do_after(user, fumbling_time, NONE, src, BUSY_ICON_UNSKILLED, extra_checks = CALLBACK(WT, TYPE_PROC_REF(/obj/item/tool/weldingtool, isOn))))
 				return
@@ -257,6 +249,7 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 		playsound(loc, 'sound/items/weldingtool_weld.ogg', 25)
 		user.visible_message(span_notice("[user] carefully starts burning [src]'s resin off."),
 		span_notice("You carefully start burning [src]'s resin off."))
+		user.balloon_alert(user, "You carefully start burning [src]'s resin off.")
 		add_overlay(GLOB.welding_sparks)
 
 		if(!do_after(user, 20 SECONDS - clamp((user.skills.getRating(SKILL_ENGINEER) - SKILL_ENGINEER_ENGI) * 5, 0, 20) SECONDS, NONE, src, BUSY_ICON_BUILD, extra_checks = CALLBACK(WT, TYPE_PROC_REF(/obj/item/tool/weldingtool, isOn))))
@@ -266,10 +259,13 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 		playsound(loc, 'sound/items/welder2.ogg', 25, 1)
 		user.visible_message(span_notice("[user] burns [src]'s resin off."),
 		span_notice("You burn [src]'s resin off."))
+		user.balloon_alert(user, "You burn [src]'s resin off.")
 		cut_overlay(GLOB.welding_sparks)
 		corrupted = 0
 		stop_processing()
 		update_icon()
+
+	if(buildstate != GEOTHERMAL_HEAVY_DAMAGE) //Already repaired!
 		return
 
 	if(user.skills.getRating(SKILL_ENGINEER) < SKILL_ENGINEER_ENGI)
@@ -285,6 +281,7 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 	playsound(loc, 'sound/items/weldingtool_weld.ogg', 25)
 	user.visible_message(span_notice("[user] starts welding [src]'s internal damage."),
 	span_notice("You start welding [src]'s internal damage."))
+	user.balloon_alert(user, "You start welding [src]'s internal damage.")
 	add_overlay(GLOB.welding_sparks)
 
 	if(!do_after(user, 20 SECONDS - clamp((user.skills.getRating(SKILL_ENGINEER) - SKILL_ENGINEER_ENGI) * 5, 0, 20) SECONDS, NONE, src, BUSY_ICON_BUILD, extra_checks = CALLBACK(WT, TYPE_PROC_REF(/obj/item/tool/weldingtool, isOn))) || buildstate != GEOTHERMAL_HEAVY_DAMAGE || is_on)
@@ -295,6 +292,7 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 	buildstate = GEOTHERMAL_MEDIUM_DAMAGE
 	user.visible_message(span_notice("[user] welds [src]'s internal damage."),
 	span_notice("You weld [src]'s internal damage."))
+	user.balloon_alert(user, "You weld [src]'s internal damage.")
 	cut_overlay(GLOB.welding_sparks)
 	update_icon()
 	record_generator_repairs(user)
@@ -306,13 +304,14 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 	if(user.skills.getRating(SKILL_ENGINEER) < SKILL_ENGINEER_ENGI)
 		user.visible_message(span_notice("[user] fumbles around figuring out [src]'s wiring."),
 		span_notice("You fumble around figuring out [src]'s wiring."))
+		user.balloon_alert(user, "You fumble around figuring out [src]'s wiring.")
 		var/fumbling_time = 10 SECONDS - 2 SECONDS * user.skills.getRating(SKILL_ENGINEER)
 		if(!do_after(user, fumbling_time, NONE, src, BUSY_ICON_UNSKILLED) || buildstate != GEOTHERMAL_MEDIUM_DAMAGE || is_on)
 			return
 	playsound(loc, 'sound/items/wirecutter.ogg', 25, 1)
 	user.visible_message(span_notice("[user] starts securing [src]'s wiring."),
 	span_notice("You start securing [src]'s wiring."))
-
+	user.balloon_alert(user, "You start securing [src]'s wiring.")
 	if(!do_after(user, 12 SECONDS - clamp((user.skills.getRating(SKILL_ENGINEER) - SKILL_ENGINEER_ENGI) * 4, 0, 12) SECONDS, NONE, src, BUSY_ICON_BUILD) || buildstate != GEOTHERMAL_MEDIUM_DAMAGE || is_on)
 		return FALSE
 
@@ -320,6 +319,7 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 	buildstate = GEOTHERMAL_LIGHT_DAMAGE
 	user.visible_message(span_notice("[user] secures [src]'s wiring."),
 	span_notice("You secure [src]'s wiring."))
+	user.balloon_alert(user, "You secure [src]'s wiring.")
 	update_icon()
 	record_generator_repairs(user)
 	return TRUE
@@ -330,6 +330,7 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 	if(user.skills.getRating(SKILL_ENGINEER) < SKILL_ENGINEER_ENGI)
 		user.visible_message(span_notice("[user] fumbles around figuring out [src]'s tubing and plating."),
 		span_notice("You fumble around figuring out [src]'s tubing and plating."))
+		user.balloon_alert(user, "You fumble around figuring out [src]'s tubing and plating.")
 		var/fumbling_time = 10 SECONDS - 2 SECONDS * user.skills.getRating(SKILL_ENGINEER)
 		if(!do_after(user, fumbling_time, NONE, src, BUSY_ICON_UNSKILLED) || buildstate != GEOTHERMAL_LIGHT_DAMAGE || is_on)
 			return
@@ -337,6 +338,7 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 	playsound(loc, 'sound/items/ratchet.ogg', 25, 1)
 	user.visible_message(span_notice("[user] starts repairing [src]'s tubing and plating."),
 	span_notice("You start repairing [src]'s tubing and plating."))
+	user.balloon_alert(user, "You start repairing [src]'s tubing and plating.")
 
 	if(!do_after(user, 15 SECONDS - clamp((user.skills.getRating(SKILL_ENGINEER) - SKILL_ENGINEER_ENGI) * 5, 0, 15) SECONDS, NONE, src, BUSY_ICON_BUILD) || buildstate != GEOTHERMAL_LIGHT_DAMAGE || is_on)
 		return FALSE
@@ -345,6 +347,7 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 	buildstate = GEOTHERMAL_NO_DAMAGE
 	user.visible_message(span_notice("[user] repairs [src]'s tubing and plating."),
 	span_notice("You repair [src]'s tubing and plating."))
+	user.balloon_alert(user, "You repair [src]'s tubing and plating.")
 	update_icon()
 	record_generator_repairs(user)
 	return TRUE
@@ -376,12 +379,27 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 		connected_turbines += potential_turbine
 		potential_turbine.connected = src
 
+/obj/machinery/power/geothermal/teg/update_icon_state()
+	. = ..()
+	for(var/obj/machinery/power/teg_turbine/turbine in connected_turbines)
+		turbine.update_icon_state()
+
+/obj/machinery/power/geothermal/teg/attack_alien(mob/living/carbon/xenomorph/xeno_attacker, damage_amount, damage_type, armor_type, effects, armor_penetration, isrightclick)
+	. = ..()
+	/* TODO:
+	- Xenomorphs windup & slash the generator
+	- When this is done three times...
+	- Set generator effects (warning symbols, exploding state, klaxon sound)
+	- Loudspeakers around the facility
+	- Explode
+	*/
 
 /// TEG turbine, attached to the central TEG engine, no unique functionality (for now)
 /obj/machinery/power/teg_turbine
 	name = "\improper Generator Turbine"
 	desc = "A generator turbine attached to the colony's thermo-electric generator."
 	icon = 'icons/obj/machines/teg.dmi'
+	icon_state = "circ-on75-neutral"
 	var/obj/machinery/power/geothermal/teg/connected //The generator we are connected to
 	var/icon_type = "neutral" //What type of turbine this is (neutral, cold or heat); controls which icon state is used and nothing else
 
@@ -428,9 +446,11 @@ GLOBAL_VAR_INIT(generators_on_ground, 0)
 
 /obj/machinery/power/teg_turbine/heat
 	icon_type = "heat"
+	icon_state = "circ-on75-heat"
 
 /obj/machinery/power/teg_turbine/cold
 	icon_type = "cold"
+	icon_state = "circ-on75-cold"
 
 /obj/machinery/power/geothermal/bigred //used on big red
 	name = "\improper Reactor Turbine"
