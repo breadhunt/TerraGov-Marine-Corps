@@ -6,7 +6,7 @@
 	name = "chemical grenade"
 	desc = "A custom made grenade."
 	icon_state = "chemg"
-	item_state = "flashbang"
+	worn_icon_state = "flashbang"
 	w_class = WEIGHT_CLASS_SMALL
 	force = 2
 	var/stage = CG_EMPTY
@@ -23,7 +23,7 @@
 	var/casedesc = "This basic model accepts both beakers and bottles. It heats contents by 10°K upon ignition." // Appears when examining empty casings.
 
 
-/obj/item/explosive/grenade/chem_grenade/Initialize()
+/obj/item/explosive/grenade/chem_grenade/Initialize(mapload)
 	. = ..()
 	create_reagents(1000)
 	stage_change() // If no argument is set, it will change the stage to the current stage, useful for stock grenades that start READY.
@@ -40,7 +40,7 @@
 		else
 			return ..()
 
-/obj/item/explosive/grenade/chem_grenade/razorburn_smol/attackby(obj/item/I, mob/user, params)
+/obj/item/explosive/grenade/chem_grenade/razorburn_small/attackby(obj/item/I, mob/user, params)
 	to_chat(user, span_notice("The [initial(name)] is hermetically sealed, and does not open."))
 	return
 
@@ -109,8 +109,8 @@
 			return
 
 	else if(stage == CG_READY && I.tool_behaviour == TOOL_WIRECUTTER && !active)
-		stage_change(CG_WIRED)
-		to_chat(user, span_notice("You unlock the [initial(name)] assembly."))
+		to_chat(user, span_notice("Patented marine-proof Dura-Cable prevents you from taking apart the grenade."))
+		return
 
 	else if(stage == CG_WIRED && I.tool_behaviour == TOOL_WRENCH)
 		if(length(beakers))
@@ -138,7 +138,7 @@
 /obj/item/explosive/grenade/chem_grenade/examine(mob/user)
 	display_timer = (stage == CG_READY && !nadeassembly)	//show/hide the timer based on assembly state
 	. = ..()
-	if(user.skills.getRating("medical") > SKILL_MEDICAL_NOVICE)
+	if(user.skills.getRating(SKILL_MEDICAL) > SKILL_MEDICAL_NOVICE)
 		if(length(beakers))
 			. += span_notice("You scan the grenade and detect the following reagents:")
 			for(var/obj/item/reagent_containers/glass/G in beakers)
@@ -199,8 +199,7 @@
 	if(nadeassembly)
 		var/mob/M = get_mob_by_ckey(assemblyattacher)
 
-		log_explosion("[key_name(M)] primed [src] at [AREACOORD(loc)].")
-		log_combat(M, src, "primed")
+		log_bomber(M, "primed", src)
 
 	if(ismob(loc))
 		var/mob/M = loc
@@ -238,16 +237,17 @@
 	icon_state = initial(icon_state) +"_locked"
 
 
-/obj/item/explosive/grenade/chem_grenade/razorburn_smol
+/obj/item/explosive/grenade/chem_grenade/razorburn_small
 	name = "Razorburn Grenade"
 	desc = "Contains construction nanites ready to turn a small area into razorwire after a few seconds. DO NOT ENTER AREA WHILE ACTIVE."
 	icon_state = "grenade_razorburn"
-	item_state = "grenade_razorburn"
+	worn_icon_state = "grenade_razorburn"
+	hud_state = "grenade_razor"
 	stage = CG_READY
 	icon_state_mini = "grenade_chem_yellow"
 
 
-/obj/item/explosive/grenade/chem_grenade/razorburn_smol/Initialize(mapload, ...)
+/obj/item/explosive/grenade/chem_grenade/razorburn_small/Initialize(mapload, ...)
 	. = ..()
 	var/obj/item/reagent_containers/glass/beaker/B1 = new(src)
 	var/obj/item/reagent_containers/glass/beaker/B2 = new(src)
@@ -369,7 +369,7 @@
 
 
 /obj/item/explosive/grenade/chem_grenade/teargas/attack_self(mob/user)
-	if(user.skills.getRating("police") < SKILL_POLICE_MP)
+	if(user.skills.getRating(SKILL_POLICE) < SKILL_POLICE_MP)
 		to_chat(user, span_warning("You don't seem to know how to use [src]..."))
 		return
 	return ..()

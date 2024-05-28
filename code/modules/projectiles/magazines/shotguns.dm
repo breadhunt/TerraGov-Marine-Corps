@@ -52,6 +52,13 @@ one type of shotgun ammo, but I think it helps in referencing it. ~N
 	default_ammo = /datum/ammo/bullet/shotgun/tracker
 	icon_state_mini = "tracking"
 
+/obj/item/ammo_magazine/shotgun/blank
+	name = "box of 12 gauge blank shells"
+	desc = "A box filled with blank shotgun shells. 12 Gauge."
+	icon_state = "blank"
+	default_ammo = /datum/ammo/bullet/shotgun/blank
+	icon_state_mini = "blank"
+
 /obj/item/ammo_magazine/rifle/bolt
 	name = "box of 7.62x54mmR rifle rounds"
 	desc = "A box filled with rifle bullets."
@@ -70,7 +77,7 @@ one type of shotgun ammo, but I think it helps in referencing it. ~N
 	caliber = CALIBER_762X54
 	max_rounds = 4
 	w_class = WEIGHT_CLASS_SMALL
-	icon_state_mini = "clip"
+	icon_state_mini = "clips"
 
 /obj/item/ammo_magazine/rifle/martini
 	name = "box of .557/440 rifle rounds"

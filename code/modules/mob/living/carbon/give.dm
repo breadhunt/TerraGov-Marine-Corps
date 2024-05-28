@@ -7,7 +7,7 @@
 ///Signal handler for give keybind
 /mob/living/carbon/proc/give_signal_handler()
 	SIGNAL_HANDLER
-	INVOKE_ASYNC(src, .proc/do_give)
+	INVOKE_ASYNC(src, PROC_REF(do_give))
 
 ///Look for a nearby human to give the held item, and ask him if he wants it
 /mob/living/carbon/proc/do_give()
@@ -31,7 +31,7 @@
 		item = l_hand
 	else if(!hand)
 		item = r_hand
-	if(!istype(item) || (item.flags_item & (DELONDROP|NODROP)))
+	if(!istype(item) || HAS_TRAIT(src, TRAIT_NODROP) || (item.item_flags & DELONDROP))
 		return
 	if(to_give_to.r_hand && to_give_to.l_hand)
 		to_chat(src, span_warning("[to_give_to]'s hands are full."))

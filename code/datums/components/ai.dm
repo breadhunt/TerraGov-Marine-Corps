@@ -28,10 +28,6 @@ The main purpose of this is to handle cleanup and setting up the initial ai beha
 	ai_behavior = new behavior_type(src, parent, atom_to_escort, isliving(parent))
 	start_ai()
 
-//Removes registered signals and action states, useful for scenarios like when the parent is destroyed or a client is taking over
-/datum/component/ai_controller/proc/handle_combat_log()
-	SIGNAL_HANDLER
-	return DONT_LOG
 
 /datum/component/ai_controller/RemoveComponent()
 	clean_up(FALSE)
@@ -41,7 +37,6 @@ The main purpose of this is to handle cleanup and setting up the initial ai beha
 /datum/component/ai_controller/proc/clean_up(register_for_logout = TRUE)
 	SIGNAL_HANDLER
 	GLOB.ai_instances_active -= src
-	UnregisterSignal(parent, COMSIG_COMBAT_LOG)
 	UnregisterSignal(parent, COMSIG_MOB_LOGIN)
 	UnregisterSignal(parent, COMSIG_MOB_DEATH)
 	if(ai_behavior)
@@ -49,7 +44,7 @@ The main purpose of this is to handle cleanup and setting up the initial ai beha
 		ai_behavior.cleanup_signals()
 		ai_behavior.atom_to_walk_to = null
 		if(register_for_logout)
-			RegisterSignal(parent, COMSIG_MOB_LOGOUT, .proc/start_ai)
+			RegisterSignal(parent, COMSIG_MOB_LOGOUT, PROC_REF(start_ai))
 			return
 		ai_behavior = null
 
@@ -70,9 +65,8 @@ The main purpose of this is to handle cleanup and setting up the initial ai beha
 		break
 	//Iniatialise the behavior of the ai
 	ai_behavior.start_ai()
-	RegisterSignal(parent, COMSIG_MOB_DEATH, .proc/RemoveComponent)
-	RegisterSignal(parent, COMSIG_MOB_LOGIN, .proc/clean_up)
-	RegisterSignal(parent, COMSIG_COMBAT_LOG, .proc/handle_combat_log)
+	RegisterSignal(parent, COMSIG_MOB_DEATH, PROC_REF(RemoveComponent))
+	RegisterSignal(parent, COMSIG_MOB_LOGIN, PROC_REF(clean_up))
 	UnregisterSignal(parent, COMSIG_MOB_LOGOUT)
 	GLOB.ai_instances_active += src
 

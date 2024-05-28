@@ -2,10 +2,10 @@
 /obj/machinery/door/airlock/multi_tile
 	width = 2
 
-/obj/machinery/door/airlock/multi_tile/close() //Nasty as hell O(n^2) code but unfortunately necessary
+/obj/machinery/door/airlock/multi_tile/close() //Nasty as hell O(n^2) code but unfortunately necessary //honestly probably not, TODO fixme
 	for(var/turf/T in locs)
-		for(var/obj/vehicle/multitile/M in T)
-			if(M) return FALSE
+		for(var/obj/hitbox/hit in T)
+			return FALSE
 
 	return ..()
 
@@ -133,12 +133,11 @@
 /obj/machinery/door/airlock/multi_tile/mainship/blackgeneric
 	name = "\improper Airlock"
 	icon = 'icons/obj/doors/mainship/2x1almayerdoor.dmi'
-	opacity = FALSE
-	glass = FALSE
 
 /obj/machinery/door/airlock/multi_tile/mainship/blackgeneric/glass
 	name = "\improper Glass Airlock"
 	icon = 'icons/obj/doors/mainship/2x1almayerdoor_glass.dmi'
+	opacity = FALSE
 	glass = TRUE
 
 //PREP DOORS
@@ -177,7 +176,7 @@
 /obj/machinery/door/airlock/multi_tile/mainship/marine/alpha/sl
 	name = "\improper Alpha Squad Leader Preparations"
 	req_access = list(ACCESS_MARINE_LEADER, ACCESS_MARINE_ALPHA)
-	req_one_access =  null
+	req_one_access = null
 
 /obj/machinery/door/airlock/multi_tile/mainship/marine/alpha/engineer
 	name = "\improper Alpha Squad Engineer Preparations"
@@ -187,7 +186,7 @@
 /obj/machinery/door/airlock/multi_tile/mainship/marine/alpha/medic
 	name = "\improper Alpha Squad Medic Preparations"
 	req_access = list(ACCESS_MARINE_MEDPREP, ACCESS_MARINE_ALPHA)
-	req_one_access =  null
+	req_one_access = null
 
 /obj/machinery/door/airlock/multi_tile/mainship/marine/alpha/smart
 	name = "\improper Alpha Squad Smartgunner Preparations"
@@ -314,8 +313,6 @@
 /obj/machinery/door/airlock/multi_tile/mainship/engineering
 	name = "\improper Engineering Airlock"
 	icon = 'icons/obj/doors/mainship/2x1engidoor.dmi'
-	opacity = FALSE
-	glass = FALSE
 	req_one_access = list(ACCESS_MARINE_LOGISTICS, ACCESS_MARINE_ENGINEERING)
 
 /obj/machinery/door/airlock/multi_tile/mainship/engineering/glass
@@ -330,9 +327,6 @@
 	opacity = FALSE
 	glass = TRUE
 	req_access = list(ACCESS_MARINE_BRIDGE)
-
-/obj/machinery/door/airlock/multi_tile/mainship/comdoor/rebel
-	req_access = list(ACCESS_MARINE_BRIDGE_REBEL)
 
 /obj/machinery/door/airlock/multi_tile/mainship/comdoor/free_access
 	req_access = null
@@ -352,52 +346,6 @@
 	name = "\improper Security Glass Airlock"
 	icon = 'icons/obj/doors/mainship/2x1secdoor_glass.dmi'
 	glass = TRUE
-
-/obj/machinery/door/airlock/multi_tile/mainship/handle_multidoor()
-	if(!(width > 1)) return //Bubblewrap
-
-	for(var/i = 1, i < width, i++)
-		if(dir in list(NORTH, SOUTH))
-			var/turf/T = locate(x, y + i, z)
-			T.set_opacity(opacity)
-		else if(dir in list(EAST, WEST))
-			var/turf/T = locate(x + i, y, z)
-			T.set_opacity(opacity)
-
-	if(dir in list(NORTH, SOUTH))
-		bound_height = world.icon_size * width
-	else if(dir in list(EAST, WEST))
-		bound_width = world.icon_size * width
-
-//We have to find these again since these doors are used on shuttles a lot so the turfs changes
-/obj/machinery/door/airlock/multi_tile/mainship/proc/update_filler_turfs()
-
-	for(var/i = 1, i < width, i++)
-		if(dir in list(NORTH, SOUTH))
-			var/turf/T = locate(x, y + i, z)
-			if(T) T.set_opacity(opacity)
-		else if(dir in list(EAST, WEST))
-			var/turf/T = locate(x + i, y, z)
-			if(T) T.set_opacity(opacity)
-
-/obj/machinery/door/airlock/multi_tile/mainship/proc/get_filler_turfs()
-	var/list/filler_turfs = list()
-	for(var/i = 1, i < width, i++)
-		if(dir in list(NORTH, SOUTH))
-			var/turf/T = locate(x, y + i, z)
-			if(T) filler_turfs += T
-		else if(dir in list(EAST, WEST))
-			var/turf/T = locate(x + i, y, z)
-			if(T) filler_turfs += T
-	return filler_turfs
-
-/obj/machinery/door/airlock/multi_tile/mainship/open()
-	. = ..()
-	update_filler_turfs()
-
-/obj/machinery/door/airlock/multi_tile/mainship/close()
-	. = ..()
-	update_filler_turfs()
 
 //------Dropship Cargo Doors -----//
 
@@ -421,8 +369,9 @@
 
 /obj/machinery/door/airlock/multi_tile/mainship/dropshiprear/close(forced=0)
 	if(forced)
-		for(var/turf/T in get_filler_turfs())
-			for(var/mob/living/L in T)
+		for(var/filler in fillers)
+			var/filler_turf = get_turf(filler)
+			for(var/mob/living/L in filler_turf)
 				step(L, pick(NORTH,SOUTH)) // bump them off the tile
 		safe = FALSE // in case anyone tries to run into the closing door~
 		..()

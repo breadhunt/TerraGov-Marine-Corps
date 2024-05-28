@@ -20,13 +20,13 @@
 ///Will this car kidnap people by ramming into them?
 #define CAN_KIDNAP (1<<0)
 
-
 #define TURRET_TYPE_DROIDLASER 3
 #define TURRET_TYPE_HEAVY 2
 #define TURRET_TYPE_LIGHT 1
 #define TURRET_TYPE_EXPLOSIVE 0
 
 #define CLOAK_ABILITY 0
+#define CARGO_ABILITY 1
 
 #define NO_PATTERN 0
 #define PATTERN_TRACKED 1
@@ -45,3 +45,16 @@
 // For fireman carries, the carrying human needs an arm
 #define CARRIER_NEEDS_ARM (1<<4)
 
+
+//Armored vehicle defines
+#define ARMORED_HAS_UNDERLAY (1<<0)
+#define ARMORED_HAS_MAP_VARIANTS (1<<2)
+#define ARMORED_HAS_PRIMARY_WEAPON (1<<3)
+#define ARMORED_HAS_SECONDARY_WEAPON (1<<4)
+#define ARMORED_LIGHTS_ON (1<<5)
+#define ARMORED_HAS_HEADLIGHTS (1<<6)
+#define ARMORED_PURCHASABLE_ASSAULT (1<<7)
+#define ARMORED_PURCHASABLE_TRANSPORT (1<<8)
+
+#define MODULE_PRIMARY (1<<0)
+#define MODULE_SECONDARY (1<<1)

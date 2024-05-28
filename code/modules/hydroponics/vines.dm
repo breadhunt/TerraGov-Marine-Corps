@@ -8,7 +8,7 @@
 	anchored = TRUE
 	density = FALSE
 	layer = FLY_LAYER
-	flags_pass = PASSTABLE|PASSGRILLE
+	allow_pass_flags = PASS_LOW_STRUCTURE|PASS_GRILLE
 
 	// Vars used by vines with seed data.
 	var/age = 0
@@ -31,7 +31,8 @@
 
 /obj/effect/plantsegment/attackby(obj/item/I, mob/user, params)
 	. = ..()
-
+	if(.)
+		return
 	if(iswelder(I))
 		var/obj/item/tool/weldingtool/WT = I
 		if(!WT.remove_fuel(0, user))
@@ -57,7 +58,7 @@
 
 
 /obj/effect/plantsegment/attack_hand(mob/living/user)
-	.  = ..()
+	. = ..()
 	if(.)
 		return
 	if(user.a_intent == INTENT_HELP && seed && harvest)
@@ -173,7 +174,7 @@
 	// Update flower/product overlay.
 	overlays.Cut()
 	if(age >= seed.maturation)
-		if(prob(20) && seed.products && seed.products.len && !harvest && ((age-lastproduce) > seed.production))
+		if(prob(20) && seed.products && length(seed.products) && !harvest && ((age-lastproduce) > seed.production))
 			harvest = 1
 			lastproduce = age
 
@@ -213,7 +214,7 @@
 
 
 // Hotspots kill vines.
-/obj/effect/plantsegment/fire_act(null, temp, volume)
+/obj/effect/plantsegment/fire_act(burn_level)
 	qdel(src)
 
 /obj/effect/plantsegment/proc/die()
@@ -244,10 +245,6 @@
 		die()
 		return
 
-
-/obj/effect/plantsegment/flamer_fire_act(burnlevel)
-	qdel(src)
-
 /obj/effect/plant_controller
 
 	//What this does is that instead of having the grow minimum of 1, required to start growing, the minimum will be 0,
@@ -268,7 +265,7 @@
 	slowdown_limit = 3
 	limited_growth = 1
 
-/obj/effect/plant_controller/Initialize()
+/obj/effect/plant_controller/Initialize(mapload)
 	. = ..()
 
 	if(!istype(loc,/turf/open/floor))
@@ -306,9 +303,9 @@
 		return
 
 	// Check if we're too big for our own good.
-	if(vines.len >= (seed ? seed.potency * collapse_limit : 250) && !reached_collapse_size)
+	if(length(vines) >= (seed ? seed.potency * collapse_limit : 250) && !reached_collapse_size)
 		reached_collapse_size = 1
-	if(vines.len >= (seed ? seed.potency * slowdown_limit : 30) && !reached_slowdown_size )
+	if(length(vines) >= (seed ? seed.potency * slowdown_limit : 30) && !reached_slowdown_size )
 		reached_slowdown_size = 1
 
 	var/length = 0
@@ -322,7 +319,7 @@
 	else
 		length = 1
 
-	length = min(30, max(length, vines.len/5))
+	length = min(30, max(length, length(vines)/5))
 
 	// Update as many pieces of vine as we're allowed to.
 	// Append updated vines to the end of the growth queue.

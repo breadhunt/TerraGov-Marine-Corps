@@ -3,47 +3,39 @@
 /turf/template_noop,
 /area/template_noop)
 "b" = (
-/turf/closed/shuttle/ert{
-	icon_state = "stan20"
+/turf/closed/shuttle/dropship_regular/top_corner/alt{
+	dir = 1
 	},
 /area/shuttle/ert)
 "c" = (
 /obj/docking_port/mobile/ert,
-/turf/closed/shuttle/ert{
-	icon_state = "stan27"
-	},
+/turf/closed/shuttle/dropship_regular/cockpit_window,
 /area/shuttle/ert)
 "d" = (
-/turf/closed/shuttle/ert{
-	icon_state = "stan25"
-	},
+/turf/closed/shuttle/dropship_regular/top_corner/alt,
 /area/shuttle/ert)
 "e" = (
-/turf/closed/shuttle/ert{
-	icon_state = "stan21"
-	},
+/turf/closed/shuttle/dropship_regular/backwall,
 /area/shuttle/ert)
 "f" = (
-/turf/closed/shuttle/ert{
-	icon_state = "stan22"
-	},
+/turf/closed/shuttle/dropship_regular/interior_corner,
 /area/shuttle/ert)
 "g" = (
 /turf/open/shuttle/dropship/floor,
 /area/shuttle/ert)
 "h" = (
-/turf/closed/shuttle/ert{
-	icon_state = "stan23"
+/turf/closed/shuttle/dropship_regular/interior_corner{
+	dir = 1
 	},
 /area/shuttle/ert)
 "i" = (
-/turf/closed/shuttle/ert,
+/turf/closed/shuttle/dropship_regular/interior_wall,
 /area/shuttle/ert)
 "j" = (
 /obj/structure/rack,
 /obj/effect/landmark/distress_item,
 /obj/item/storage/toolbox/mechanical,
-/obj/item/multitool,
+/obj/item/tool/multitool,
 /turf/open/shuttle/dropship/floor,
 /area/shuttle/ert)
 "k" = (
@@ -53,9 +45,7 @@
 /turf/open/shuttle/dropship/six,
 /area/shuttle/ert)
 "l" = (
-/turf/open/shuttle/dropship{
-	icon_state = "floor8"
-	},
+/turf/open/shuttle/dropship/five,
 /area/shuttle/ert)
 "m" = (
 /obj/machinery/light{
@@ -70,8 +60,8 @@
 /turf/open/shuttle/dropship/floor,
 /area/shuttle/ert)
 "o" = (
-/turf/closed/shuttle/ert{
-	icon_state = "stan5"
+/turf/closed/shuttle/dropship_regular/interior_wall{
+	dir = 1
 	},
 /area/shuttle/ert)
 "p" = (
@@ -116,26 +106,22 @@
 /turf/open/shuttle/dropship/eight,
 /area/shuttle/ert)
 "x" = (
-/turf/closed/shuttle/ert{
-	icon_state = "stan_leftengine"
-	},
+/turf/closed/shuttle/dropship_regular/engine_corner,
 /area/shuttle/ert)
 "y" = (
-/turf/closed/shuttle/ert{
-	icon_state = "stan8"
-	},
+/turf/closed/shuttle/dropship_regular/top_corner,
 /area/shuttle/ert)
 "z" = (
 /turf/open/shuttle/dropship/three,
 /area/shuttle/ert)
 "A" = (
-/turf/closed/shuttle/ert{
-	icon_state = "stan9"
+/turf/closed/shuttle/dropship_regular/top_corner{
+	dir = 1
 	},
 /area/shuttle/ert)
 "B" = (
-/turf/closed/shuttle/ert{
-	icon_state = "stan_rightengine"
+/turf/closed/shuttle/dropship_regular/engine_corner{
+	dir = 1
 	},
 /area/shuttle/ert)
 "C" = (
@@ -155,15 +141,12 @@
 /turf/open/shuttle/dropship/floor,
 /area/shuttle/ert)
 "G" = (
-/turf/closed/shuttle/ert{
-	icon_state = "leftengine_3";
-	opacity = 0
+/turf/closed/shuttle/ert/engines/left/three{
+	dir = 1
 	},
 /area/shuttle/ert)
 "H" = (
-/turf/closed/shuttle/ert{
-	icon_state = "stan1"
-	},
+/turf/closed/shuttle/dropship_regular/backhatch,
 /area/shuttle/ert)
 "I" = (
 /obj/machinery/door/poddoor/shutters/transit/open{
@@ -175,37 +158,57 @@
 /turf/open/shuttle/dropship/floor,
 /area/shuttle/ert)
 "J" = (
-/turf/closed/shuttle/ert{
-	icon_state = "stan2"
+/turf/closed/shuttle/dropship_regular/backhatch{
+	dir = 1
 	},
 /area/shuttle/ert)
 "K" = (
-/turf/closed/shuttle/ert{
-	icon_state = "stan3"
+/turf/closed/shuttle/dropship_regular/backhatch{
+	dir = 4
 	},
 /area/shuttle/ert)
 "N" = (
-/turf/closed/shuttle/ert{
-	icon_state = "rightengine_3";
-	opacity = 0
+/turf/closed/shuttle/ert/engines/right/three{
+	dir = 1
 	},
 /area/shuttle/ert)
 "O" = (
 /turf/closed/shuttle/ert/engines/left{
-	dir = 1;
-	},
-/area/shuttle/ert)
-"Q" = (
-/turf/closed/shuttle/ert/engines/right{
+	dir = 1
 	},
 /area/shuttle/ert)
 "R" = (
-/turf/closed/shuttle/ert/engines/left{
+/obj/structure/barricade/plasteel{
+	dir = 4
 	},
+/obj/effect/mapping_helpers/barricade/closed,
+/turf/open/shuttle/dropship/floor,
 /area/shuttle/ert)
 "S" = (
 /turf/closed/shuttle/ert/engines/right{
-	dir = 1;
+	dir = 1
+	},
+/area/shuttle/ert)
+"U" = (
+/obj/structure/barricade/plasteel,
+/obj/effect/mapping_helpers/barricade/closed,
+/turf/open/shuttle/dropship/floor,
+/area/shuttle/ert)
+"W" = (
+/obj/structure/barricade/plasteel{
+	dir = 8
+	},
+/obj/effect/mapping_helpers/barricade/closed,
+/turf/open/shuttle/dropship/floor,
+/area/shuttle/ert)
+"X" = (
+/turf/closed/shuttle/ert/engines/right/two{
+	dir = 1
+	},
+/area/shuttle/ert)
+"Y" = (
+/turf/closed/shuttle/ert/engines/left/two{
+	dir = 1
 	},
 /area/shuttle/ert)
 
@@ -221,18 +224,18 @@ p
 i
 x
 G
+Y
 O
-R
 "}
 (2,1,1) = {"
 a
 e
 j
-g
+W
 s
 s
 s
-g
+W
 u
 y
 i
@@ -251,7 +254,7 @@ q
 v
 g
 D
-g
+U
 I
 "}
 (4,1,1) = {"
@@ -281,18 +284,18 @@ q
 w
 g
 E
-g
+U
 I
 "}
 (6,1,1) = {"
 a
 e
 n
-g
+R
 t
 t
 t
-g
+R
 u
 A
 o
@@ -311,6 +314,6 @@ p
 o
 B
 N
+X
 S
-Q
 "}

@@ -1,3 +1,20 @@
+/particles/shuttle_dust
+	icon = 'icons/effects/effects.dmi'
+	icon_state = "smoke"
+	width = 750
+	height = 750
+	count = 1000
+	spawning = 20
+	lifespan = 8
+	fade = 50
+	grow = 0.3
+	velocity = list(0, 0)
+	position = generator(GEN_CIRCLE, 160, 160, NORMAL_RAND)
+	gravity = list(0, 0)
+	scale = generator(GEN_VECTOR, list(1, 1), list(2,2), NORMAL_RAND)
+	rotation = 0
+	spin = generator(GEN_NUM, -20, 20)
+
 //use this define to highlight docking port bounding boxes (ONLY FOR DEBUG USE)
 //#ifdef TESTING
 //#define DOCKING_PORT_HIGHLIGHT
@@ -6,7 +23,7 @@
 //NORTH default dir
 /obj/docking_port
 	invisibility = INVISIBILITY_ABSTRACT
-	icon = 'icons/obj/device.dmi'
+	icon = 'icons/Marine/marine-navigation.dmi'
 	icon_state = "pinonfar"
 
 	resistance_flags = RESIST_ALL
@@ -38,6 +55,10 @@
 	var/delete_after = FALSE
 	///are we registered in SSshuttles?
 	var/registered = FALSE
+	///particle holder for dust/engine smoke
+	var/obj/effect/abstract/particle_holder/particle_holder
+	///does the landing sequence emit dust
+	var/uses_dust = TRUE
 
 ///register to SSshuttles
 /obj/docking_port/proc/register()
@@ -294,7 +315,7 @@
 /obj/docking_port/stationary/proc/on_crash()
 	return
 
-//returns first-found touching shuttleport
+///returns first-found touching shuttleport
 /obj/docking_port/stationary/get_docked()
 	. = locate(/obj/docking_port/mobile) in loc
 
@@ -306,7 +327,7 @@
 
 	var/spawn_time
 
-/obj/docking_port/stationary/transit/Initialize()
+/obj/docking_port/stationary/transit/Initialize(mapload)
 	. = ..()
 	SSshuttle.transit += src
 	spawn_time = world.time
@@ -334,14 +355,20 @@
 
 	var/list/shuttle_areas
 
-	var/timer						//used as a timer (if you want time left to complete move, use timeLeft proc)
+	///used as a timer (if you want time left to complete move, use timeLeft proc)
+	var/timer
 	var/last_timer_length
 
-	var/mode = SHUTTLE_IDLE			//current shuttle mode
-	var/callTime = 100				//time spent in transit (deciseconds). Should not be lower then 10 seconds without editing the animation of the hyperspace ripples.
-	var/ignitionTime = 55			// time spent "starting the engines". Also rate limits how often we try to reserve transit space if its ever full of transiting shuttles.
-	var/rechargeTime = 0			//time spent after arrival before being able to launch again
-	var/prearrivalTime = 0			//delay after call time finishes for sound effects, explosions, etc.
+	///current shuttle mode
+	var/mode = SHUTTLE_IDLE
+	///time spent in transit (deciseconds). Should not be lower then 10 seconds without editing the animation of the hyperspace ripples.
+	var/callTime = 100
+	/// time spent "starting the engines". Also rate limits how often we try to reserve transit space if its ever full of transiting shuttles.
+	var/ignitionTime = 55
+	///time spent after arrival before being able to launch again
+	var/rechargeTime = 0
+	///delay after call time finishes for sound effects, explosions, etc.
+	var/prearrivalTime = 0
 
 	var/landing_sound = 'sound/effects/engine_landing.ogg'
 	var/ignition_sound = 'sound/effects/engine_startup.ogg'
@@ -395,13 +422,13 @@
 	. = ..()
 
 	if(!id)
-		id = "[SSshuttle.mobile.len]"
+		id = "[length(SSshuttle.mobile)]"
 	if(name == "shuttle")
-		name = "shuttle[SSshuttle.mobile.len]"
+		name = "shuttle[length(SSshuttle.mobile)]"
 
 	shuttle_areas = list()
 	var/list/all_turfs = return_ordered_turfs(x, y, z, dir)
-	for(var/i in 1 to all_turfs.len)
+	for(var/i in 1 to length(all_turfs))
 		var/turf/curT = all_turfs[i]
 		var/area/cur_area = get_area(curT)
 		if(istype(cur_area, area_type))
@@ -495,7 +522,6 @@
 
 /obj/docking_port/mobile/proc/transit_failure()
 	message_admins("Shuttle [src] repeatedly failed to create transit zone.")
-	log_debug("Setting [src]/[src.id] idle")
 	set_idle()
 
 //call the shuttle to destination S
@@ -595,7 +621,7 @@
 	var/underlying_area_type = SHUTTLE_DEFAULT_UNDERLYING_AREA
 	// If the shuttle is docked to a stationary port, restore its normal
 	// "empty" area and turf
-	if(current_dock && current_dock.area_type)
+	if(current_dock?.area_type)
 		underlying_area_type = current_dock.area_type
 
 	var/list/old_turfs = return_ordered_turfs(x, y, z, dir)
@@ -604,7 +630,7 @@
 	if(!underlying_area)
 		underlying_area = new underlying_area_type(null)
 
-	for(var/i in 1 to old_turfs.len)
+	for(var/i in 1 to length(old_turfs))
 		var/turf/oldT = old_turfs[i]
 		if(!oldT || !istype(oldT.loc, area_type))
 			continue
@@ -617,7 +643,7 @@
 		var/list/baseturf_cache = oldT.baseturfs
 		for(var/k in 1 to length(baseturf_cache))
 			if(ispath(baseturf_cache[k], /turf/baseturf_skipover/shuttle))
-				oldT.ScrapeAway(baseturf_cache.len - k + 1)
+				oldT.ScrapeAway(length(baseturf_cache) - k + 1)
 				break
 
 	qdel(src, force=TRUE)
@@ -644,10 +670,16 @@
 	var/list/turfs = ripple_area(S1)
 	for(var/t in turfs)
 		ripples += new /obj/effect/abstract/ripple(t, animate_time)
+	if(uses_dust)
+		particle_holder = new(S1.loc, /particles/shuttle_dust)
+		particle_holder.particles.position = generator(GEN_CIRCLE, width*12, height*12, NORMAL_RAND)
+		particle_holder.particles.width = width * 65
+		particle_holder.particles.height = height * 65
 	return TRUE
 
 /obj/docking_port/mobile/proc/remove_ripples()
 	QDEL_LIST(ripples)
+	QDEL_NULL(particle_holder)
 
 /obj/docking_port/mobile/proc/ripple_area(obj/docking_port/stationary/S1)
 	if(!S1)
@@ -657,7 +689,7 @@
 
 	var/list/ripple_turfs = list()
 
-	for(var/i in 1 to L0.len)
+	for(var/i in 1 to length(L0))
 		var/turf/T0 = L0[i]
 		var/turf/T1 = L1[i]
 		if(!T0 || !T1)
@@ -725,7 +757,7 @@
 	set_idle()
 
 /obj/docking_port/mobile/proc/check_effects()
-	if(!ripples.len && destination?.loc != loc)
+	if(!length(ripples) && destination?.loc != loc)
 		if((mode == SHUTTLE_CALL) || (mode == SHUTTLE_RECALL))
 			var/tl = timeLeft(1)
 			if(tl <= SHUTTLE_RIPPLE_TIME)
@@ -823,7 +855,7 @@
 
 /obj/docking_port/mobile/proc/getDbgStatusText()
 	var/obj/docking_port/stationary/dockedAt = get_docked()
-	. = (dockedAt && dockedAt.name) ? dockedAt.name : "unknown"
+	. = (dockedAt?.name) ? dockedAt.name : "unknown"
 	if(istype(dockedAt, /obj/docking_port/stationary/transit))
 		var/obj/docking_port/stationary/dst
 		if(mode == SHUTTLE_RECALL)
@@ -963,3 +995,66 @@
 		to_chat(user, span_warning("Shuttle already in transit."))
 		return FALSE
 	return TRUE
+
+#define WORLDMAXX_CUTOFF (world.maxx + 1)
+#define WORLDMAXY_CUTOFF (world.maxx + 1)
+/**
+ * Calculated and populates the information used for docking and some internal vars.
+ * This can also be used to calculate from shuttle_areas so that you can expand/shrink shuttles!
+ *
+ * Arguments:
+ * * loading_from - The template that the shuttle was loaded from, if not given we iterate shuttle_areas to calculate information instead
+ */
+/obj/docking_port/mobile/proc/calculate_docking_port_information(datum/map_template/shuttle/loading_from)
+	var/port_x_offset = loading_from?.port_x_offset
+	var/port_y_offset = loading_from?.port_y_offset
+	var/width = loading_from?.width
+	var/height = loading_from?.height
+	if(!loading_from)
+		if(!length(shuttle_areas))
+			CRASH("Attempted to calculate a docking port's information without a template before it was assigned any areas!")
+		// no template given, use shuttle_areas to calculate width and height
+		var/min_x = -1
+		var/min_y = -1
+		var/max_x = WORLDMAXX_CUTOFF
+		var/max_y = WORLDMAXY_CUTOFF
+		for(var/area/area AS in shuttle_areas)
+			for(var/turf/turf in area)
+				min_x = max(turf.x, min_x)
+				max_x = min(turf.x, max_x)
+				min_y = max(turf.y, min_y)
+				max_y = min(turf.y, max_y)
+			CHECK_TICK
+
+		if(min_x == -1 || max_x == WORLDMAXX_CUTOFF)
+			CRASH("Failed to locate shuttle boundaries when iterating through shuttle areas, somehow.")
+		if(min_y == -1 || max_y == WORLDMAXY_CUTOFF)
+			CRASH("Failed to locate shuttle boundaries when iterating through shuttle areas, somehow.")
+
+		width = (max_x - min_x) + 1
+		height = (max_y - min_y) + 1
+		port_x_offset = min_x - x
+		port_y_offset = min_y - y
+
+	if(dir in list(EAST, WEST))
+		src.width = height
+		src.height = width
+	else
+		src.width = width
+		src.height = height
+
+	switch(dir)
+		if(NORTH)
+			dwidth = port_x_offset - 1
+			dheight = port_y_offset - 1
+		if(EAST)
+			dwidth = height - port_y_offset
+			dheight = port_x_offset - 1
+		if(SOUTH)
+			dwidth = width - port_x_offset
+			dheight = height - port_y_offset
+		if(WEST)
+			dwidth = port_y_offset - 1
+			dheight = width - port_x_offset
+#undef WORLDMAXX_CUTOFF
+#undef WORLDMAXY_CUTOFF

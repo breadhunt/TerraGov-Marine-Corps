@@ -12,7 +12,7 @@
 	var/card_type = "normal"
 	var/list/cards = list()
 
-/obj/item/toy/deck/Initialize()
+/obj/item/toy/deck/Initialize(mapload)
 	. = ..()
 	populate_deck()
 
@@ -32,6 +32,8 @@
 
 /obj/item/toy/deck/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(istype(I, /obj/item/toy/handcard))
 		var/obj/item/toy/handcard/H = I
@@ -42,7 +44,8 @@
 		to_chat(user, "You place your cards on the bottom of the deck.")
 
 /obj/item/toy/deck/update_icon_state()
-	switch(cards.len)
+	. = ..()
+	switch(length(cards))
 		if(52)
 			icon_state = "deck"
 		if(1 to 51)
@@ -69,7 +72,7 @@
 	if(!ishuman(user))
 		return
 
-	if(!cards.len)
+	if(!length(cards))
 		to_chat(usr, "There are no cards in the deck.")
 		return
 
@@ -101,7 +104,7 @@
 
 	if(usr.stat || !Adjacent(usr)) return
 
-	if(!cards.len)
+	if(!length(cards))
 		to_chat(usr, "There are no cards in the deck.")
 		return
 
@@ -114,7 +117,7 @@
 	var/mob/living/M = tgui_input_list(usr, "Who do you wish to deal a card?", null, players)
 	if(!usr || gc_destroyed || !Adjacent(usr) || !M || M.gc_destroyed) return
 
-	if(!cards.len)
+	if(!length(cards))
 		return
 
 	for(var/mob/living/L in viewers(3))
@@ -136,14 +139,9 @@
 		user.visible_message("\The [user] deals a card to \the [target].")
 	H.throw_at(get_step(target,target.dir),10,1,H)
 
-/obj/item/toy/deck/attack_self(mob/user as mob)
-
-	var/list/newcards = list()
-	while(cards.len)
-		var/datum/playingcard/P = pick(cards)
-		newcards += P
-		cards -= P
-	cards = newcards
+/obj/item/toy/deck/attack_self(mob/user)
+	. = ..()
+	shuffle_inplace(cards)
 	user.visible_message("\The [user] shuffles [src].")
 
 /obj/item/toy/deck/MouseDrop(atom/over)
@@ -152,7 +150,7 @@
 
 	if(!ishuman(over) || !(over in viewers(3))) return
 
-	if(!cards.len)
+	if(!length(cards))
 		to_chat(usr, "There are no cards in the deck.")
 		return
 
@@ -167,6 +165,8 @@
 
 	var/concealed = 0
 	var/list/cards = list()
+	///The last direction the person who dropped us was facing
+	var/last_direction = SOUTH
 
 /obj/item/toy/handcard/Initialize(mapload, card_type)
 	. = ..()
@@ -178,6 +178,8 @@
 
 /obj/item/toy/handcard/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(istype(I, /obj/item/toy/handcard))
 		var/obj/item/toy/handcard/H = I
@@ -233,7 +235,7 @@
 	user.visible_message("\The [user] plays \the [discarding].")
 	H.loc = get_step(user, user.dir)
 
-	if(!cards.len)
+	if(!length(cards))
 		qdel(src)
 
 /obj/item/toy/handcard/attack_self(mob/user as mob)
@@ -243,39 +245,45 @@
 
 /obj/item/toy/handcard/examine(mob/user)
 	. = ..()
-	if(cards.len)
-		. += span_notice("It has [cards.len] cards.")
+	if(length(cards))
+		. += span_notice("It has [length(cards)] cards.")
 		if((!concealed || loc == user))
 			. += span_notice("The cards are: ")
 			for(var/datum/playingcard/P in cards)
 				. += "-[P.name]"
 
-/obj/item/toy/handcard/update_icon(direction = 0)
-	if(cards.len > 1)
+/obj/item/toy/handcard/update_name(updates)
+	. = ..()
+	if(length(cards) > 1)
 		name = "hand of cards"
-		desc = "Some playing cards."
 	else
 		name = "a playing card"
+
+/obj/item/toy/handcard/update_desc(updates)
+	. = ..()
+	if(length(cards) > 1)
+		desc = "Some playing cards."
+	else
 		desc = "A playing card."
 
-	overlays.Cut()
-
-	if(!cards.len)
+/obj/item/toy/handcard/update_overlays()
+	. = ..()
+	if(!length(cards))
 		return
 
-	if(cards.len == 1)
+	if(length(cards) == 1)
 		var/datum/playingcard/P = cards[1]
 		var/image/I = new(src.icon, (concealed ? "card_back" : "[P.card_icon]") )
 		I.pixel_x += (-5+rand(10))
 		I.pixel_y += (-5+rand(10))
-		overlays += I
+		. += I
 		return
 
-	var/offset = FLOOR(20/cards.len, 1)
+	var/offset = FLOOR(20/length(cards), 1)
 
 	var/matrix/M = matrix()
-	if(direction)
-		switch(direction)
+	if(last_direction)
+		switch(last_direction)
 			if(NORTH)
 				M.Translate( 0,  0)
 			if(SOUTH)
@@ -290,7 +298,7 @@
 	for(var/datum/playingcard/P in cards)
 		var/image/I = new(src.icon, (concealed ? "card_back" : "[P.card_icon]") )
 		//I.pixel_x = origin+(offset*i)
-		switch(direction)
+		switch(last_direction)
 			if(SOUTH)
 				I.pixel_x = 8-(offset*i)
 			if(WEST)
@@ -300,15 +308,14 @@
 			else
 				I.pixel_x = -7+(offset*i)
 		I.transform = M
-		overlays += I
+		. += I
 		i++
 
 /obj/item/toy/handcard/dropped(mob/user as mob)
-	..()
+	. = ..()
 	if(locate(/obj/structure/table, loc))
-		src.update_icon(user.dir)
-	else
-		update_icon()
+		last_direction = user.dir
+	update_icon()
 
 /obj/item/toy/handcard/pickup(mob/user as mob)
 	src.update_icon()
@@ -325,7 +332,7 @@
 	var/datum/playingcard/P
 	var/datum/playingcard/I
 
-	for(var/colour in list("Red","Yellow","Green","Blue"))
+	for(var/colour in list("Red","Yellow","Purple","Blue"))
 		P = new()
 		P.name = "[colour] 0" //kotahi decks have only one colour of each 0, weird huh?
 		P.card_icon = "[colour] 0"
@@ -357,12 +364,34 @@
 		P.card_icon = "Wildcard"
 		cards += P
 	for(var/k in 0 to 3)
+		P = new()
 		P.name= "Draw 4"
 		P.card_icon = "Draw 4"
 		cards += P
 
 /obj/item/toy/deck/kotahi/update_icon_state()
-	switch(cards.len)
-		if(72 to 108) icon_state = "deck"
-		if(37 to 72) icon_state = "deck_half"
-		if(0 to 36) icon_state = "deck_empty"
+	. = ..()
+	switch(length(cards))
+		if(107 to 108)
+			icon_state = "deck"
+		if(37 to 106)
+			icon_state = "deck_open"
+		if(0 to 36)
+			icon_state = "deck_empty"
+
+// purely cosmetic for helmet stuff, can't be stacked with normal cards
+/obj/item/toy/card/ace/hearts
+	name = "Ancient Ace of Hearts card"
+	desc = "An ancient copy of an Ace of Hearts from a deck of playing cards."
+	icon = 'icons/obj/items/items.dmi'
+	icon_state = "ace_of_hearts"
+	worn_icon_state = "ace_of_hearts"
+	w_class = WEIGHT_CLASS_TINY
+
+/obj/item/toy/card/ace/spades
+	name = "Ancient Ace of Spades card"
+	desc = "An ancient copy of an Ace of Spades from a deck of playing cards."
+	icon = 'icons/obj/items/items.dmi'
+	icon_state = "ace_of_spades"
+	worn_icon_state = "ace_of_spades"
+	w_class = WEIGHT_CLASS_TINY

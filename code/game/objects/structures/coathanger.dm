@@ -5,12 +5,12 @@
 	icon_state = "coatrack0"
 	coverage = 5
 	var/obj/item/clothing/suit/coat
-	var/list/allowed = list(/obj/item/clothing/suit/storage/labcoat, /obj/item/clothing/suit/storage/det_suit, /obj/item/clothing/suit/bomber)
+	var/list/allowed = list(/obj/item/clothing/suit/storage/labcoat, /obj/item/clothing/suit/storage/det_suit, /obj/item/clothing/suit/storage/bomber)
 
 /obj/structure/coatrack/Initialize(mapload)
 	. = ..()
 	var/static/list/connections = list(
-		COMSIG_ATOM_ENTERED = .proc/on_cross,
+		COMSIG_ATOM_ENTERED = PROC_REF(on_cross),
 	)
 	AddElement(/datum/element/connect_loc, connections)
 
@@ -25,6 +25,8 @@
 
 /obj/structure/coatrack/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(!(I.type in allowed) || coat)
 		to_chat(user, span_notice("You cannot hang [I] on [src]"))
@@ -50,11 +52,11 @@
 			break
 
 
-/obj/structure/coatrack/update_icon()
-	overlays.Cut()
+/obj/structure/coatrack/update_overlays()
+	. = ..()
 	if(istype(coat, /obj/item/clothing/suit/storage/labcoat))
-		overlays += image(icon, icon_state = "coat_lab")
+		. += image(icon, icon_state = "coat_lab")
 	if(istype(coat, /obj/item/clothing/suit/storage/labcoat/cmo))
-		overlays += image(icon, icon_state = "coat_cmo")
+		. += image(icon, icon_state = "coat_cmo")
 	if(istype(coat, /obj/item/clothing/suit/storage/det_suit))
-		overlays += image(icon, icon_state = "coat_det")
+		. += image(icon, icon_state = "coat_det")

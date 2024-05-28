@@ -2,7 +2,11 @@
 	name = "disk"
 	icon = 'icons/obj/items/disk.dmi'
 	icon_state = "datadisk0"
-	item_state = "card-id"
+	worn_icon_list = list(
+		slot_l_hand_str = 'icons/mob/inhands/equipment/id_left.dmi',
+		slot_r_hand_str = 'icons/mob/inhands/equipment/id_right.dmi',
+	)
+	worn_icon_state = "card-id"
 
 
 /obj/item/disk/nuclear
@@ -12,7 +16,7 @@
 	w_class = WEIGHT_CLASS_TINY
 	resistance_flags = RESIST_ALL
 
-/obj/item/disk/nuclear/Initialize()
+/obj/item/disk/nuclear/Initialize(mapload)
 	. = ..()
 	GLOB.nuke_disk_list += src
 

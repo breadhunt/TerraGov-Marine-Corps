@@ -7,6 +7,7 @@
 	name = "Intelligence computer"
 	desc = "A computer used to access the colonies central database. TGMC Intel division will occasionally request remote data retrieval from these computers"
 	icon_state = "intel_computer"
+	screen_overlay = "intel_computer_screen"
 	circuit = /obj/item/circuitboard/computer/intel_computer
 
 	resistance_flags = INDESTRUCTIBLE|UNACIDABLE
@@ -15,7 +16,7 @@
 	///Whether this computer is activated by the event yet
 	var/active = FALSE
 	///How much supply points you get for completing the terminal
-	var/supply_reward = 60
+	var/supply_reward = 600
 	///How much dropship points you get for completing the terminal
 	var/dropship_reward = 60
 
@@ -35,10 +36,10 @@
 	var/faction = FACTION_TERRAGOV
 
 
-/obj/machinery/computer/intel_computer/Initialize()
+/obj/machinery/computer/intel_computer/Initialize(mapload)
 	. = ..()
 	GLOB.intel_computers += src
-	RegisterSignal(SSdcs, COMSIG_GLOB_DROPSHIP_HIJACKED, .proc/disable_on_hijack)
+	RegisterSignal(SSdcs, COMSIG_GLOB_DROPSHIP_HIJACKED, PROC_REF(disable_on_hijack))
 
 /obj/machinery/computer/intel_computer/process()
 	. = ..()
@@ -52,7 +53,7 @@
 		printing_complete = TRUE
 		SSpoints.supply_points[faction] += supply_reward
 		SSpoints.dropship_points += dropship_reward
-		priority_announce("Classified transmission recieved from [get_area(src)]. Bonus delivered as [supply_reward] supply points and [dropship_reward] dropship points.", title = "TGMC Intel Division")
+		minor_announce("Classified transmission recieved from [get_area(src)]. Bonus delivered as [supply_reward] supply points and [dropship_reward] dropship points.", title = "TGMC Intel Division")
 		SSminimaps.remove_marker(src)
 
 /obj/machinery/computer/intel_computer/Destroy()

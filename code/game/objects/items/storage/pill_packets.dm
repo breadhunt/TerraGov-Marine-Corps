@@ -1,70 +1,76 @@
 // Pill packets, basically pill bottles you can't put pills back into.
 
 /obj/item/storage/pill_bottle/packet
-	name = "Pill packet"
-	desc = "Containts pills. Once you take them out they don't go back in."
-	greyscale_config = null //this line stops pill packets from turning into pill bottles
-	icon_state = "pill_packet"
-	cant_hold = list(/obj/item/reagent_containers/pill) //Nada. Once you take the pills out. They don't come back in.
-	storage_slots = 4
-	max_w_class = 0
-	max_storage_space = 4
+	name = "pill packet"
+	desc = "Contains pills. Once you take them out they don't go back in."
+	icon_state = "packet_canister"
+	greyscale_config = null //So that we get packets and not pill bottles.
+	storage_type = /datum/storage/pill_bottle/packet
+	///Color of the pips on top of the pill packet
+	var/pip_color = "#0066ff" //default color because I like this color
+
+/obj/item/storage/pill_bottle/packet/update_overlays()
+	. = ..()
+	var/image/overlay = image('icons/obj/items/chemistry.dmi', src, "packet_canister[length(contents)]")
+	overlay.color = pip_color
+	. += overlay
 
 /obj/item/storage/pill_bottle/packet/bicaridine
-	name = "Bicaridine pill packet"
-	icon_state = "bic_packet"
+	name = "bicaridine pill packet"
 	desc = "This packet contains bicaridine pills. Used to treat minor lacerations. Once you take them out they don't go back in. No more than 2 pills at once."
 	pill_type_to_fill = /obj/item/reagent_containers/pill/bicaridine
-	storage_slots = 8
-	max_storage_space = 8
+	pip_color = COLOR_PACKET_BICARIDINE
 
 /obj/item/storage/pill_bottle/packet/kelotane
-	name = "Kelotane pill packet"
-	icon_state = "kelo_packet"
+	name = "kelotane pill packet"
 	desc = "This packet contains kelotane pills. Used to treat surface burns. Once you take them out they don't go back in. No more than 2 pills at once."
 	pill_type_to_fill = /obj/item/reagent_containers/pill/kelotane
-	storage_slots = 8
-	max_storage_space = 8
+	pip_color = COLOR_PACKET_KELOTANE
 
 /obj/item/storage/pill_bottle/packet/tramadol
-	name = "Tramadol pill packet"
-	icon_state = "tram_packet"
+	name = "tramadol pill packet"
 	desc = "This packet contains tramadol pills. Used as a medium-strength painkiller. Once you take them out they don't go back in. No more than 2 pills at once."
 	pill_type_to_fill = /obj/item/reagent_containers/pill/tramadol
-	storage_slots = 8
-	max_storage_space = 8
+	pip_color = COLOR_PACKET_TRAMADOL
 
 /obj/item/storage/pill_bottle/packet/tricordrazine
-	name = "Tricordazine pill packet"
-	desc = "This packet contains tricordazine pills. Heals all types of damage slightly. Once you take them out they don't go back in. No more than 2 pills at once."
+	name = "tricordrazine pill packet"
+	desc = "This packet contains tricordrazine pills. Heals all types of damage slightly. Once you take them out they don't go back in. No more than 2 pills at once."
 	pill_type_to_fill = /obj/item/reagent_containers/pill/tricordrazine
-	storage_slots = 6
-	max_storage_space = 6
+	pip_color = COLOR_PACKET_TRICORDRAZINE
 
 /obj/item/storage/pill_bottle/packet/dylovene
-	name = "Dylovene pill packet"
-	icon_state = "tric_packet"
+	name = "dylovene pill packet"
 	desc = "This packet contains dylovene pills. Used to purge toxins and heal toxic damage. Once you take them out they don't go back in. No more than 2 pills at once."
 	pill_type_to_fill = /obj/item/reagent_containers/pill/dylovene
-	storage_slots = 6
-	max_storage_space = 6
+	pip_color = COLOR_PACKET_DYLOVENE
 
 /obj/item/storage/pill_bottle/packet/paracetamol
-	name = "Paracematol pill packet"
+	name = "paracetamol pill packet"
 	desc = "This packet contains paracetamol pills, also known as tylenol. A long lasting but minor painkiller. Once you take them out they don't go back in. No more than 4 pills in a long period."
 	pill_type_to_fill = /obj/item/reagent_containers/pill/paracetamol
+	pip_color = COLOR_PACKET_PARACETAMOL
+
+/obj/item/storage/pill_bottle/packet/isotonic
+	name = "isotonic pill packet"
+	desc = "A pill with an isotonic solution inside. Used to stimulate blood regeneration. Once you take them out they don't go back in."
+	pill_type_to_fill = /obj/item/reagent_containers/pill/isotonic
+	pip_color = COLOR_PACKET_ISOTONIC
 
 /obj/item/storage/pill_bottle/packet/leporazine
-	name = "Leporazine pill packet"
+	name = "leporazine pill packet"
 	desc = "This packet contains leporazine pills. Rapidly stablizes the patients internal temperature. Once you take them out they don't go back in.."
 	pill_type_to_fill = /obj/item/reagent_containers/pill/leporazine
+	pip_color = COLOR_PACKET_LEPORAZINE
 
 /obj/item/storage/pill_bottle/packet/russian_red
-	name = "Russian Red pill packet"
+	name = "russian red pill packet"
 	desc = "This packet contains Russian Red pills. Used for field treatment of critical cases without a medic. Once you take them out they don't go back in.."
 	pill_type_to_fill = /obj/item/reagent_containers/pill/russian_red
+	pip_color = COLOR_PACKET_RUSSIAN_RED
 
 /obj/item/storage/pill_bottle/packet/ryetalyn
-	name = "Ryetalyn pill packet"
+	name = "ryetalyn pill packet"
 	desc = "This packet contains Ryetalyn pills. Used to provide a shield against bloodstream toxins. Once you take them out they don't go back in. No more than 2 pills at once."
 	pill_type_to_fill = /obj/item/reagent_containers/pill/ryetalyn
+	pip_color = COLOR_PACKET_RYETALYN

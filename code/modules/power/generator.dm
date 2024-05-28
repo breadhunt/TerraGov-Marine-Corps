@@ -15,7 +15,7 @@
 	var/lastgen = 0
 	var/lastgenlev = -1
 
-/obj/machinery/power/generator/Initialize()
+/obj/machinery/power/generator/Initialize(mapload)
 	. = ..()
 
 	reconnect()
@@ -75,6 +75,8 @@
 
 /obj/machinery/power/generator/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(iswrench(I))
 		anchored = !anchored

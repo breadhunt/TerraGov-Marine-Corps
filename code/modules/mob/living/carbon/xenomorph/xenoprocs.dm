@@ -1,3 +1,10 @@
+/mob/living/carbon/xenomorph/Bump(atom/A)
+	if(!(xeno_flags & XENO_LEAPING))
+		return ..()
+	if(!isliving(A))
+		return ..()
+	return SEND_SIGNAL(src, COMSIG_XENOMORPH_LEAP_BUMP, A)
+
 /mob/living/carbon/xenomorph/verb/hive_status()
 	set name = "Hive Status"
 	set desc = "Check the status of your current hive."
@@ -18,10 +25,11 @@
 
 	dat += "<b>List of Hive Tunnels:</b><BR>"
 
-	for(var/obj/structure/xeno/tunnel/T AS in GLOB.xeno_tunnels)
-		if(user.issamexenohive(T))
-			var/distance = get_dist(user, T)
-			dat += "<b>[T.name]</b> located at: <b><font color=green>([T.tunnel_desc][distance > 0 ? " <b>Distance: [distance])</b>" : ""]</b></font><BR>"
+	for(var/hive AS in GLOB.xeno_tunnels_by_hive)
+		for(var/obj/structure/xeno/tunnel/T in GLOB.xeno_tunnels_by_hive[hive])
+			if(user.issamexenohive(T))
+				var/distance = get_dist(user, T)
+				dat += "<b>[T.name]</b> located at: <b><font color=green>([T.tunnel_desc][distance > 0 ? " <b>Distance: [distance])</b>" : ""]</b></font><BR>"
 
 	var/datum/browser/popup = new(user, "tunnelstatus", "<div align='center'>Tunnel List</div>", 600, 600)
 	popup.set_content(dat)
@@ -64,8 +72,8 @@
 
 	if(href_list["track_silo_number"])
 		var/silo_number = href_list["track_silo_number"]
-		for(var/obj/structure/xeno/silo/resin_silo AS in GLOB.xeno_resin_silos)
-			if(resin_silo.associated_hive == hive && num2text(resin_silo.number_silo) == silo_number)
+		for(var/obj/structure/xeno/silo/resin_silo AS in GLOB.xeno_resin_silos_by_hive[hivenumber])
+			if(num2text(resin_silo.number_silo) == silo_number)
 				set_tracked(resin_silo)
 				to_chat(usr,span_notice(" You will now track [resin_silo.name]"))
 				break
@@ -87,40 +95,47 @@
 	var/datum/hive_status/HS = GLOB.hive_datums[hivenumber]
 	HS.xeno_message(message, span_class, size, force, target, sound, apply_preferences, filter_list, arrow_type, arrow_color, report_distance)
 
-///returns TRUE if we are permitted to evo to the next case FALSE otherwise
+///returns TRUE if we are permitted to evo to the next caste FALSE otherwise
 /mob/living/carbon/xenomorph/proc/upgrade_possible()
-	if(upgrade == XENO_UPGRADE_THREE)
+	if(HAS_TRAIT(src, TRAIT_VALHALLA_XENO))
+		return FALSE
+	if(upgrade == XENO_UPGRADE_NORMAL)
 		return hive.purchases.upgrades_by_name[GLOB.tier_to_primo_upgrade[xeno_caste.tier]].times_bought
-	return (upgrade != XENO_UPGRADE_INVALID && upgrade != XENO_UPGRADE_FOUR)
+	return (upgrade != XENO_UPGRADE_INVALID && upgrade != XENO_UPGRADE_PRIMO)
 
 //Adds stuff to your "Status" pane -- Specific castes can have their own, like carrier hugger count
 //Those are dealt with in their caste files.
-/mob/living/carbon/xenomorph/Stat()
+/mob/living/carbon/xenomorph/get_status_tab_items()
 	. = ..()
 
-	if(!statpanel("Game"))
-		return
-
 	if(!(xeno_caste.caste_flags & CASTE_EVOLUTION_ALLOWED))
-		stat("Evolve Progress:", "(FINISHED)")
+		. += "Evolve Progress: (FINISHED)"
 	else if(!hive.check_ruler())
-		stat("Evolve Progress:", "(HALTED - NO RULER)")
+		. += "Evolve Progress: (HALTED - NO RULER)"
 	else
-		stat("Evolve Progress:", "[evolution_stored]/[xeno_caste.evolution_threshold]")
+		. += "Evolve Progress: [evolution_stored]/[xeno_caste.evolution_threshold]"
 
 	if(upgrade_possible())
-		stat("Upgrade Progress:", "[upgrade_stored]/[xeno_caste.upgrade_threshold]")
+		. += "Upgrade Progress: [upgrade_stored]/[xeno_caste.upgrade_threshold]"
 	else //Upgrade process finished or impossible
-		stat("Upgrade Progress:", "(FINISHED)")
+		. += "Upgrade Progress: (FINISHED)"
 
-	stat("Health:", "[overheal ? "[overheal] + ": ""][health]/[maxHealth]") //Changes with balance scalar, can't just use the caste
+	. += "Health: [health]/[maxHealth][overheal ? " + [overheal]": ""]" //Changes with balance scalar, can't just use the caste
 
 	if(xeno_caste.plasma_max > 0)
-		stat("Plasma:", "[plasma_stored]/[xeno_caste.plasma_max]")
+		. += "Plasma: [plasma_stored]/[xeno_caste.plasma_max]"
 
-	stat("Sunder:", "[100-sunder]% armor left")
+	. += "Sunder: [100-sunder]% armor left"
 
-	//Very weak <= 1.0, weak <= 2.0, no modifier 2-3, strong <= 3.5, very strong <= 4.5
+	. += "Regeneration power: [max(regen_power * 100, 0)]%"
+
+	var/casteswap_value = ((GLOB.key_to_time_of_caste_swap[key] ? GLOB.key_to_time_of_caste_swap[key] : -INFINITY)  + 15 MINUTES - world.time) * 0.1
+	if(casteswap_value <= 0)
+		. += "Caste Swap Timer: READY"
+	else
+		. += "Caste Swap Timer: [(casteswap_value / 60) % 60]:[add_leading(num2text(casteswap_value % 60), 2, "0")]"
+
+	//Very weak <= 1.0, Weak <= 2.0, Medium < 3.0, Strong < 4.0, Very strong >= 4.0
 	var/msg_holder = ""
 	if(frenzy_aura)
 		switch(frenzy_aura)
@@ -134,7 +149,7 @@
 				msg_holder = "Strong"
 			if(4.0 to INFINITY)
 				msg_holder = "Very strong"
-		stat("[AURA_XENO_FRENZY] pheromone strength:", msg_holder)
+		. += "[AURA_XENO_FRENZY] pheromone strength: [msg_holder] ([frenzy_aura])"
 	if(warding_aura)
 		switch(warding_aura)
 			if(-INFINITY to 1.0)
@@ -147,7 +162,7 @@
 				msg_holder = "Strong"
 			if(4.0 to INFINITY)
 				msg_holder = "Very strong"
-		stat("[AURA_XENO_WARDING] pheromone strength:", msg_holder)
+		. += "[AURA_XENO_WARDING] pheromone strength: [msg_holder] ([warding_aura])"
 	if(recovery_aura)
 		switch(recovery_aura)
 			if(-INFINITY to 1.0)
@@ -160,15 +175,7 @@
 				msg_holder = "Strong"
 			if(4.0 to INFINITY)
 				msg_holder = "Very strong"
-		stat("[AURA_XENO_RECOVERY] pheromone strength:", msg_holder)
-
-	if(hivenumber == XENO_HIVE_NORMAL)
-		var/hivemind_countdown = SSticker.mode?.get_hivemind_collapse_countdown()
-		if(hivemind_countdown)
-			stat("<b>Orphan hivemind collapse timer:</b>", hivemind_countdown)
-		var/siloless_countdown = SSticker.mode?.get_siloless_collapse_countdown()
-		if(siloless_countdown)
-			stat("<b>Orphan hivemind collapse timer:</b>", siloless_countdown)
+		. += "[AURA_XENO_RECOVERY] pheromone strength: [msg_holder] ([recovery_aura])"
 
 //A simple handler for checking your state. Used in pretty much all the procs.
 /mob/living/carbon/xenomorph/proc/check_state()
@@ -184,28 +191,36 @@
 		return FALSE
 	return TRUE
 
-/mob/living/carbon/xenomorph/proc/use_plasma(value)
+/mob/living/carbon/xenomorph/proc/set_plasma(value, update_plasma = TRUE)
+	plasma_stored = clamp(value, 0, xeno_caste.plasma_max)
+	if(!update_plasma)
+		return
+	hud_set_plasma()
+
+/mob/living/carbon/xenomorph/proc/use_plasma(value, update_plasma = TRUE)
 	plasma_stored = max(plasma_stored - value, 0)
 	update_action_button_icons()
+	if(!update_plasma)
+		return
+	hud_set_plasma()
 
-/mob/living/carbon/xenomorph/proc/gain_plasma(value)
+/mob/living/carbon/xenomorph/proc/gain_plasma(value, update_plasma = TRUE)
 	plasma_stored = min(plasma_stored + value, xeno_caste.plasma_max)
 	update_action_button_icons()
-
-
-
+	if(!update_plasma)
+		return
+	hud_set_plasma()
 
 //Strip all inherent xeno verbs from your caste. Used in evolution.
 /mob/living/carbon/xenomorph/proc/remove_inherent_verbs()
 	if(inherent_verbs)
 		for(var/verb_path in inherent_verbs)
-			verbs -= verb_path
+			remove_verb(verbs, verb_path)
 
 //Add all your inherent caste verbs and procs. Used in evolution.
 /mob/living/carbon/xenomorph/proc/add_inherent_verbs()
 	if(inherent_verbs)
-		for(var/verb_path in inherent_verbs)
-			verbs |= verb_path
+		add_verb(src, inherent_verbs)
 
 
 //Adds or removes a delay to movement based on your caste. If speed = 0 then it shouldn't do much.
@@ -235,11 +250,9 @@
 
 
 /mob/living/carbon/xenomorph/proc/update_evolving()
-	if(!client || !ckey) // stop evolve progress for ssd/ghosted xenos
+	if(evolution_stored >= xeno_caste.evolution_threshold || !(xeno_caste.caste_flags & CASTE_EVOLUTION_ALLOWED) || HAS_TRAIT(src, TRAIT_VALHALLA_XENO))
 		return
-	if(evolution_stored >= xeno_caste.evolution_threshold || !(xeno_caste.caste_flags & CASTE_EVOLUTION_ALLOWED))
-		return
-	if(!hive.check_ruler() && caste_base_type != /mob/living/carbon/xenomorph/larva) // Larva can evolve without leaders at round start.
+	if(!hive.check_ruler() && caste_base_type != /datum/xeno_caste/larva) // Larva can evolve without leaders at round start.
 		return
 
 	// Evolution is increased based on marine to xeno population taking stored_larva as a modifier.
@@ -248,13 +261,12 @@
 	var/evolution_points = 1 + (FLOOR(stored_larva / 3, 1)) + hive.get_evolution_boost() + spec_evolution_boost()
 	evolution_stored = min(evolution_stored + evolution_points, xeno_caste.evolution_threshold)
 
+	if(!client || !ckey)
+		return
+
 	if(evolution_stored == xeno_caste.evolution_threshold)
 		to_chat(src, span_xenodanger("Our carapace crackles and our tendons strengthen. We are ready to evolve!"))
 		SEND_SOUND(src, sound('sound/effects/xeno_evolveready.ogg'))
-
-
-/mob/living/carbon/xenomorph/show_inv(mob/user)
-	return
 
 
 //This deals with "throwing" xenos -- ravagers, hunters, and runners in particular. Everyone else defaults to normal
@@ -262,17 +274,13 @@
 /mob/living/carbon/xenomorph/throw_impact(atom/hit_atom, speed)
 	set waitfor = FALSE
 
-	// TODO: remove charge_type check
-	if(!xeno_caste.charge_type || stat || (!throwing && usedPounce)) //No charge type, unconscious or dead, or not throwing but used pounce.
-		..() //Do the parent instead.
-		return FALSE
+	if(stat || !(xeno_flags & XENO_LEAPING))
+		return ..()
 
 	if(isobj(hit_atom)) //Deal with smacking into dense objects. This overwrites normal throw code.
 		var/obj/O = hit_atom
-		if(!O.density)
-			return FALSE//Not a dense object? Doesn't matter then, pass over it.
-		if(!O.anchored)
-			step(O, dir) //Not anchored? Knock the object back a bit. Ie. canisters.
+		if(!O.anchored && !isxeno(src))
+			step(O, dir)
 		SEND_SIGNAL(src, COMSIG_XENO_OBJ_THROW_HIT, O, speed)
 		return TRUE
 
@@ -281,7 +289,7 @@
 			return FALSE
 		stop_throw() //Resert throwing since something was hit.
 		return TRUE
-	stop_throw() //Resert throwing since something was hit.
+
 	return ..() //Do the parent otherwise, for turfs.
 
 /mob/living/carbon/xenomorph/proc/toggle_nightvision(new_lighting_alpha)
@@ -313,17 +321,16 @@
 
 /mob/living/carbon/xenomorph/proc/zoom_in(tileoffset = 5, viewsize = 12)
 	if(stat || resting)
-		if(is_zoomed)
-			is_zoomed = 0
+		if(xeno_flags & XENO_ZOOMED)
 			zoom_out()
 			return
 		return
-	if(is_zoomed)
+	if(xeno_flags & XENO_ZOOMED)
 		return
 	if(!client)
 		return
 	zoom_turf = get_turf(src)
-	is_zoomed = 1
+	xeno_flags |= XENO_ZOOMED
 	client.view_size.set_view_radius_to(viewsize/2-2) //convert diameter to radius
 	var/viewoffset = 32 * tileoffset
 	switch(dir)
@@ -341,7 +348,7 @@
 			client.pixel_y = 0
 
 /mob/living/carbon/xenomorph/proc/zoom_out()
-	is_zoomed = 0
+	xeno_flags &= ~XENO_ZOOMED
 	zoom_turf = null
 	if(!client)
 		return
@@ -364,30 +371,25 @@
 //When the Queen's pheromones are updated, or we add/remove a leader, update leader pheromones
 /mob/living/carbon/xenomorph/proc/handle_xeno_leader_pheromones(mob/living/carbon/xenomorph/queen/Q)
 	QDEL_NULL(leader_current_aura)
-	if(QDELETED(Q) || !queen_chosen_lead || !Q.current_aura || Q.loc.z != loc.z) //We are no longer a leader, or the Queen attached to us has dropped from her ovi, disabled her pheromones or even died
+	if(QDELETED(Q) || !(xeno_flags & XENO_LEADER) || !Q.current_aura || Q.loc.z != loc.z) //We are no longer a leader, or the Queen attached to us has dropped from her ovi, disabled her pheromones or even died
 		to_chat(src, span_xenowarning("Our pheromones wane. The Queen is no longer granting us her pheromones."))
 	else
-		leader_current_aura = SSaura.add_emitter(src, Q.current_aura.aura_types.Copy(), Q.current_aura.range, Q.current_aura.strength, Q.current_aura.duration, Q.current_aura.faction)
+		leader_current_aura = SSaura.add_emitter(src, Q.current_aura.aura_types.Copy(), Q.current_aura.range, Q.current_aura.strength, Q.current_aura.duration, Q.current_aura.faction, Q.current_aura.hive_number)
 		to_chat(src, span_xenowarning("Our pheromones have changed. The Queen has new plans for the Hive."))
 
 
 /mob/living/carbon/xenomorph/proc/update_spits(skip_ammo_choice = FALSE)
 	if(!ammo && length(xeno_caste.spit_types))
 		ammo = GLOB.ammo_list[xeno_caste.spit_types[1]]
-	if(!ammo || !xeno_caste.spit_types || !xeno_caste.spit_types.len) //Only update xenos with ammo and spit types.
+	if(!ammo || !xeno_caste.spit_types || !length(xeno_caste.spit_types)) //Only update xenos with ammo and spit types.
 		return
 	if(!skip_ammo_choice)
-		for(var/i in 1 to xeno_caste.spit_types.len)
+		for(var/i in 1 to length(xeno_caste.spit_types))
 			var/datum/ammo/A = GLOB.ammo_list[xeno_caste.spit_types[i]]
 			if(ammo.icon_state == A.icon_state)
 				ammo = A
 				break
 	SEND_SIGNAL(src, COMSIG_XENO_AUTOFIREDELAY_MODIFIED, xeno_caste.spit_delay + ammo?.added_spit_delay)
-
-/mob/living/carbon/xenomorph/proc/handle_decay()
-	if(prob(7+(3*tier)+(3*upgrade_as_number()))) // higher level xenos decay faster, higher plasma storage.
-		use_plasma(min(rand(1,2), plasma_stored))
-
 
 
 // this mess will be fixed by obj damage refactor
@@ -397,17 +399,12 @@
 /obj/structure/acid_spray_act(mob/living/carbon/xenomorph/X)
 	if(!is_type_in_typecache(src, GLOB.acid_spray_hit))
 		return TRUE // normal density flag
-	take_damage(X.xeno_caste.acid_spray_structure_damage, "acid", "acid")
+	take_damage(X.xeno_caste.acid_spray_structure_damage, BURN, ACID)
 	return TRUE // normal density flag
 
 /obj/structure/razorwire/acid_spray_act(mob/living/carbon/xenomorph/X)
-	. = ..()
+	take_damage(2 * X.xeno_caste.acid_spray_structure_damage, BURN, ACID)
 	return FALSE // not normal density flag
-
-/obj/vehicle/multitile/root/cm_armored/acid_spray_act(mob/living/carbon/xenomorph/X)
-	take_damage_type(X.xeno_caste.acid_spray_structure_damage, "acid", src)
-	healthcheck()
-	return TRUE
 
 /mob/living/carbon/acid_spray_act(mob/living/carbon/xenomorph/X)
 	ExtinguishMob()
@@ -422,24 +419,27 @@
 		GLOB.round_statistics.praetorian_spray_direct_hits++
 		SSblackbox.record_feedback("tally", "round_statistics", 1, "praetorian_spray_direct_hits")
 
-	var/armor_block = get_soft_armor("acid", BODY_ZONE_CHEST)
 	var/damage = X.xeno_caste.acid_spray_damage_on_hit
-	INVOKE_ASYNC(src, .proc/apply_acid_spray_damage, damage, armor_block)
+	INVOKE_ASYNC(src, PROC_REF(apply_acid_spray_damage), damage)
 	to_chat(src, span_xenodanger("\The [X] showers you in corrosive acid!"))
 
-/mob/living/carbon/proc/apply_acid_spray_damage(damage, armor_block)
-	apply_damage(damage, BURN, null, armor_block, updating_health = TRUE)
+/mob/living/carbon/proc/apply_acid_spray_damage(damage)
+	apply_damage(damage, BURN, null, ACID, updating_health = TRUE)
 
-/mob/living/carbon/human/apply_acid_spray_damage(damage, armor_block)
-	take_overall_damage_armored(damage, BURN, "acid", updating_health = TRUE)
+/mob/living/carbon/human/apply_acid_spray_damage(damage)
+	take_overall_damage(damage, BURN, ACID, updating_health = TRUE)
 	emote("scream")
-	Paralyze(20)
+	Paralyze(2 SECONDS)
 
 /mob/living/carbon/xenomorph/acid_spray_act(mob/living/carbon/xenomorph/X)
 	ExtinguishMob()
 
-/obj/flamer_fire/acid_spray_act(mob/living/carbon/xenomorph/X)
-	Destroy()
+/obj/fire/flamer/acid_spray_act(mob/living/carbon/xenomorph/X)
+	qdel(src)
+
+/obj/hitbox/acid_spray_act(mob/living/carbon/xenomorph/X)
+	take_damage(X.xeno_caste.acid_spray_structure_damage, BURN, ACID)
+	return TRUE
 
 // Vent Crawl
 /mob/living/carbon/xenomorph/proc/vent_crawl()
@@ -457,34 +457,33 @@
 	set desc = "Toggles the health and plasma hud appearing above Xenomorphs."
 	set category = "Alien"
 
-	xeno_mobhud = !xeno_mobhud
+	xeno_flags ^= XENO_MOBHUD
 	var/datum/atom_hud/H = GLOB.huds[DATA_HUD_XENO_STATUS]
-	if(xeno_mobhud)
+	if(xeno_flags & XENO_MOBHUD)
 		H.add_hud_to(src)
 	else
 		H.remove_hud_from(src)
-	to_chat(src, span_notice("You have [xeno_mobhud ? "enabled" : "disabled"] the Xeno Status HUD."))
+	to_chat(src, span_notice("You have [(xeno_flags & XENO_MOBHUD) ? "enabled" : "disabled"] the Xeno Status HUD."))
 
 
 /mob/living/carbon/xenomorph/proc/recurring_injection(mob/living/carbon/C, datum/reagent/toxin = /datum/reagent/toxin/xeno_neurotoxin, channel_time = XENO_NEURO_CHANNEL_TIME, transfer_amount = XENO_NEURO_AMOUNT_RECURRING, count = 4)
 	if(!C?.can_sting() || !toxin)
 		return FALSE
-	if(!do_after(src, channel_time, TRUE, C, BUSY_ICON_HOSTILE))
+	if(!do_after(src, channel_time, NONE, C, BUSY_ICON_HOSTILE))
 		return FALSE
 	var/i = 1
 	to_chat(C, span_danger("You feel a tiny prick."))
 	to_chat(src, span_xenowarning("Our stinger injects our victim with [initial(toxin.name)]!"))
 	playsound(C, 'sound/effects/spray3.ogg', 15, TRUE)
-	playsound(C, "alien_drool", 15, TRUE)
+	playsound(C, SFX_ALIEN_DROOL, 15, TRUE)
 	do
 		face_atom(C)
-		if(stagger)
+		if(IsStaggered())
 			return FALSE
 		do_attack_animation(C)
 		C.reagents.add_reagent(toxin, transfer_amount)
-	while(i++ < count && do_after(src, channel_time, TRUE, C, BUSY_ICON_HOSTILE))
+	while(i++ < count && do_after(src, channel_time, NONE, C, BUSY_ICON_HOSTILE))
 	return TRUE
-
 
 /atom/proc/can_sting()
 	return FALSE
@@ -492,21 +491,18 @@
 /mob/living/carbon/human/can_sting()
 	if(species?.species_flags & (IS_SYNTHETIC|ROBOTIC_LIMBS))
 		return FALSE
+	if(status_flags & GODMODE)
+		return FALSE
 	if(stat != DEAD)
 		return TRUE
 	return FALSE
-
-/mob/living/carbon/xenomorph/proc/setup_verbs()
-	verbs += /mob/living/proc/lay_down
-
-/mob/living/carbon/xenomorph/hivemind/setup_verbs()
-	return
 
 /mob/living/carbon/xenomorph/adjust_sunder(adjustment)
 	. = ..()
 	if(.)
 		return
-	sunder = clamp(sunder + adjustment, 0, xeno_caste.sunder_max)
+	sunder = clamp(sunder + (adjustment > 0 ? adjustment * xeno_caste.sunder_multiplier : adjustment), 0, xeno_caste.sunder_max)
+//Applying sunder is an adjustment value above 0, healing sunder is an adjustment value below 0. Use multiplier when taking sunder, not when healing.
 
 /mob/living/carbon/xenomorph/set_sunder(new_sunder)
 	. = ..()
@@ -518,17 +514,12 @@
 	. = ..()
 	if(.)
 		return
-	return (sunder * -0.01) + 1
+	return 1 - (sunder * 0.01)
 
 /mob/living/carbon/xenomorph/adjust_stagger(amount)
 	if(is_charging >= CHARGE_ON) //If we're charging we don't accumulate more stagger stacks.
 		return FALSE
 	return ..()
-
-/mob/living/carbon/xenomorph/add_slowdown(amount)
-	if(is_charging >= CHARGE_ON) //If we're charging we're immune to slowdown.
-		return
-	adjust_slowdown(amount * XENO_SLOWDOWN_REGEN)
 
 ///Eject the mob inside our belly, and putting it in a cocoon if needed
 /mob/living/carbon/xenomorph/proc/eject_victim(make_cocoon = FALSE, turf/eject_location = loc)
@@ -548,21 +539,17 @@
 ///Set the var tracked to to_track
 /mob/living/carbon/xenomorph/proc/set_tracked(atom/to_track)
 	if(tracked)
-		UnregisterSignal(tracked, COMSIG_PARENT_QDELETING)
+		UnregisterSignal(tracked, COMSIG_QDELETING)
 		if (tracked == to_track)
 			clean_tracked()
 			return
 	tracked = to_track
-	RegisterSignal(tracked, COMSIG_PARENT_QDELETING, .proc/clean_tracked)
+	RegisterSignal(tracked, COMSIG_QDELETING, PROC_REF(clean_tracked))
 
 ///Signal handler to null tracked
 /mob/living/carbon/xenomorph/proc/clean_tracked(atom/to_track)
 	SIGNAL_HANDLER
 	tracked = null
-
-///Handles empowered abilities, should return TRUE if the ability should be empowered. Empowerable should be FALSE if the ability cannot itself be empowered but has interactions with empowerable abilities
-/mob/living/carbon/xenomorph/proc/empower(empowerable = TRUE)
-	return FALSE
 
 ///Handles icon updates when leadered/unleadered. Evolution.dm also uses this
 /mob/living/carbon/xenomorph/proc/update_leader_icon(makeleader = TRUE)
@@ -571,7 +558,18 @@
 		return
 
 	SSminimaps.remove_marker(src)
+	var/image/blip = image('icons/UI_icons/map_blips.dmi', null, xeno_caste.minimap_icon)
 	if(makeleader)
-		SSminimaps.add_marker(src, z, MINIMAP_FLAG_XENO, xeno_caste.minimap_icon, overlay_iconstates=list(xeno_caste.minimap_leadered_overlay))
-	else
-		SSminimaps.add_marker(src, z, MINIMAP_FLAG_XENO, xeno_caste.minimap_icon)
+		blip.overlays += image('icons/UI_icons/map_blips.dmi', null, xeno_caste.minimap_leadered_overlay)
+	SSminimaps.add_marker(src, MINIMAP_FLAG_XENO, blip)
+
+///updates the xeno's glow, based on the ability being used
+/mob/living/carbon/xenomorph/proc/update_glow(range, power, color)
+	if(!range || !power || !color)
+		set_light_on(FALSE)
+		return
+	set_light_range_power_color(range, power, color)
+	set_light_on(TRUE)
+
+/mob/living/carbon/xenomorph/on_eord(turf/destination)
+	revive(TRUE)

@@ -31,12 +31,11 @@
 
 /obj/item/mecha_parts/mecha_equipment/Destroy()
 	if(chassis)
-		detach(get_turf(src))
-		log_message("[src] is destroyed.", LOG_MECHA)
 		if(LAZYLEN(chassis.occupants))
 			to_chat(chassis.occupants, "[icon2html(src, chassis.occupants)][span_danger("[src] is destroyed!")]")
 			playsound(chassis, destroy_sound, 50)
-		chassis = null
+		detach(get_turf(src))
+		log_message("[src] is destroyed.", LOG_MECHA)
 	return ..()
 
 /obj/item/mecha_parts/mecha_equipment/try_attach_part(mob/user, obj/vehicle/sealed/mecha/M, attach_right = FALSE)
@@ -61,7 +60,7 @@
 		if("repair")
 			ui.close() // allow watching for baddies and the ingame effects
 			chassis.balloon_alert(usr, "starting repair")
-			while(do_after(usr, 1 SECONDS, chassis) && obj_integrity < max_integrity)
+			while(do_after(usr, 1 SECONDS, NONE, chassis) && obj_integrity < max_integrity)
 				repair_damage(30)
 			if(obj_integrity == max_integrity)
 				balloon_alert(usr, "repair complete")
@@ -111,11 +110,11 @@
 	if(!chassis)
 		return FALSE
 	chassis.use_power(energy_drain)
-	return do_after(user, equip_cooldown, target, extra_checks = CALLBACK(src, .proc/do_after_checks, target))
+	return do_after(user, equip_cooldown, NONE, target, extra_checks = CALLBACK(src, PROC_REF(do_after_checks)))
 
 ///Do after wrapper for mecha equipment
 /obj/item/mecha_parts/mecha_equipment/proc/do_after_mecha(atom/target, mob/user, delay)
-	return do_after(user, delay, target, extra_checks = CALLBACK(src, .proc/do_after_checks, target))
+	return do_after(user, delay, NONE, target, extra_checks = CALLBACK(src, PROC_REF(do_after_checks)))
 
 /// do after checks for the mecha equipment do afters
 /obj/item/mecha_parts/mecha_equipment/proc/do_after_checks(atom/target)
@@ -183,11 +182,6 @@
 	//tgmc changes end
 	chassis = null
 
-/obj/item/mecha_parts/mecha_equipment/log_message(message, message_type=LOG_GAME, color=null, log_globally)
-	if(chassis)
-		return chassis.log_message("ATTACHMENT: [src] [message]", message_type, color)
-	return ..()
-
 /**
  * ## get_snowflake_data
  * handles the returning of snowflake data required by the UI of the mecha
@@ -199,13 +193,14 @@
 /obj/item/mecha_parts/mecha_equipment/proc/get_snowflake_data()
 	return list()
 
-/**
- * Proc for reloading weapons from HTML UI or by AI
- * note that this is old and likely broken code
- */
+///Tries to rearm the module
+/obj/item/mecha_parts/mecha_equipment/proc/attempt_rearm()
+	return FALSE
+
+///Rearms the module
 /obj/item/mecha_parts/mecha_equipment/proc/rearm()
 	return FALSE
 
-/// AI mech pilot: returns TRUE if the Ai should try to reload the mecha
+///Checks if the module actually need rearming
 /obj/item/mecha_parts/mecha_equipment/proc/needs_rearm()
 	return FALSE

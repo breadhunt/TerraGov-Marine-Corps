@@ -17,6 +17,7 @@
 	update_icon()
 
 /obj/machinery/holosign/update_icon_state()
+	. = ..()
 	if(!lit)
 		icon_state = "sign_off"
 	else
@@ -51,6 +52,8 @@
 
 /obj/machinery/holosign_switch/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(istype(I, /obj/item/detective_scanner))
 		return
@@ -71,4 +74,4 @@
 
 	for(var/obj/machinery/holosign/M in GLOB.machines)
 		if (M.id == src.id)
-			INVOKE_ASYNC(M, /obj/machinery/holosign.proc/toggle)
+			INVOKE_ASYNC(M, TYPE_PROC_REF(/obj/machinery/holosign, toggle))

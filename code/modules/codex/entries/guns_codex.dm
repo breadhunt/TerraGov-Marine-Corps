@@ -1,20 +1,38 @@
 /obj/item/weapon/gun/get_antag_info()
 	var/list/entries = SScodex.retrieve_entries_for_string(general_codex_key)
 	var/datum/codex_entry/general_entry = LAZYACCESS(entries, 1)
-	if(general_entry && general_entry.antag_text)
+	if(general_entry?.antag_text)
 		return general_entry.antag_text
 
 /obj/item/weapon/gun/get_lore_info()
 	var/list/entries = SScodex.retrieve_entries_for_string(general_codex_key)
 	var/datum/codex_entry/general_entry = LAZYACCESS(entries, 1)
-	if(general_entry && general_entry.lore_text)
+	if(general_entry?.lore_text)
 		return general_entry.lore_text
 
 /obj/item/weapon/gun/get_mechanics_info()
 	. = ..()
 	var/list/traits = list()
 
-	if(flags_gun_features & GUN_WIELDED_FIRING_ONLY)
+	var/skill_name
+	switch(gun_skill_category)
+		if(SKILL_RIFLES)
+			skill_name = "rifle skill"
+		if(SKILL_SMGS)
+			skill_name = "SMG skill"
+		if(SKILL_HEAVY_WEAPONS)
+			skill_name = "heavy weapon skill"
+		if(SKILL_SMARTGUN)
+			skill_name = "smartgun skill"
+		if(SKILL_SHOTGUNS)
+			skill_name = "shotgun skill"
+		if(SKILL_PISTOLS)
+			skill_name = "pistol skill"
+
+	if(skill_name)
+		traits += "This weapons is effected by the user's <U>[skill_name]</U> rating. <br>"
+
+	if(gun_features_flags & GUN_WIELDED_FIRING_ONLY)
 		traits += "This can only be fired with a two-handed grip."
 	else
 		traits += "It's best fired with a two-handed grip."
@@ -96,7 +114,7 @@
 	traits += "<br>"
 	var/list/entries = SScodex.retrieve_entries_for_string(general_codex_key)
 	var/datum/codex_entry/general_entry = LAZYACCESS(entries, 1)
-	if(general_entry && general_entry.mechanics_text)
+	if(general_entry?.mechanics_text)
 		traits += general_entry.mechanics_text
 
 	. += jointext(traits, "<br>")
@@ -110,23 +128,26 @@
 
 	. += jointext(traits, "<br>")
 
+/obj/item/weapon/gun/energy/lasgun/lasrifle/get_mechanics_info()
+	. = ..()
+	if(!mode_list)
+		return
+
+	var/list/fire_modes = list()
+	fire_modes += "<br><U>Fire modes</U>:<br>"
+
+	for(var/num AS in mode_list)
+		var/datum/lasrifle/mode = mode_list[num]
+		fire_modes += "<U>[num]</U>: [initial(mode.description)]"
+
+	. += jointext(fire_modes, "<br>")
+
 /obj/item/weapon/gun/shotgun/pump/get_mechanics_info()
 	. = ..()
-	if(gun_skill_category == GUN_SKILL_RIFLES)
+	if(gun_skill_category == SKILL_RIFLES)
 		. += "<br><br>To work the weapon press spacebar.<br>"
 	else
 		. += "<br><br>To pump it press spacebar.<br>"
-
-/obj/item/weapon/gun/energy/crossbow/get_antag_info()
-	. = ..()
-	. += "This is a stealthy weapon which fires poisoned bolts at your target. When it hits someone, they will suffer a stun effect, in \
-	addition to toxins. The energy crossbow recharges itself slowly, and can be concealed in your pocket or bag.<br>"
-
-/obj/item/weapon/gun/energy/chameleon/get_antag_info()
-	. = ..()
-	. += "This gun is actually a hologram projector that can alter its appearance to mimick other weapons. To change the appearance, use \
-	the appropriate verb in the chameleon items tab. Any beams or projectiles fired from this gun are actually holograms and useless for actual combat. \
-	Projecting these holograms over distance uses a little bit of charge.<br>"
 
 /datum/codex_entry/energy_weapons
 	display_name = "energy weapons"
@@ -142,6 +163,16 @@
 		thanks to their ability to disable human targets easily and even on the military thanks to their ability to recharge using \
 		traditional chargers and their capability to switch their lens, allowing more flexibility, something that a ballistic weapon \
 		aren't capable of."
+
+/datum/codex_entry/plasma_weapons
+	display_name = "plasma weapons"
+	mechanics_text = "This weapon is a plasma weapon; it fires bursts of superheated gas that have been ionized and electrically charged. You can \
+		unload it by holding it and clicking it with an empty hand, and reload it by clicking it with a power cell or a plasma cartridge, depending on the model of \
+		the weapon. \
+		<br>"
+	lore_text = "Plasma weapons are rare and powerful due to the high cost and difficulty of producing and controlling plasma \
+		pulses. They have a devastating effect on most targets, as the plasma can melt, burn, or vaporize them. Using a plasma weapon in a confined space is very risky, \
+		as the plasma can damage the surroundings or harm friendly units with its intense heat and radiation."
 
 /datum/codex_entry/ballistic_weapons
 	display_name = "ballistic weapons"
@@ -182,16 +213,16 @@
 /datum/codex_entry/sniper_rifle
 	associated_paths = list(/obj/item/weapon/gun/rifle/sniper/antimaterial)
 	lore_text = "A rather strange gun in the TGMC's arsenal. The M42A \"Express\" originally was born out of it's younger brother the M42. Made by the same \
-	company who eventually went on to design the M56 smartgun system. Which the M42As specialized scope eventually adopted a modified IFF system similar to it's cousin the smartgun. <br><br>\
+	company who eventually went on to design the HSG-102 smartgun system. Which the M42As specialized scope eventually adopted a modified IFF system similar to it's cousin the smartgun. <br><br>\
 	It was at first marketed to PMCs and civilians as an expensive accurate long range rifle but it failed due to the lack of need for such a thing for PMCs and the wide variety of options \
-	already available for civilians in a more affordable package. The company after the failure went onto design the M56 smartgun and succeeded there however. Which kept them afloat after the failure of the M42.<br><br>\
+	already available for civilians in a more affordable package. The company after the failure went onto design the HS-102 smartgun and succeeded there however. Which kept them afloat after the failure of the M42.<br><br>\
 	Later however an announcement by the Marine Corps who decided to replace the aging supply of the current adopted Sniper Rifle after complaints that the frames were starting to wear out due to long-term use and thus trials would be announced to replace them.<br><br>\
 	Eventually, the board of directors decided to give that reviving the M42 design was a worthwhile possibility. And thus the design was decided to be modernized and equipped with an IFF-capable scope, after that it was named as the M42A and submitted to go the trials.<br><br>\
 	Though high unit cost didn't allow it to be more widely adopted it was eventually decided that it would meet limited adoption for Marksmen and be designated the SR-26."
 
 /datum/codex_entry/battle_rifle
 	associated_paths = list(/obj/item/weapon/gun/rifle/tx8)
-	lore_text = "The M45A was born from a commission order from the TGMC to the company which made the M42A and M56 smartgun systems. <br><br>\
+	lore_text = "The M45A was born from a commission order from the TGMC to the company which made the M42A and HS-102 smartgun systems. <br><br>\
 	The reason for this commission order resulted from complaints from light infantry and scout units about the poor accuracy of the new SR-26 \
 	carbine at longer ranges and the large size of the SG-29 making close combat uncomfortable eventually reached the higher ups, who kept getting \
 	the same complaints over and over. So they eventually reached out to a trusted company to do it.<br><br>\

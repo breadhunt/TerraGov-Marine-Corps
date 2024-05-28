@@ -4,6 +4,10 @@
 #define AGE_MIN 18
 #define AGE_MAX 85
 
+#define BACK_NOTHING 1
+#define BACK_BACKPACK 2
+#define BACK_SATCHEL 3
+
 #define GET_RANDOM_JOB 0
 #define BE_OVERFLOW 1
 #define RETURN_TO_LOBBY 2
@@ -74,6 +78,9 @@
 #define RADIAL_MEDICAL (1<<0)
 #define MIDDLESHIFTCLICKING (1<<1)
 #define RADIAL_STACKS (1<<2)
+#define AUTO_INTERACT_DEPLOYABLES (1<<3)
+#define RADIAL_LASERGUNS (1<<4)
+#define DIRECTIONAL_ATTACKS (1<<5)
 
 #define PARALLAX_INSANE -1 //for show offs
 #define PARALLAX_HIGH    0 //default.
@@ -95,7 +102,7 @@
 #define SCALING_METHOD_DISTORT "distort"
 #define SCALING_METHOD_BLUR "blur"
 
-#define TOGGLES_GAMEPLAY_DEFAULT (RADIAL_MEDICAL|MIDDLESHIFTCLICKING|RADIAL_STACKS)
+#define TOGGLES_GAMEPLAY_DEFAULT (RADIAL_MEDICAL|MIDDLESHIFTCLICKING|RADIAL_STACKS|AUTO_INTERACT_DEPLOYABLES|RADIAL_LASERGUNS|DIRECTIONAL_ATTACKS)
 
 #define CHARACTER_CUSTOMIZATION 1
 #define BACKGROUND_INFORMATION 2
@@ -103,6 +110,7 @@
 #define JOB_PREFERENCES 4
 #define GAME_SETTINGS 5
 #define KEYBIND_SETTINGS 6
+#define DRAW_ORDER 7
 
 #define CITIZENSHIP_CHOICES list(\
 	"Earth Born",\
@@ -172,9 +180,22 @@
 	"Holo"\
 	)
 
+///The amount of quick equip slots there should have. If someone doesn't have this many slots, their prefs will reset to get the new ones.
+///This adds only the buttons, to make the hotkeys usable in-game you need to make a keybind for it.
+#define MAX_QUICK_EQUIP_SLOTS 5
+
+///The default Quick equip order list, adding/removing slots from this list will increase the amount of quick equip slots. Update the define above when
+#define QUICK_EQUIP_ORDER list(\
+	SLOT_S_STORE,\
+	SLOT_BELT,\
+	SLOT_IN_BOOT,\
+	SLOT_L_STORE,\
+	SLOT_R_STORE\
+	)
+
 #define BE_SPECIAL_FLAGS list(\
-	"Latejoin Xenomorph" = BE_ALIEN,\
-	"Xenomorph when unrevivable" = BE_ALIEN_UNREVIVABLE,\
+	"Join as Chestburster" = BE_ALIEN,\
+	"Take Own Chestburster" = BE_ALIEN_UNREVIVABLE,\
 	"End of Round Deathmatch" = BE_DEATHMATCH,\
 	"Prefer Squad over Role" = BE_SQUAD_STRICT\
 	)

@@ -14,38 +14,30 @@
 */
 /obj/structure/closet/emcloset
 	name = "emergency closet"
-	desc = "It's a storage unit for emergency breathmasks and o2 tanks."
+	desc = "It's a storage unit for emergency breathmasks."
 	icon_state = "emergency"
 	icon_closed = "emergency"
 	icon_opened = "emergencyopen"
 
 /obj/structure/closet/emcloset/PopulateContents()
-	switch (pickweight(list("small" = 55, "aid" = 25, "tank" = 10, "both" = 10, "nothing" = 0, "delete" = 0)))
+	switch (pickweight(list("small" = 55, "aid" = 25, "mask" = 10, "both" = 10, "nothing" = 0, "delete" = 0)))
 		if ("small")
-			new /obj/item/tank/emergency_oxygen(src)
-			new /obj/item/tank/emergency_oxygen(src)
 			new /obj/item/clothing/mask/breath(src)
 			new /obj/item/clothing/mask/breath(src)
 			new /obj/item/clothing/mask/gas(src)
 			new /obj/item/clothing/mask/gas(src)
 		if ("aid")
-			new /obj/item/tank/emergency_oxygen(src)
 			new /obj/item/storage/toolbox/emergency(src)
 			new /obj/item/storage/firstaid/o2(src)
 			new /obj/item/clothing/mask/gas(src)
-		if ("tank")
-			new /obj/item/tank/emergency_oxygen/engi(src)
+		if ("mask")
 			new /obj/item/clothing/mask/breath(src)
-			new /obj/item/tank/emergency_oxygen/engi(src)
 			new /obj/item/clothing/mask/gas(src)
 		if ("both")
 			new /obj/item/storage/toolbox/emergency(src)
-			new /obj/item/tank/emergency_oxygen/engi(src)
 			new /obj/item/clothing/mask/gas(src)
 			new /obj/item/clothing/mask/gas(src)
 			new /obj/item/storage/firstaid/o2(src)
-		if ("nothing")
-			// doot
 
 		// teehee - Ah, tg coders...
 		if ("delete")
@@ -57,7 +49,6 @@
 			qdel(src)*/
 
 /obj/structure/closet/emcloset/legacy/PopulateContents()
-	new /obj/item/tank/oxygen(src)
 	new /obj/item/clothing/mask/gas(src)
 
 /*
@@ -73,21 +64,20 @@
 /obj/structure/closet/firecloset/PopulateContents()
 	..()
 
-	new /obj/item/clothing/suit/fire/firefighter(src)
+	new /obj/item/clothing/suit/fire(src)
 	new /obj/item/clothing/mask/gas(src)
-	new /obj/item/tank/oxygen/red(src)
 	new /obj/item/tool/extinguisher(src)
 	new /obj/item/clothing/head/hardhat/red(src)
 
 /obj/structure/closet/firecloset/full/PopulateContents()
-	new /obj/item/clothing/suit/fire/firefighter(src)
+	new /obj/item/clothing/suit/fire(src)
 	new /obj/item/clothing/mask/gas(src)
 	new /obj/item/flashlight(src)
-	new /obj/item/tank/oxygen/red(src)
 	new /obj/item/tool/extinguisher(src)
 	new /obj/item/clothing/head/hardhat/red(src)
 
-/obj/structure/closet/firecloset/update_icon()
+/obj/structure/closet/firecloset/update_icon_state()
+	. = ..()
 	if(!opened)
 		icon_state = icon_closed
 	else
@@ -106,7 +96,6 @@
 
 
 /obj/structure/closet/toolcloset/PopulateContents()
-	. = ..()
 	new /obj/item/clothing/suit/storage/hazardvest(src)
 	new /obj/item/clothing/suit/storage/hazardvest/lime(src)
 	new /obj/item/clothing/suit/storage/hazardvest/blue(src)
@@ -115,7 +104,7 @@
 	new /obj/item/storage/belt/utility/full(src)
 	new /obj/item/clothing/head/hardhat(src)
 	if(prob(10))
-		new /obj/item/clothing/gloves/yellow(src)
+		new /obj/item/clothing/gloves/insulated(src)
 
 
 /*

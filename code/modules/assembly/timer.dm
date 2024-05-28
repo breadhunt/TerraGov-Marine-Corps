@@ -2,7 +2,6 @@
 	name = "timer"
 	desc = "Used to time things. Works well with contraptions which has to count down. Tick tock."
 	icon_state = "timer"
-	materials = list(/datum/material/metal = 500, /datum/material/glass = 50)
 	attachable = TRUE
 	interaction_flags = INTERACT_REQUIRES_DEXTERITY
 
@@ -12,21 +11,17 @@
 	var/loop = FALSE
 	var/hearing_range = 3
 
-
-/obj/item/assembly/timer/Initialize()
+/obj/item/assembly/timer/Initialize(mapload)
 	. = ..()
 	START_PROCESSING(SSobj, src)
-
 
 /obj/item/assembly/timer/Destroy()
 	STOP_PROCESSING(SSobj, src)
 	return ..()
 
-
 /obj/item/assembly/timer/examine(mob/user)
 	. = ..()
 	. += span_notice("The timer is [timing ? "counting down from [time]":"set for [time] seconds"].")
-
 
 /obj/item/assembly/timer/activate()
 	. = ..()
@@ -35,7 +30,6 @@
 	timing = !timing
 	update_icon()
 	return TRUE
-
 
 /obj/item/assembly/timer/toggle_secure()
 	secured = !secured
@@ -46,7 +40,6 @@
 		STOP_PROCESSING(SSobj, src)
 	update_icon()
 	return secured
-
 
 /obj/item/assembly/timer/proc/timer_end()
 	if(!secured || next_activate > world.time)
@@ -61,7 +54,6 @@
 		timing = TRUE
 	update_icon()
 
-
 /obj/item/assembly/timer/process()
 	if(!timing)
 		return
@@ -71,16 +63,17 @@
 		timer_end()
 		time = saved_time
 
-
-/obj/item/assembly/timer/update_icon()
-	cut_overlays()
+/obj/item/assembly/timer/update_overlays()
+	. = ..()
 	attached_overlays = list()
 	if(timing)
-		add_overlay("timer_timing")
+		. += "timer_timing"
 		attached_overlays += "timer_timing"
+
+/obj/item/assembly/timer/update_icon()
+	. = ..()
 	if(holder)
 		holder.update_icon()
-
 
 /obj/item/assembly/timer/can_interact(mob/user)
 	. = ..()
@@ -91,7 +84,6 @@
 		return FALSE
 
 	return TRUE
-
 
 /obj/item/assembly/timer/interact(mob/user)
 	. = ..()
@@ -109,7 +101,6 @@
 	var/datum/browser/popup = new(user, "timer", name)
 	popup.set_content(dat)
 	popup.open()
-
 
 /obj/item/assembly/timer/Topic(href, href_list)
 	. = ..()

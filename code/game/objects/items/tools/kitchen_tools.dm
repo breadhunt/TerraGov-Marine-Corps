@@ -12,6 +12,10 @@
 
 /obj/item/tool/kitchen
 	icon = 'icons/obj/items/kitchen_tools.dmi'
+	worn_icon_list = list(
+		slot_l_hand_str = 'icons/mob/inhands/equipment/kitchen_left.dmi',
+		slot_r_hand_str = 'icons/mob/inhands/equipment/kitchen_right.dmi',
+	)
 
 /*
 * Utensils
@@ -22,12 +26,12 @@
 	throwforce = 5
 	throw_speed = 3
 	throw_range = 5
-	flags_atom = CONDUCT
+	atom_flags = CONDUCT
 	attack_verb = list("attacked", "stabbed", "poked")
 	sharp = 0
 	var/loaded      //Descriptive string for currently loaded food object.
 
-/obj/item/tool/kitchen/utensil/Initialize()
+/obj/item/tool/kitchen/utensil/Initialize(mapload)
 	. = ..()
 	if (prob(60))
 		src.pixel_y = rand(0, 4)
@@ -56,10 +60,10 @@
 	else
 		..()
 
-/obj/item/tool/kitchen/utensil/attack_alien(mob/living/carbon/xenomorph/X, damage_amount = X.xeno_caste.melee_damage, damage_type = BRUTE, damage_flag = "", effects = TRUE, armor_penetration = 0, isrightclick = FALSE)
+/obj/item/tool/kitchen/utensil/attack_alien(mob/living/carbon/xenomorph/xeno_attacker, damage_amount = xeno_attacker.xeno_caste.melee_damage, damage_type = BRUTE, armor_type = MELEE, effects = TRUE, armor_penetration = xeno_attacker.xeno_caste.melee_ap, isrightclick = FALSE)
 	if(!CONFIG_GET(flag/fun_allowed))
 		return FALSE
-	attack_hand(X)
+	attack_hand(xeno_attacker)
 
 /obj/item/tool/kitchen/utensil/fork
 	name = "fork"
@@ -90,8 +94,8 @@
 	name = "knife"
 	desc = "Can cut through any food."
 	icon_state = "knife"
-	force = 10.0
-	throwforce = 10.0
+	force = 10
+	throwforce = 10
 	sharp = IS_SHARP_ITEM_ACCURATE
 	edge = 1
 
@@ -109,12 +113,8 @@
 	name = "plastic knife"
 	desc = "The bluntest of blades."
 	icon_state = "pknife"
-	force = 10.0
-	throwforce = 10.0
-
-/obj/item/tool/kitchen/utensil/knife/attack(target as mob, mob/living/user as mob)
-	playsound(loc, 'sound/weapons/bladeslice.ogg', 25, 1, 5)
-	return ..()
+	force = 10
+	throwforce = 10
 
 /*
 * Kitchen knives
@@ -123,12 +123,12 @@
 	name = "kitchen knife"
 	icon_state = "knife"
 	desc = "A general purpose Chef's Knife made by SpaceCook Incorporated. Guaranteed to stay sharp for years to come."
-	flags_atom = CONDUCT
+	atom_flags = CONDUCT
 	sharp = IS_SHARP_ITEM_ACCURATE
 	edge = 1
-	force = 10.0
+	force = 10
 	w_class = WEIGHT_CLASS_NORMAL
-	throwforce = 6.0
+	throwforce = 6
 	throw_speed = 3
 	throw_range = 6
 	attack_verb = list("slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
@@ -152,10 +152,10 @@
 	name = "butcher's cleaver"
 	icon_state = "butch"
 	desc = "A huge thing used for chopping and chopping up meat. This includes clowns and clown-by-products."
-	flags_atom = CONDUCT
-	force = 15.0
+	atom_flags = CONDUCT
+	force = 15
 	w_class = WEIGHT_CLASS_SMALL
-	throwforce = 8.0
+	throwforce = 8
 	throw_speed = 3
 	throw_range = 6
 	attack_verb = list("cleaved", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
@@ -190,12 +190,12 @@
 	icon = 'icons/obj/items/kitchen_tools.dmi'
 	icon_state = "tray"
 	desc = "A metal tray to lay food on."
-	throwforce = 12.0
-	throwforce = 10.0
+	throwforce = 12
+	throwforce = 10
 	throw_speed = 1
 	throw_range = 5
 	w_class = WEIGHT_CLASS_NORMAL
-	flags_atom = CONDUCT
+	atom_flags = CONDUCT
 	/* // NOPE
 	var/food_total= 0
 	var/burger_amt = 0
@@ -244,7 +244,7 @@
 		log_combat(user, M, "attacked", src)
 
 		if(prob(15))
-			M.Paralyze(60)
+			M.Paralyze(6 SECONDS)
 			M.take_limb_damage(3)
 		else
 			M.take_limb_damage(5)
@@ -260,7 +260,7 @@
 
 
 
-	if(ishuman(M) && ((H.head && (H.head.flags_inventory & COVEREYES) ) || (H.wear_mask && (H.wear_mask.flags_inventory & COVEREYES) ) || (H.glasses && (H.glasses.flags_inventory & COVEREYES) )))
+	if(ishuman(M) && ((H.head && (H.head.inventory_flags & COVEREYES) ) || (H.wear_mask && (H.wear_mask.inventory_flags & COVEREYES) ) || (H.glasses && (H.glasses.inventory_flags & COVEREYES) )))
 		to_chat(M, span_warning("You get slammed in the face with the tray, against your mask!"))
 		if(prob(33))
 			src.add_mob_blood(H)
@@ -281,7 +281,7 @@
 			playsound(M, 'sound/items/trayhit2.ogg', 25, 1)  //sound playin'
 			visible_message(span_danger("[user] slams [M] with the tray!"))
 		if(prob(10))
-			M.Stun(rand(20,60))
+			M.Stun(rand(2 SECONDS, 6 SECONDS))
 			M.take_limb_damage(3)
 			return
 		else
@@ -303,13 +303,13 @@
 			playsound(M, 'sound/items/trayhit2.ogg', 25, 1)  //sound playin' again
 			visible_message(span_danger("[user] slams [M] in the face with the tray!"))
 		if(prob(30))
-			M.Stun(rand(40,80))
+			M.Stun(rand(4 SECONDS, 8 SECONDS))
 			M.take_limb_damage(4)
 			return
 		else
 			M.take_limb_damage(8)
 			if(prob(30))
-				M.Paralyze(40)
+				M.Paralyze(4 SECONDS)
 				return
 			return
 
@@ -317,6 +317,8 @@
 
 /obj/item/tool/kitchen/tray/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(istype(I, /obj/item/tool/kitchen/rollingpin))
 		if(cooldown < world.time - 25)

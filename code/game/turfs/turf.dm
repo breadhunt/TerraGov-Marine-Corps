@@ -37,8 +37,6 @@
 	// In the case of a list it is sorted from bottom layer to top.
 	// This shouldn't be modified directly, use the helper procs.
 	var/list/baseturfs = /turf/baseturf_bottom
-	var/obj/effect/xenomorph/acid/current_acid = null //If it has acid spewed on it
-
 	luminosity = 1
 
 	var/changing_turf = FALSE
@@ -56,11 +54,14 @@
 	///Lazylist of movable atoms providing opacity sources.
 	var/list/atom/movable/opacity_sources
 
+	///Icon-smoothing variable to map a diagonal wall corner with a fixed underlay.
+	var/list/fixed_underlay = null
+
 /turf/Initialize(mapload)
 	SHOULD_CALL_PARENT(FALSE) // anti laggies
-	if(flags_atom & INITIALIZED)
+	if(atom_flags & INITIALIZED)
 		stack_trace("Warning: [src]([type]) initialized multiple times!")
-	ENABLE_BITFIELD(flags_atom, INITIALIZED)
+	ENABLE_BITFIELD(atom_flags, INITIALIZED)
 
 	// by default, vis_contents is inherited from the turf that was here before
 	vis_contents.Cut()
@@ -100,9 +101,17 @@
 	else if (!istype(hard_armor, /datum/armor))
 		stack_trace("Invalid type [hard_armor.type] found in .hard_armor during /turf Initialize()")
 
-	if(smoothing_behavior)
-		smooth_self()
-		smooth_neighbors()
+	if (length(smoothing_groups))
+		sortTim(smoothing_groups) //In case it's not properly ordered, let's avoid duplicate entries with the same values.
+		SET_BITFLAG_LIST(smoothing_groups)
+	if (length(canSmoothWith))
+		sortTim(canSmoothWith)
+		if(canSmoothWith[length(canSmoothWith)] > MAX_S_TURF) //If the last element is higher than the maximum turf-only value, then it must scan turf contents for smoothing targets.
+			smoothing_flags |= SMOOTH_OBJ
+		SET_BITFLAG_LIST(canSmoothWith)
+	if (smoothing_flags & (SMOOTH_CORNERS|SMOOTH_BITMASK))
+		QUEUE_SMOOTH(src)
+		QUEUE_SMOOTH_NEIGHBORS(src)
 
 	return INITIALIZE_HINT_NORMAL
 
@@ -121,10 +130,10 @@
 			B.vars[I] = null
 		return QDEL_HINT_IWILLGC
 	visibilityChanged()
-	DISABLE_BITFIELD(flags_atom, INITIALIZED)
+	DISABLE_BITFIELD(atom_flags, INITIALIZED)
 	soft_armor = null
 	hard_armor = null
-	current_acid = null
+	QDEL_NULL(current_acid)
 	..()
 	return QDEL_HINT_IWILLGC
 
@@ -145,7 +154,7 @@
 			if(COMPONENT_MOVABLE_PREBUMP_STOPPED)
 				return FALSE //No need for a bump, already procesed.
 			if(COMPONENT_MOVABLE_PREBUMP_PLOWED)
-				//Continue. We've plowed through the obstacle.
+				EMPTY_BLOCK_GUARD
 			else
 				mover.Bump(src)
 				return FALSE
@@ -156,7 +165,7 @@
 		if(i == mover || i == mover.loc) // Multi tile objects and moving out of other objects
 			continue
 		var/atom/movable/thing = i
-		if(CHECK_MULTIPLE_BITFIELDS(thing.flags_pass, HOVERING))
+		if(CHECK_MULTIPLE_BITFIELDS(thing.pass_flags, HOVERING))
 			continue
 		if(thing.status_flags & INCORPOREAL)
 			continue
@@ -171,7 +180,7 @@
 			return TRUE //We've entered the tile and gotten entangled inside it.
 		if(QDELETED(mover)) //Mover deleted from Cross/CanPass, do not proceed.
 			return FALSE
-		else if(!firstbump || ((thing.layer > firstbump.layer || thing.flags_atom & ON_BORDER) && !(firstbump.flags_atom & ON_BORDER)))
+		else if(!firstbump || ((thing.layer > firstbump.layer || thing.atom_flags & ON_BORDER) && !(firstbump.atom_flags & ON_BORDER)))
 			firstbump = thing
 	if(QDELETED(mover)) //Mover deleted from Cross/CanPass/Bump, do not proceed.
 		return FALSE
@@ -198,27 +207,15 @@
 	if(CHECK_BITFIELD(S.smoke_traits, SMOKE_CHEM))
 		S.reagents?.reaction(src, VAPOR, S.fraction)
 
-/turf/proc/is_plating()
-	return FALSE
-/turf/proc/is_asteroid_floor()
-	return FALSE
-/turf/proc/is_plasteel_floor()
-	return FALSE
-/turf/proc/is_light_floor()
-	return FALSE
-/turf/proc/is_grass_floor()
-	return FALSE
-/turf/proc/is_wood_floor()
-	return FALSE
-/turf/proc/is_carpet_floor()
-	return FALSE
-/turf/proc/return_siding_icon_state()		//used for grass floors, which have siding.
-	return 0
+/turf/get_soft_armor(armor_type, proj_def_zone)
+	return soft_armor.getRating(armor_type)
 
+/turf/get_hard_armor(armor_type, proj_def_zone)
+	return hard_armor.getRating(armor_type)
 
 /turf/proc/levelupdate()
 	for(var/obj/O in src)
-		if(O.flags_atom & INITIALIZED)
+		if(O.atom_flags & INITIALIZED)
 			SEND_SIGNAL(O, COMSIG_OBJ_HIDE, intact_tile)
 
 
@@ -263,19 +260,19 @@
 	changing_turf = TRUE
 	qdel(src)	//Just get the side effects and call Destroy
 	//We do this here so anything that doesn't want to persist can clear itself
-	var/list/old_comp_lookup = comp_lookup?.Copy()
-	var/list/old_signal_procs = signal_procs?.Copy()
+	var/list/old__listen_lookup = _listen_lookup?.Copy()
+	var/list/old_signal_procs = _signal_procs?.Copy()
 	var/turf/W = new path(src)
 
 	// WARNING WARNING
 	// Turfs DO NOT lose their signals when they get replaced, REMEMBER THIS
 	// It's possible because turfs are fucked, and if you have one in a list and it's replaced with another one, the list ref points to the new turf
-	if(old_comp_lookup)
-		LAZYOR(W.comp_lookup, old_comp_lookup)
+	if(old__listen_lookup)
+		LAZYOR(W._listen_lookup, old__listen_lookup)
 	if(old_signal_procs)
-		LAZYOR(W.signal_procs, old_signal_procs)
+		LAZYOR(W._signal_procs, old_signal_procs)
 
-	for(var/datum/callback/callback as anything in post_change_callbacks)
+	for(var/datum/callback/callback AS in post_change_callbacks)
 		callback.InvokeAsync(W)
 
 	if(new_baseturfs)
@@ -322,8 +319,8 @@
 			var/turf/D = get_step(W,dirn)
 			if(isnull(D))
 				continue
-			D.smooth_self()
-			D.smooth_neighbors()
+			QUEUE_SMOOTH(D)
+			QUEUE_SMOOTH_NEIGHBORS(D)
 	return W
 
 /// Take off the top layer turf and replace it with the next baseturf down
@@ -332,14 +329,14 @@
 		return
 	if(length(baseturfs))
 		var/list/new_baseturfs = baseturfs.Copy()
-		var/turf_type = new_baseturfs[max(1, new_baseturfs.len - amount + 1)]
+		var/turf_type = new_baseturfs[max(1, length(new_baseturfs) - amount + 1)]
 		while(ispath(turf_type, /turf/baseturf_skipover))
 			amount++
-			if(amount > new_baseturfs.len)
+			if(amount > length(new_baseturfs))
 				CRASH("The bottomost baseturf of a turf is a skipover [src]([type])")
-			turf_type = new_baseturfs[max(1, new_baseturfs.len - amount + 1)]
-		new_baseturfs.len -= min(amount, new_baseturfs.len - 1) // No removing the very bottom
-		if(new_baseturfs.len == 1)
+			turf_type = new_baseturfs[max(1, length(new_baseturfs) - amount + 1)]
+		new_baseturfs.len -= min(amount, length(new_baseturfs) - 1) // No removing the very bottom
+		if(length(new_baseturfs) == 1)
 			new_baseturfs = new_baseturfs[1]
 		return ChangeTurf(turf_type, new_baseturfs, flags)
 
@@ -348,12 +345,12 @@
 
 	return ChangeTurf(baseturfs, baseturfs, flags) // The bottom baseturf will never go away
 
-/turf/proc/empty(turf_type=/turf/open/space, baseturf_type, list/ignore_typecache, flags)
-	// Remove all atoms except observers, landmarks, docking ports
-	var/static/list/ignored_atoms = typecacheof(list(/mob/dead, /obj/effect/landmark, /obj/docking_port))
+/turf/proc/empty(turf_type = /turf/open/space, baseturf_type, list/ignore_typecache, flags)
+	// Remove all atoms except  landmarks, docking ports, ai nodes
+	var/static/list/ignored_atoms = typecacheof(list(/mob/dead, /obj/effect/landmark, /obj/docking_port, /obj/effect/ai_node))
 	var/list/allowed_contents = typecache_filter_list_reverse(GetAllContentsIgnoring(ignore_typecache), ignored_atoms)
 	allowed_contents -= src
-	for(var/i in 1 to allowed_contents.len)
+	for(var/i in 1 to length(allowed_contents))
 		var/thing = allowed_contents[i]
 		qdel(thing, force=TRUE)
 
@@ -419,30 +416,6 @@
 /turf/proc/can_lay_cable()
 	return can_have_cabling() & !intact_tile
 
-/turf/attackby(obj/item/C, mob/user, params)
-	if(..())
-		return TRUE
-	if(can_lay_cable() && istype(C, /obj/item/stack/cable_coil))
-		var/obj/item/stack/cable_coil/coil = C
-		coil.place_turf(src, user)
-		return TRUE
-	else if(can_have_cabling() && istype(C, /obj/item/stack/pipe_cleaner_coil))
-		var/obj/item/stack/pipe_cleaner_coil/coil = C
-		for(var/obj/structure/pipe_cleaner/LC in src)
-			if(!LC.d1 || !LC.d2)
-				LC.attackby(C, user)
-				return
-		coil.place_turf(src, user)
-		return TRUE
-
-	//else if(istype(C, /obj/item/rcl))
-	//	handleRCL(C, user)
-
-	return FALSE
-
-//for xeno corrosive acid, 0 for unmeltable, 1 for regular, 2 for strong walls that require strong acid and more time.
-/turf/proc/can_be_dissolved()
-	return FALSE
 
 /turf/proc/ceiling_debris_check(size = 1)
 	return
@@ -467,7 +440,7 @@
 				for(var/i=1, i<=amount, i++)
 					new /obj/item/shard(pick(turfs))
 					new /obj/item/shard(pick(turfs))
-		if(CEILING_METAL)
+		if(CEILING_METAL, CEILING_OBSTRUCTED)
 			playsound(src, "sound/effects/metal_crash.ogg", 60, 1)
 			spawn(8)
 				if(amount >1)
@@ -498,6 +471,8 @@
 			return "The ceiling above is glass."
 		if(CEILING_METAL)
 			return "The ceiling above is metal."
+		if(CEILING_OBSTRUCTED)
+			return "The ceiling above is metal. Nothing could land here."
 		if(CEILING_UNDERGROUND)
 			return "It is underground. The cavern roof lies above."
 		if(CEILING_UNDERGROUND_METAL)
@@ -521,6 +496,9 @@
 /turf/closed/wall/is_weedable()
 	return TRUE
 
+/turf/closed/wall/resin/is_weedable()
+	return FALSE
+
 /turf/open/space/is_weedable()
 	return FALSE
 
@@ -530,14 +508,14 @@
 /turf/open/floor/plating/ground/dirtgrassborder/is_weedable()
 	return FALSE
 
-/turf/open/ground/river/is_weedable()
-	return FALSE
-
 /turf/open/ground/coast/is_weedable()
 	return FALSE
 
-/turf/open/floor/plating/ground/snow/is_weedable()
-	return !slayer && ..()
+/turf/open/floor/plating/ground/dirtgrassborder/autosmooth/buildable/is_weedable()
+	return TRUE
+
+/turf/open/ground/grass/weedable/is_weedable()
+	return TRUE
 
 /**
  * Checks for whether we can build advanced xeno structures here
@@ -545,7 +523,7 @@
  */
 /turf/proc/check_disallow_alien_fortification(mob/living/builder, silent = FALSE)
 	var/area/ourarea = loc
-	if(ourarea.flags_area & DISALLOW_WEEDING)
+	if(ourarea.area_flags & DISALLOW_WEEDING)
 		if(!silent)
 			to_chat(builder, span_warning("We cannot build in this area before the talls are out!"))
 		return FALSE
@@ -585,6 +563,9 @@
 				if(P.chair_state != DROPSHIP_CHAIR_BROKEN)
 					has_obstacle = TRUE
 					break
+			if(istype(O, /obj/structure/bed/chair/dropship/doublewide))
+				has_obstacle = TRUE
+				break
 			else if(istype(O, /obj/structure/bed/nest)) //We don't care about other beds/chairs/whatever the fuck.
 				has_obstacle = TRUE
 				break
@@ -596,7 +577,7 @@
 			has_obstacle = TRUE
 			break
 
-		if(O.density && !(O.flags_atom & ON_BORDER))
+		if(O.density && !(O.atom_flags & ON_BORDER))
 			has_obstacle = TRUE
 			break
 
@@ -617,7 +598,7 @@
 /turf/open/ground/can_dig_xeno_tunnel()
 	return TRUE
 
-/turf/open/ground/river/can_dig_xeno_tunnel()
+/turf/open/liquid/water/can_dig_xeno_tunnel()
 	return FALSE
 
 /turf/open/floor/plating/ground/snow/can_dig_xeno_tunnel()
@@ -695,7 +676,7 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 
 	var/turf/newT
 	if(flags & CHANGETURF_SKIP) // We haven't been initialized
-		if(flags_atom & INITIALIZED)
+		if(atom_flags & INITIALIZED)
 			stack_trace("CHANGETURF_SKIP was used in a PlaceOnTop call for a turf that's initialized. This is a mistake. [src]([type])")
 		assemble_baseturfs()
 	if(fake_turf_type)
@@ -724,9 +705,9 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 		baseturfs += type
 	var/turf/change_type
 	if(length(new_baseturfs))
-		change_type = new_baseturfs[new_baseturfs.len]
+		change_type = new_baseturfs[length(new_baseturfs)]
 		new_baseturfs.len--
-		if(new_baseturfs.len)
+		if(length(new_baseturfs))
 			baseturfs += new_baseturfs
 	else
 		change_type = new_baseturfs
@@ -742,9 +723,9 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 	if(depth)
 		var/list/target_baseturfs
 		if(length(copytarget.baseturfs))
-			// with default inputs this would be Copy(clamp(2, -INFINITY, baseturfs.len))
+			// with default inputs this would be Copy(clamp(2, -INFINITY, length(baseturfs)))
 			// Don't forget a lower index is lower in the baseturfs stack, the bottom is baseturfs[1]
-			target_baseturfs = copytarget.baseturfs.Copy(clamp(1 + ignore_bottom, 1 + copytarget.baseturfs.len - depth, copytarget.baseturfs.len))
+			target_baseturfs = copytarget.baseturfs.Copy(clamp(1 + ignore_bottom, 1 + length(copytarget.baseturfs) - depth, length(copytarget.baseturfs)))
 		else if(!ignore_bottom)
 			target_baseturfs = list(copytarget.baseturfs)
 		if(target_baseturfs)
@@ -792,7 +773,7 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 // Removes all signs of lattice on the pos of the turf -Donkieyo
 /turf/proc/RemoveLattice()
 	var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
-	if(L && (L.flags_atom & INITIALIZED))
+	if(L && (L.atom_flags & INITIALIZED))
 		qdel(L)
 
 // A proc in case it needs to be recreated or badmins want to change the baseturfs
@@ -841,7 +822,7 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 		next_target = initial(current_target.baseturfs)
 
 	baseturfs = new_baseturfs
-	created_baseturf_lists[new_baseturfs[new_baseturfs.len]] = new_baseturfs.Copy()
+	created_baseturf_lists[new_baseturfs[length(new_baseturfs)]] = new_baseturfs.Copy()
 	return new_baseturfs
 
 // Take the input as baseturfs and put it underneath the current baseturfs
@@ -882,15 +863,17 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 
 
 /turf/proc/visibilityChanged()
-	GLOB.cameranet.updateVisibility(src)
-	// The cameranet usually handles this for us, but if we've just been
-	// recreated we should make sure we have the cameranet vis_contents.
-	var/datum/camerachunk/C = GLOB.cameranet.chunkGenerated(x, y, z)
-	if(C)
-		if(C.obscuredTurfs[src])
-			vis_contents += GLOB.cameranet.vis_contents_opaque
-		else
-			vis_contents -= GLOB.cameranet.vis_contents_opaque
+	for(var/datum/cameranet/net AS in list(GLOB.cameranet, GLOB.som_cameranet))
+
+		net.updateVisibility(src)
+		// The cameranet usually handles this for us, but if we've just been
+		// recreated we should make sure we have the cameranet vis_contents.
+		var/datum/camerachunk/C = net.chunkGenerated(x, y, z)
+		if(C)
+			if(C.obscuredTurfs[src])
+				vis_contents += net.vis_contents_opaque
+			else
+				vis_contents -= net.vis_contents_opaque
 
 
 /turf/AllowDrop()
@@ -898,6 +881,7 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 
 
 /turf/contents_explosion(severity)
+	. = ..()
 	for(var/thing in contents)
 		var/atom/movable/thing_in_turf = thing
 		if(thing_in_turf.resistance_flags & INDESTRUCTIBLE)
@@ -905,22 +889,28 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 		switch(severity)
 			if(EXPLODE_DEVASTATE)
 				SSexplosions.highMovAtom[thing_in_turf] += list(src)
-				if(thing_in_turf.flags_atom & PREVENT_CONTENTS_EXPLOSION)
+				if(thing_in_turf.atom_flags & PREVENT_CONTENTS_EXPLOSION)
 					continue
 				for(var/a in thing_in_turf.contents)
 					SSexplosions.highMovAtom[a] += list(src)
 			if(EXPLODE_HEAVY)
 				SSexplosions.medMovAtom[thing_in_turf] += list(src)
-				if(thing_in_turf.flags_atom & PREVENT_CONTENTS_EXPLOSION)
+				if(thing_in_turf.atom_flags & PREVENT_CONTENTS_EXPLOSION)
 					continue
 				for(var/a in thing_in_turf.contents)
 					SSexplosions.medMovAtom[a] += list(src)
 			if(EXPLODE_LIGHT)
 				SSexplosions.lowMovAtom[thing_in_turf] += list(src)
-				if(thing_in_turf.flags_atom & PREVENT_CONTENTS_EXPLOSION)
+				if(thing_in_turf.atom_flags & PREVENT_CONTENTS_EXPLOSION)
 					continue
 				for(var/a in thing_in_turf.contents)
 					SSexplosions.lowMovAtom[a] += list(src)
+			if(EXPLODE_WEAK)
+				SSexplosions.weakMovAtom[thing_in_turf] += list(src)
+				if(thing_in_turf.atom_flags & PREVENT_CONTENTS_EXPLOSION)
+					continue
+				for(var/a in thing_in_turf.contents)
+					SSexplosions.weakMovAtom[a] += list(src)
 
 
 /turf/vv_edit_var(var_name, new_value)
@@ -929,24 +919,27 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 		return FALSE
 	return ..()
 
-///Change the turf current acid var
-/turf/proc/set_current_acid(obj/effect/xenomorph/acid/new_acid)
-	if(current_acid)
-		UnregisterSignal(current_acid, COMSIG_PARENT_QDELETING)
-	current_acid = new_acid
-	RegisterSignal(current_acid, COMSIG_PARENT_QDELETING, .proc/clean_current_acid)
-
-///Signal handler to clean current_acid var
-/turf/proc/clean_current_acid()
-	SIGNAL_HANDLER
-	current_acid = null
-
 /turf/balloon_alert_perform(mob/viewer, text)
 	// Balloon alerts occuring on turf objects result in mass spam of alerts.
 	// Thus, no more balloon alerts for turfs.
 	return
 
 ///cleans any cleanable decals from the turf
-/turf/proc/clean_turf()
+/turf/wash()
+	. = ..()
 	for(var/obj/effect/decal/cleanable/filth in src)
 		qdel(filth) //dirty, filthy floor
+
+/turf/proc/get_smooth_underlay_icon(mutable_appearance/underlay_appearance, turf/asking_turf, adjacency_dir)
+	underlay_appearance.icon = icon
+	underlay_appearance.icon_state = icon_state
+	underlay_appearance.dir = adjacency_dir
+	return TRUE
+
+///Are we able to teleport to this turf using in game teleport mechanics
+/turf/proc/can_teleport_here()
+	if(density)
+		return FALSE
+	if(SEND_SIGNAL(src, COMSIG_TURF_TELEPORT_CHECK))
+		return FALSE
+	return TRUE

@@ -12,7 +12,7 @@
 	weather_duration_upper = 1200
 	weather_overlay = "ash_storm"
 
-	end_message = span_boldannounce("The shrieking wind whips away the last of the ash and falls to its usual murmur. It should be safe to go outside now.")
+	end_message = span_danger("The shrieking wind whips away the last of the ash and falls to its usual murmur. It should be safe to go outside now.")
 	end_duration = 300
 	end_overlay = "light_ash"
 
@@ -24,54 +24,41 @@
 
 	barometer_predictable = TRUE
 
-	var/datum/looping_sound/active_outside_ashstorm/sound_ao = new(list(), FALSE, TRUE)
-	var/datum/looping_sound/active_inside_ashstorm/sound_ai = new(list(), FALSE, TRUE)
-	var/datum/looping_sound/weak_outside_ashstorm/sound_wo = new(list(), FALSE, TRUE)
-	var/datum/looping_sound/weak_inside_ashstorm/sound_wi = new(list(), FALSE, TRUE)
+	var/datum/looping_sound/active_ashstorm/sound_active_ashstorm = new(list(), FALSE, TRUE)
+	var/datum/looping_sound/weak_ashstorm/sound_weak_ashstorm = new(list(), FALSE, TRUE)
 
 /datum/weather/ash_storm/telegraph()
 	. = ..()
-	var/list/inside_areas = list()
-	var/list/outside_areas = list()
-	var/list/eligible_areas = list()
-	for (var/z in impacted_z_levels)
-		eligible_areas += SSmapping.areas_in_z["[z]"]
-	for(var/i in 1 to eligible_areas.len)
-		var/area/place = eligible_areas[i]
-		if(place.outside)
-			outside_areas += place
-		else
-			inside_areas += place
+	var/list/impacted_mobs = list()
+	for(var/mob/impacted_mob AS in GLOB.player_list)
+		if(impacted_mob?.client?.prefs?.toggles_sound & SOUND_WEATHER)
+			continue
+		var/turf/impacted_mob_turf = get_turf(impacted_mob)
+		if(!impacted_mob_turf || !(impacted_mob.z in impacted_z_levels))
+			continue
+		impacted_mobs |= impacted_mob
 		CHECK_TICK
 
-	sound_ao.output_atoms = outside_areas
-	sound_ai.output_atoms = inside_areas
-	sound_wo.output_atoms = outside_areas
-	sound_wi.output_atoms = inside_areas
+	sound_active_ashstorm.output_atoms = impacted_mobs
+	sound_weak_ashstorm.output_atoms = impacted_mobs
 
-	sound_wo.start()
-	sound_wi.start()
+	sound_weak_ashstorm.start()
 
 /datum/weather/ash_storm/start()
 	. = ..()
-	sound_wo.stop()
-	sound_wi.stop()
+	sound_weak_ashstorm.stop()
 
-	sound_ao.start()
-	sound_ai.start()
+	sound_active_ashstorm.start()
 
 /datum/weather/ash_storm/wind_down()
 	. = ..()
-	sound_ao.stop()
-	sound_ai.stop()
+	sound_active_ashstorm.stop()
 
-	sound_wo.start()
-	sound_wi.start()
+	sound_weak_ashstorm.start()
 
 /datum/weather/ash_storm/end()
 	. = ..()
-	sound_wo.stop()
-	sound_wi.stop()
+	sound_weak_ashstorm.stop()
 
 /datum/weather/ash_storm/proc/is_storm_immune(atom/L)
 	while (L && !isturf(L))
@@ -95,7 +82,7 @@
 	name = "emberfall"
 	desc = "A passing ash storm blankets the area in harmless embers."
 
-	telegraph_message = span_boldannounce("An eerie moan rises on the wind. Sheets of burning ash blacken the horizon.")
+	telegraph_message = span_danger("An eerie moan rises on the wind. Sheets of burning ash blacken the horizon.")
 
 	weather_message = span_notice("Gentle embers waft down around you like grotesque snow. The storm seems to have passed you by...")
 	weather_overlay = "light_ash"

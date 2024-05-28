@@ -1,10 +1,14 @@
 /obj/item/weapon/twohanded
+	worn_icon_list = list(
+		slot_l_hand_str = 'icons/mob/inhands/weapons/twohanded_left.dmi',
+		slot_r_hand_str = 'icons/mob/inhands/weapons/twohanded_right.dmi',
+	)
 	var/force_wielded = 0
 	var/wieldsound
 	var/unwieldsound
-	flags_item = TWOHANDED
+	item_flags = TWOHANDED
 
-/obj/item/weapon/twohanded/mob_can_equip(mob/user)
+/obj/item/weapon/twohanded/mob_can_equip(mob/user, slot, warning = TRUE, override_nodrop = FALSE, bitslot = FALSE)
 	unwield(user)
 	return ..()
 
@@ -19,7 +23,7 @@
 
 
 /obj/item/proc/wield(mob/user)
-	if(!(flags_item & TWOHANDED) || flags_item & WIELDED)
+	if(!(item_flags & TWOHANDED) || item_flags & WIELDED)
 		return FALSE
 
 	var/obj/item/offhand = user.get_inactive_held_item()
@@ -40,16 +44,21 @@
 			to_chat(user, span_warning("Your other hand can't hold [src]!"))
 			return FALSE
 
+	if(!place_offhand(user))
+		to_chat(user, span_warning("You cannot wield [src] right now."))
+		return FALSE
+
 	toggle_wielded(user, TRUE)
 	SEND_SIGNAL(src, COMSIG_ITEM_WIELD, user)
 	name = "[name] (Wielded)"
 	update_item_state()
-	place_offhand(user, name)
+	user.update_inv_l_hand()
+	user.update_inv_r_hand()
 	return TRUE
 
 
 /obj/item/proc/unwield(mob/user)
-	if(!CHECK_MULTIPLE_BITFIELDS(flags_item, TWOHANDED|WIELDED))
+	if(!CHECK_MULTIPLE_BITFIELDS(item_flags, TWOHANDED|WIELDED))
 		return FALSE
 
 	toggle_wielded(user, FALSE)
@@ -64,18 +73,18 @@
 	return TRUE
 
 
-/obj/item/proc/place_offhand(mob/user, item_name)
-	to_chat(user, span_notice("You grab [item_name] with both hands."))
+/obj/item/proc/place_offhand(mob/user)
 	var/obj/item/weapon/twohanded/offhand/offhand = new /obj/item/weapon/twohanded/offhand(user)
-	offhand.name = "[item_name] - offhand"
-	offhand.desc = "Your second grip on the [item_name]."
-	user.put_in_inactive_hand(offhand)
-	user.update_inv_l_hand()
-	user.update_inv_r_hand()
-
+	if(!user.put_in_inactive_hand(offhand))
+		qdel(offhand)
+		return FALSE
+	to_chat(user, span_notice("You grab [src] with both hands."))
+	offhand.name = "[name] - offhand"
+	offhand.desc = "Your second grip on [src]."
+	return TRUE
 
 /obj/item/proc/remove_offhand(mob/user)
-	to_chat(user, span_notice("You are now carrying [name] with one hand."))
+	to_chat(user, span_notice("You are now carrying [src] with one hand."))
 	var/obj/item/weapon/twohanded/offhand/offhand = user.get_inactive_held_item()
 	if(istype(offhand) && !QDELETED(offhand))
 		qdel(offhand)
@@ -83,20 +92,17 @@
 	user.update_inv_r_hand()
 
 
-/obj/item/proc/toggle_wielded(user, new_value)
-	switch(new_value)
-		if(null)
-			flags_item ^= WIELDED
-		if(FALSE)
-			flags_item &= ~WIELDED
-		if(TRUE)
-			flags_item |= WIELDED
-
+/obj/item/proc/toggle_wielded(user, wielded)
+	if(wielded)
+		item_flags |= WIELDED
+	else
+		item_flags &= ~WIELDED
 
 /obj/item/weapon/twohanded/wield(mob/user)
 	. = ..()
 	if(!.)
 		return
+	toggle_active(TRUE)
 
 	if(wieldsound)
 		playsound(user, wieldsound, 15, 1)
@@ -108,20 +114,18 @@
 	. = ..()
 	if(!.)
 		return
+	toggle_active(FALSE)
 
 	if(unwieldsound)
 		playsound(user, unwieldsound, 15, 1)
 
 	force = initial(force)
 
-
+// TODO port tg wielding component
 /obj/item/weapon/twohanded/attack_self(mob/user)
 	. = ..()
-	if(ismonkey(user)) //TODO MAKE THIS A SPECIES FLAG
-		to_chat(user, span_warning("It's too heavy for you to wield fully!"))
-		return
 
-	if(flags_item & WIELDED)
+	if(item_flags & WIELDED)
 		unwield(user)
 	else
 		wield(user)
@@ -132,7 +136,7 @@
 	w_class = WEIGHT_CLASS_HUGE
 	icon_state = "offhand"
 	name = "offhand"
-	flags_item = DELONDROP|TWOHANDED|WIELDED
+	item_flags = DELONDROP|TWOHANDED|WIELDED
 	resistance_flags = RESIST_ALL
 
 
@@ -150,6 +154,7 @@
 
 
 /obj/item/weapon/twohanded/offhand/dropped(mob/user)
+	. = ..()
 	return
 
 
@@ -167,14 +172,14 @@
 	name = "fire axe"
 	desc = "Truly, the weapon of a madman. Who would think to fight fire with an axe?"
 	icon_state = "fireaxe"
-	item_state = "fireaxe"
+	worn_icon_state = "fireaxe"
 	force = 20
 	sharp = IS_SHARP_ITEM_BIG
-	edge = 1
+	edge = TRUE
 	w_class = WEIGHT_CLASS_BULKY
-	flags_equip_slot = ITEM_SLOT_BELT|ITEM_SLOT_BACK
-	flags_atom = CONDUCT
-	flags_item = TWOHANDED
+	equip_slot_flags = ITEM_SLOT_BELT|ITEM_SLOT_BACK
+	atom_flags = CONDUCT
+	item_flags = TWOHANDED
 	force_wielded = 75
 	attack_verb = list("attacked", "chopped", "cleaved", "torn", "cut")
 
@@ -192,6 +197,114 @@
 		return
 	pry_capable = 0
 
+/obj/item/weapon/twohanded/fireaxe/som
+	name = "boarding axe"
+	desc = "A SOM boarding axe, effective at breaching doors as well as skulls. When wielded it can be used to block as well as attack."
+	icon = 'icons/obj/items/weapons64.dmi'
+	icon_state = "som_axe"
+	worn_icon_list = list(
+		slot_l_hand_str = 'icons/mob/inhands/weapons/weapon64_left.dmi',
+		slot_r_hand_str = 'icons/mob/inhands/weapons/weapon64_right.dmi',
+	)
+	inhand_x_dimension = 64
+	inhand_y_dimension = 64
+	worn_icon_state = "som_axe"
+	force = 40
+	force_wielded = 80
+	penetration = 35
+	equip_slot_flags = ITEM_SLOT_BACK
+	attack_speed = 15
+	///Special attack action granted to users with the right trait
+	var/datum/action/ability/activable/weapon_skill/axe_sweep/special_attack
+
+/obj/item/weapon/twohanded/fireaxe/som/Initialize(mapload)
+	. = ..()
+	AddComponent(/datum/component/shield, SHIELD_TOGGLE|SHIELD_PURE_BLOCKING, list(MELEE = 45, BULLET = 20, LASER = 20, ENERGY = 20, BOMB = 0, BIO = 0, FIRE = 0, ACID = 0))
+	AddComponent(/datum/component/stun_mitigation, SHIELD_TOGGLE, shield_cover = list(MELEE = 60, BULLET = 60, LASER = 60, ENERGY = 60, BOMB = 60, BIO = 60, FIRE = 60, ACID = 60))
+	AddElement(/datum/element/strappable)
+	special_attack = new(src, force_wielded, penetration)
+
+/obj/item/weapon/twohanded/fireaxe/som/Destroy()
+	QDEL_NULL(special_attack)
+	return ..()
+
+/obj/item/weapon/twohanded/fireaxe/som/wield(mob/user)
+	. = ..()
+	if(!.)
+		return
+	toggle_item_bump_attack(user, TRUE)
+	if(HAS_TRAIT(user, TRAIT_AXE_EXPERT))
+		special_attack.give_action(user)
+
+/obj/item/weapon/twohanded/fireaxe/som/unwield(mob/user)
+	. = ..()
+	if(!.)
+		return
+	toggle_item_bump_attack(user, FALSE)
+	special_attack.remove_action(user)
+
+//Special attack
+/datum/action/ability/activable/weapon_skill/axe_sweep
+	name = "Sweeping blow"
+	action_icon_state = "axe_sweep"
+	desc = "A powerful sweeping blow that hits foes in the direction you are facing. Cannot stun."
+	ability_cost = 10
+	cooldown_duration = 6 SECONDS
+	keybinding_signals = list(
+		KEYBINDING_NORMAL = COMSIG_WEAPONABILITY_AXESWEEP,
+	)
+	/// Used for particles. Holds the particles instead of the mob. See particle_holder for documentation.
+	var/obj/effect/abstract/particle_holder/particle_holder
+
+/datum/action/ability/activable/weapon_skill/axe_sweep/use_ability(atom/A)
+	succeed_activate()
+	add_cooldown()
+	var/mob/living/carbon/carbon_owner = owner
+	carbon_owner.Move(get_step_towards(carbon_owner, A), get_dir(src, A))
+	carbon_owner.face_atom(A)
+	activate_particles(owner.dir)
+	playsound(owner, "sound/effects/alien_tail_swipe3.ogg", 50, 0, 5)
+	owner.visible_message(span_danger("[owner] Swing their weapon in a deadly arc!"))
+
+	var/list/atom/movable/atoms_to_ravage = get_step(owner, owner.dir).contents.Copy()
+	atoms_to_ravage += get_step(owner, turn(owner.dir, -45)).contents
+	atoms_to_ravage += get_step(owner, turn(owner.dir, 45)).contents
+	for(var/atom/movable/victim AS in atoms_to_ravage)
+		if((victim.resistance_flags & INDESTRUCTIBLE))
+			continue
+		if(!ishuman(victim))
+			var/obj/obj_victim = victim
+			obj_victim.take_damage(damage, BRUTE, MELEE, TRUE, TRUE, get_dir(obj_victim, carbon_owner), penetration, carbon_owner)
+			if(!obj_victim.anchored && obj_victim.move_resist < MOVE_FORCE_VERY_STRONG)
+				obj_victim.knockback(owner, 1, 2)
+			continue
+		var/mob/living/carbon/human/human_victim = victim
+		if(human_victim.lying_angle)
+			continue
+		human_victim.apply_damage(damage, BRUTE, BODY_ZONE_CHEST, MELEE, TRUE, TRUE, TRUE, penetration)
+		human_victim.knockback(owner, 1, 2)
+		human_victim.adjust_stagger(1 SECONDS)
+		playsound(human_victim, "sound/weapons/wristblades_hit.ogg", 25, 0, 5)
+		shake_camera(human_victim, 2, 1)
+
+/// Handles the activation and deactivation of particles, as well as their appearance.
+/datum/action/ability/activable/weapon_skill/axe_sweep/proc/activate_particles(direction)
+	particle_holder = new(get_turf(owner), /particles/ravager_slash)
+	QDEL_NULL_IN(src, particle_holder, 5)
+	particle_holder.particles.rotation += dir2angle(direction)
+	switch(direction) // There's no shared logic here because sprites are magical.
+		if(NORTH) // Gotta define stuff for each angle so it looks good.
+			particle_holder.particles.position = list(8, 4)
+			particle_holder.particles.velocity = list(0, 20)
+		if(EAST)
+			particle_holder.particles.position = list(3, -8)
+			particle_holder.particles.velocity = list(20, 0)
+		if(SOUTH)
+			particle_holder.particles.position = list(-9, -3)
+			particle_holder.particles.velocity = list(0, -20)
+		if(WEST)
+			particle_holder.particles.position = list(-4, 9)
+			particle_holder.particles.velocity = list(-20, 0)
 
 /*
 * Double-Bladed Energy Swords - Cheridan
@@ -200,46 +313,33 @@
 	name = "double-bladed energy sword"
 	desc = "Handle with care."
 	icon_state = "dualsaber"
-	item_state = "dualsaber"
+	worn_icon_state = "dualsaber"
 	force = 3
-	throwforce = 5.0
+	throwforce = 5
 	throw_speed = 1
 	throw_range = 5
 	w_class = WEIGHT_CLASS_SMALL
 	force_wielded = 150
 	wieldsound = 'sound/weapons/saberon.ogg'
 	unwieldsound = 'sound/weapons/saberoff.ogg'
-	flags_atom = NOBLOODY
+	atom_flags = NOBLOODY
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	sharp = IS_SHARP_ITEM_BIG
 	edge = 1
 
 
-/obj/item/weapon/twohanded/dualsaber/Initialize()
+/obj/item/weapon/twohanded/dualsaber/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/shield, SHIELD_TOGGLE|SHIELD_PURE_BLOCKING)
-
-/obj/item/weapon/twohanded/dualsaber/wield(mob/user)
-	. = ..()
-	if(!.)
-		return
-	toggle_active(TRUE)
-
-/obj/item/weapon/twohanded/dualsaber/unwield(mob/user)
-	. = ..()
-	if(!.)
-		return
-	toggle_active(FALSE)
-
 
 /obj/item/weapon/twohanded/spear
 	name = "spear"
 	desc = "A haphazardly-constructed yet still deadly weapon of ancient design."
 	icon_state = "spearglass"
-	item_state = "spearglass"
+	worn_icon_state = "spearglass"
 	force = 40
 	w_class = WEIGHT_CLASS_BULKY
-	flags_equip_slot = ITEM_SLOT_BACK
+	equip_slot_flags = ITEM_SLOT_BACK
 	force_wielded = 75
 	throwforce = 75
 	throw_speed = 3
@@ -248,33 +348,47 @@
 	sharp = IS_SHARP_ITEM_SIMPLE
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	attack_verb = list("attacked", "stabbed", "jabbed", "torn", "gored")
+	///Based on what direction the tip of the spear is pointed at in the sprite; maybe someone makes a spear that points northwest
+	var/current_angle = 45
+
+/obj/item/weapon/twohanded/spear/throw_at(atom/target, range, speed, thrower, spin, flying = FALSE, targetted_throw = TRUE)
+	spin = FALSE
+	//Find the angle the spear is to be thrown at, then rotate it based on that angle
+	var/rotation_value = Get_Angle(thrower, get_turf(target)) - current_angle
+	current_angle += rotation_value
+	var/matrix/rotate_me = matrix()
+	rotate_me.Turn(rotation_value)
+	transform = rotate_me
+	return ..()
+
+/obj/item/weapon/twohanded/spear/pickup(mob/user)
+	. = ..()
+	if(initial(current_angle) == current_angle)
+		return
+	//Reset the angle of the spear when picked up off the ground so it doesn't stay lopsided
+	var/matrix/rotate_me = matrix()
+	rotate_me.Turn(initial(current_angle) - current_angle)
+	//Rotate the object in the opposite direction because for some unfathomable reason, the above Turn() is applied twice; it just works
+	rotate_me.Turn(-(initial(current_angle) - current_angle))
+	transform = rotate_me
+	current_angle = initial(current_angle)	//Reset the angle
 
 /obj/item/weapon/twohanded/spear/tactical
 	name = "M-23 spear"
 	desc = "A tactical spear. Used for 'tactical' combat."
 	icon_state = "spear"
-	item_state = "spear"
+	worn_icon_state = "spear"
 
-/obj/item/weapon/twohanded/spear/tactical/harvester
-	name = "\improper HP-S Harvester spear"
-	desc = "TerraGov Marine Corps' experimental High Point-Singularity 'Harvester' spear. An advanced weapon that trades sheer force for the ability to apply a variety of debilitating effects when loaded with certain reagents. Activate after loading to prime a single use of an effect. It also harvests substances from alien lifeforms it strikes when connected to the Vali system."
-	icon_state = "vali_spear"
-	item_state = "vali_spear"
-	force = 32
-	force_wielded = 60
-	throwforce = 60
-	flags_item = DRAINS_XENO | TWOHANDED
-
-/obj/item/weapon/twohanded/spear/tactical/harvester/Initialize()
+/obj/item/weapon/twohanded/spear/tactical/Initialize(mapload)
 	. = ..()
-	AddComponent(/datum/component/harvester)
+	AddElement(/datum/element/strappable)
 
 /obj/item/weapon/twohanded/spear/tactical/tacticool
 	name = "M-23 TACTICOOL spear"
-	icon = 'icons/Marine/gun64.dmi'
+	icon = 'icons/Marine/spear.dmi'
 	desc = "A TACTICOOL spear. Used for TACTICOOLNESS in combat."
 
-/obj/item/weapon/twohanded/spear/tactical/tacticool/Initialize()
+/obj/item/weapon/twohanded/spear/tactical/tacticool/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/attachment_handler, \
 	list(ATTACHMENT_SLOT_RAIL, ATTACHMENT_SLOT_UNDER, ATTACHMENT_SLOT_MUZZLE), \
@@ -284,7 +398,7 @@
 		/obj/item/attachable/lasersight,
 		/obj/item/attachable/gyro,
 		/obj/item/attachable/flashlight,
-		/obj/item/attachable/bipod,
+		/obj/item/attachable/foldable/bipod,
 		/obj/item/attachable/burstfire_assembly,
 		/obj/item/attachable/magnetic_harness,
 		/obj/item/attachable/extended_barrel,
@@ -292,6 +406,7 @@
 		/obj/item/attachable/suppressor,
 		/obj/item/attachable/bayonet,
 		/obj/item/attachable/bayonetknife,
+		/obj/item/attachable/bayonetknife/som,
 		/obj/item/attachable/compensator,
 		/obj/item/attachable/scope,
 		/obj/item/attachable/scope/mini,
@@ -309,42 +424,44 @@
 /obj/item/weapon/twohanded/glaive
 	name = "war glaive"
 	icon_state = "glaive"
-	item_state = "glaive"
+	worn_icon_state = "glaive"
 	desc = "A huge, powerful blade on a metallic pole. Mysterious writing is carved into the weapon."
 	force = 28
 	w_class = WEIGHT_CLASS_BULKY
-	flags_equip_slot = ITEM_SLOT_BACK
+	equip_slot_flags = ITEM_SLOT_BACK
 	force_wielded = 90
 	throwforce = 65
 	throw_speed = 3
 	edge = 1
 	sharp = IS_SHARP_ITEM_BIG
-	flags_atom = CONDUCT
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	atom_flags = CONDUCT
 	attack_verb = list("sliced", "slashed", "jabbed", "torn", "gored")
 	resistance_flags = UNACIDABLE
 	attack_speed = 12 //Default is 7.
+
+/obj/item/weapon/twohanded/glaive/attack(mob/living/carbon/M as mob, mob/living/carbon/user as mob)
+	playsound(loc, 'sound/weapons/bladeslice.ogg', 25, 1)
+	return ..()
 
 /obj/item/weapon/twohanded/glaive/damaged
 	name = "war glaive"
 	desc = "A huge, powerful blade on a metallic pole. Mysterious writing is carved into the weapon. This one is ancient and has suffered serious acid damage, making it near-useless."
 	force = 18
 	force_wielded = 28
-
 /obj/item/weapon/twohanded/rocketsledge
 	name = "rocket sledge"
-	desc = "Fitted with a rocket booster at the head, the rocket sledge would deliver a tremendously powerful impact, easily crushing your enemies. Uses fuel to power itself. AltClick to tighten your grip."
+	desc = "Fitted with a rocket booster at the head, the rocket sledge would deliver a tremendously powerful impact, easily crushing your enemies. Uses fuel to power itself. Press AltClick to tighten your grip. Press Spacebar to change modes."
 	icon_state = "rocketsledge"
-	item_state = "rocketsledge"
+	worn_icon_state = "rocketsledge"
 	force = 30
 	w_class = WEIGHT_CLASS_BULKY
-	flags_equip_slot = ITEM_SLOT_BACK
+	equip_slot_flags = ITEM_SLOT_BACK
 	force_wielded = 75
 	throwforce = 50
 	throw_speed = 2
 	edge = 1
 	sharp = IS_SHARP_ITEM_BIG
-	flags_atom = CONDUCT | TWOHANDED
+	atom_flags = CONDUCT | TWOHANDED
 	attack_verb = list("smashed", "hammered")
 	attack_speed = 20
 
@@ -354,16 +471,28 @@
 	var/fuel_used = 5
 	///additional damage when weapon is active
 	var/additional_damage = 75
+	///stun value in crush mode
+	var/crush_stun_amount = 2 SECONDS
+	///weaken value in crush mode
+	var/crush_weaken_amount = 4 SECONDS
+	///stun value in knockback mode
+	var/knockback_stun_amount = 2 SECONDS
+	///weaken value in knockback mode
+	var/knockback_weaken_amount = 2 SECONDS
 	///stun value
-	var/stun = 1
+	var/stun
 	///weaken value
-	var/weaken = 2
-	///knockback value
-	var/knockback = 0
+	var/weaken
+	///knockback value; 0 = crush mode, 1 = knockback mode
+	var/knockback
 
-/obj/item/weapon/twohanded/rocketsledge/Initialize()
+/obj/item/weapon/twohanded/rocketsledge/Initialize(mapload)
 	. = ..()
+	stun = crush_stun_amount
+	weaken = crush_weaken_amount
+	knockback = 0
 	create_reagents(max_fuel, null, list(/datum/reagent/fuel = max_fuel))
+	AddElement(/datum/element/strappable)
 
 /obj/item/weapon/twohanded/rocketsledge/equipped(mob/user, slot)
 	. = ..()
@@ -389,7 +518,8 @@
 	update_icon()
 
 /obj/item/weapon/twohanded/rocketsledge/update_icon_state()
-	if ((reagents.get_reagent_amount(/datum/reagent/fuel) > fuel_used) && (CHECK_BITFIELD(flags_item, WIELDED)))
+	. = ..()
+	if ((reagents.get_reagent_amount(/datum/reagent/fuel) > fuel_used) && (CHECK_BITFIELD(item_flags, WIELDED)))
 		icon_state = "rocketsledge_w"
 	else
 		icon_state = "rocketsledge"
@@ -410,33 +540,24 @@
 
 	return ..()
 
-/obj/item/weapon/twohanded/rocketsledge/AltClick(mob/user)
-	if(!can_interact(user) || !ishuman(user) || !(user.l_hand == src || user.r_hand == src))
-		return ..()
-	TOGGLE_BITFIELD(flags_item, NODROP)
-	if(CHECK_BITFIELD(flags_item, NODROP))
-		to_chat(user, span_warning("You tighten the grip around [src]!"))
-		return
-	to_chat(user, span_notice("You loosen the grip around [src]!"))
-
 /obj/item/weapon/twohanded/rocketsledge/unique_action(mob/user)
 	. = ..()
 	if (knockback)
-		stun = 1
-		weaken = 2
+		stun = crush_stun_amount
+		weaken = crush_weaken_amount
 		knockback = 0
 		balloon_alert(user, "Selected mode: CRUSH.")
 		playsound(loc, 'sound/machines/switch.ogg', 25)
 		return
 
-	stun = 1
-	weaken = 1
+	stun = knockback_stun_amount
+	weaken = knockback_weaken_amount
 	knockback = 1
 	balloon_alert(user, "Selected mode: KNOCKBACK.")
 	playsound(loc, 'sound/machines/switch.ogg', 25)
 
 /obj/item/weapon/twohanded/rocketsledge/attack(mob/living/carbon/M, mob/living/carbon/user as mob)
-	if(!CHECK_BITFIELD(flags_item, WIELDED))
+	if(!CHECK_BITFIELD(item_flags, WIELDED))
 		to_chat(user, span_warning("You need a more secure grip to use [src]!"))
 		return
 
@@ -447,7 +568,7 @@
 		to_chat(user, span_warning("\The [src] doesn't have enough fuel!"))
 		return ..()
 
-	M.apply_damage(max(0, additional_damage - additional_damage*M.hard_armor.getRating("melee")), BRUTE, user.zone_selected, M.get_soft_armor("melee", user.zone_selected))
+	M.apply_damage(additional_damage, BRUTE, user.zone_selected, updating_health = TRUE)
 	M.visible_message(span_danger("[user]'s rocket sledge hits [M.name], smashing them!"), span_userdanger("You [user]'s rocket sledge smashes you!"))
 
 	if(reagents.get_reagent_amount(/datum/reagent/fuel) < fuel_used * 2)
@@ -466,13 +587,13 @@
 
 	if(isxeno(M))
 		var/mob/living/carbon/xenomorph/xeno_victim = M
-		if(xeno_victim.fortify || xeno_victim.endure) //If we're fortified or use endure we don't give a shit about staggerstun.
+		if(xeno_victim.fortify || xeno_victim.endure || HAS_TRAIT_FROM(xeno_victim, TRAIT_IMMOBILE, BOILER_ROOTED_TRAIT)) //If we're fortified or use endure we don't give a shit about staggerstun.
 			return
 
 		if(xeno_victim.crest_defense) //Crest defense protects us from the stun.
 			stun = 0
 		else
-			stun = 1
+			stun = knockback ? knockback_stun_amount : crush_stun_amount
 
 	if(!M.IsStun() && !M.IsParalyzed() && !isxenoqueen(M)) //Prevent chain stunning. Queen is protected.
 		M.apply_effects(stun,weaken)

@@ -6,7 +6,7 @@
 /atom/movable/lighting_mask
 	name = ""
 	icon = LIGHTING_ICON_BIG
-	icon_state  = "light_big"
+	icon_state = "light_big"
 
 	anchored = TRUE
 	plane = LIGHTING_PLANE
@@ -147,7 +147,7 @@
 /atom/movable/lighting_mask/ex_act(severity, target)
 	return
 
-/atom/movable/lighting_mask/fire_act(exposed_temperature, exposed_volume)
+/atom/movable/lighting_mask/fire_act(burn_level)
 	return
 
 #undef LIGHTING_MASK_SPRITE_SIZE

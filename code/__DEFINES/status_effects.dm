@@ -37,9 +37,16 @@
 
 #define STATUS_EFFECT_HEALING_INFUSION /datum/status_effect/healing_infusion
 
+#define STATUS_EFFECT_DRAIN_SURGE /datum/status_effect/drain_surge
+
+#define STATUS_EFFECT_MINDMEND /datum/status_effect/mindmeld
+
+#define STATUS_EFFECT_REKNIT_FORM /datum/status_effect/reknit_form
 /////////////
 // DEBUFFS //
 /////////////
+
+#define STATUS_EFFECT_STAGGER /datum/status_effect/incapacitating/stagger //reduces human gun damage or impairs xeno ability use
 
 #define STATUS_EFFECT_STUN /datum/status_effect/incapacitating/stun //the affected is unable to move or use items
 
@@ -57,13 +64,24 @@
 
 #define STATUS_EFFECT_CONFUSED /datum/status_effect/incapacitating/confused // random direction chosen when trying to move
 
-#define STATUS_EFFECT_GUN_SKILL_ACCURACY_DEBUFF /datum/status_effect/stacking/gun_skill/accuracy/debuff // Decreases the accuracy of the mob
+#define STATUS_EFFECT_GUN_SKILL_ACCURACY_DEBUFF /datum/status_effect/gun_skill/accuracy/debuff // Decreases the accuracy of the mob
 
-#define STATUS_EFFECT_GUN_SKILL_SCATTER_DEBUFF /datum/status_effect/stacking/gun_skill/scatter/debuff // Decreases the scatter of the mob
+#define STATUS_EFFECT_GUN_SKILL_SCATTER_DEBUFF /datum/status_effect/gun_skill/scatter/debuff // Decreases the scatter of the mob
 
 #define STATUS_EFFECT_MUTED /datum/status_effect/mute //Mutes the affected mob
 
-#define STATUS_EFFECT_IRRADIATED /datum/status_effect/irradiated //the affected has been irradiated, harming them over time
+#define STATUS_EFFECT_IRRADIATED /datum/status_effect/incapacitating/irradiated //the affected has been irradiated, harming them over time
+
+#define STATUS_EFFECT_INTOXICATED /datum/status_effect/stacking/intoxicated //Damage over time
+
+#define STATUS_EFFECT_REPAIR_MODE /datum/status_effect/incapacitating/repair_mode //affected is blinded and stunned, but heals over time
+///damage and sunder over time
+#define STATUS_EFFECT_MELTING /datum/status_effect/stacking/melting
+#define STATUS_EFFECT_MELTING_FIRE /datum/status_effect/stacking/melting_fire
+///damage over time
+#define STATUS_EFFECT_MICROWAVE /datum/status_effect/stacking/microwave
+///armor reduction
+#define STATUS_EFFECT_SHATTER /datum/status_effect/shatter
 
 /////////////
 // NEUTRAL //

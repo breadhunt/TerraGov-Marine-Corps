@@ -16,7 +16,7 @@
 	var/ai_detector_color = "#FF0000"
 
 
-/mob/camera/aiEye/Initialize()
+/mob/camera/aiEye/Initialize(mapload, cameranet, new_faction)
 	. = ..()
 	GLOB.aiEyes += src
 	setLoc(loc, TRUE)
@@ -28,7 +28,7 @@
 	var/icon_state_on = "ai_camera"
 	hud_possible = list(SQUAD_HUD_TERRAGOV)
 
-/mob/camera/aiEye/hud/Initialize()
+/mob/camera/aiEye/hud/Initialize(mapload)
 	. = ..()
 	prepare_huds()
 	var/datum/atom_hud/squad/squad_hud = GLOB.huds[DATA_HUD_SQUAD_TERRAGOV]
@@ -41,8 +41,10 @@
 	holder.icon_state = icon_state_on
 	hud_list[hud_type] = holder
 
-///
-
+/mob/camera/aiEye/hud/Destroy()
+	var/datum/atom_hud/squad/squad_hud = GLOB.huds[DATA_HUD_SQUAD_TERRAGOV]
+	squad_hud.remove_from_hud(src)
+	return ..()
 
 /mob/camera/aiEye/proc/get_visible_turfs()
 	if(!isturf(loc))
@@ -83,8 +85,15 @@
 		ai.master_multicam.refresh_view()
 	update_parallax_contents()
 
+/mob/camera/aiEye/abstract_move(atom/new_loc)
+	var/turf/old_turf = get_turf(src)
+	var/turf/new_turf = get_turf(new_loc)
+	if(old_turf?.z != new_turf?.z)
+		onTransitZ(old_turf?.z, new_turf?.z)
+	return ..()
 
-/mob/camera/aiEye/Move()
+
+/mob/camera/aiEye/Move(atom/newloc, direction, glide_size_override)
 	return FALSE
 
 
@@ -165,6 +174,7 @@
 	eyeobj.setLoc(loc)
 	eyeobj.name = "[name] (AI Eye)"
 	eyeobj.real_name = eyeobj.name
+	mini.override_locator(eyeobj)
 	set_eyeobj_visible(TRUE)
 
 
@@ -181,10 +191,15 @@
 		ai.relay_speech(message, speaker, message_language, raw_message, radio_freq, spans, message_mode)
 
 /mob/camera/aiEye/proc/register_facedir_signals(mob/user)
-	RegisterSignal(user, COMSIG_KB_MOB_FACENORTH_DOWN, .verb/northface)
-	RegisterSignal(user, COMSIG_KB_MOB_FACEEAST_DOWN, .verb/eastface)
-	RegisterSignal(user, COMSIG_KB_MOB_FACESOUTH_DOWN, .verb/southface)
-	RegisterSignal(user, COMSIG_KB_MOB_FACEWEST_DOWN, .verb/westface)
+	RegisterSignal(user, COMSIG_KB_MOB_FACENORTH_DOWN, VERB_REF(northface))
+	RegisterSignal(user, COMSIG_KB_MOB_FACEEAST_DOWN, VERB_REF(eastface))
+	RegisterSignal(user, COMSIG_KB_MOB_FACESOUTH_DOWN, VERB_REF(southface))
+	RegisterSignal(user, COMSIG_KB_MOB_FACEWEST_DOWN, VERB_REF(westface))
 
 /mob/camera/aiEye/proc/unregister_facedir_signals(mob/user)
 	UnregisterSignal(user, list(COMSIG_KB_MOB_FACENORTH_DOWN, COMSIG_KB_MOB_FACEEAST_DOWN, COMSIG_KB_MOB_FACESOUTH_DOWN, COMSIG_KB_MOB_FACEWEST_DOWN))
+
+/mob/camera/aiEye/playsound_local(turf/turf_source, soundin, vol, vary, frequency, falloff, is_global, channel, sound/sound_to_use, distance_multiplier, mob/sound_reciever)
+	if(istype(parent_cameranet) && !parent_cameranet.checkTurfVis(get_turf(src)))
+		return
+	return ..(turf_source, soundin, vol, vary, frequency, falloff, is_global, channel, sound_to_use, distance_multiplier, ai)

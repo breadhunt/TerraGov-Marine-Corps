@@ -5,6 +5,7 @@
 	else if(isgrabitem(dropping))
 		var/obj/item/grab/grab_item = dropping
 		if(isliving(grab_item.grabbed_thing))
+
 			. = grab_item.grabbed_thing
 	if(. && user_buckle_mob(., user))
 		return TRUE
@@ -23,9 +24,9 @@
 	if(!(buckling_mob.buckle_flags & CAN_BE_BUCKLED) && !force)
 		if(!silent)
 			if(buckling_mob == usr)
-				to_chat(buckling_mob, span_warning("You are unable to buckle yourself to [src]!"))
+				balloon_alert_to_viewers("can't buckle")
 			else
-				to_chat(usr, span_warning("You are unable to buckle [buckling_mob] to [src]!"))
+				balloon_alert_to_viewers("can't buckle [buckling_mob] to [src]")
 		return FALSE
 
 	// This signal will check if the mob is mounting this atom to ride it. There are 3 possibilities for how this goes
@@ -60,9 +61,10 @@
 	if(buckle_lying != -1)
 		ADD_TRAIT(buckling_mob, TRAIT_FLOORED, BUCKLE_TRAIT)
 	buckling_mob.throw_alert("buckled", /atom/movable/screen/alert/restrained/buckled)
+	buckling_mob.set_glide_size(glide_size)
 	post_buckle_mob(buckling_mob, silent)
 
-	RegisterSignal(buckling_mob, COMSIG_LIVING_DO_RESIST, .proc/resisted_against)
+	RegisterSignal(buckling_mob, COMSIG_LIVING_DO_RESIST, PROC_REF(resisted_against))
 	SEND_SIGNAL(src, COMSIG_MOVABLE_BUCKLE, buckling_mob, force, check_loc, lying_buckle, hands_needed, target_hands_needed, silent)
 	return TRUE
 
@@ -86,6 +88,7 @@
 	if(buckle_lying != -1)
 		REMOVE_TRAIT(buckled_mob, TRAIT_FLOORED, BUCKLE_TRAIT)
 	buckled_mob.clear_alert("buckled")
+	buckled_mob.set_glide_size(DELAY_TO_GLIDE_SIZE(buckled_mob.cached_multiplicative_slowdown))
 	LAZYREMOVE(buckled_mobs, buckled_mob)
 
 	UnregisterSignal(buckled_mob, COMSIG_LIVING_DO_RESIST)

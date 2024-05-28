@@ -112,7 +112,7 @@
 
 	update_sight()
 
-	if (hud_used && hud_used.healths)
+	if (hud_used?.healths)
 		if (stat != DEAD)
 			switch(health)
 				if(100 to INFINITY)
@@ -138,17 +138,3 @@
 		interactee?.check_eye(src)
 
 	return 1
-
-
-/*/mob/living/brain/emp_act(severity)
-	if(!(container && istype(container, /obj/item/mmi)))
-		return
-	else
-		switch(severity)
-			if(1)
-				emp_damage += rand(20,30)
-			if(2)
-				emp_damage += rand(10,20)
-			if(3)
-				emp_damage += rand(0,10)
-	..()*/

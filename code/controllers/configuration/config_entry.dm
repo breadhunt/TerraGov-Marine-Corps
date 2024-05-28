@@ -42,7 +42,7 @@
 		. &= !(protection & CONFIG_ENTRY_HIDDEN)
 
 /datum/config_entry/vv_edit_var(var_name, var_value)
-	var/static/list/banned_edits = list(NAMEOF(src, name), NAMEOF(src, vv_VAS), NAMEOF(src, default), NAMEOF(src, resident_file), NAMEOF(src, protection), NAMEOF(src, abstract_type), NAMEOF(src, modified), NAMEOF(src, dupes_allowed))
+	var/static/list/banned_edits = list(NAMEOF_STATIC(src, name), NAMEOF_STATIC(src, vv_VAS), NAMEOF_STATIC(src, default), NAMEOF_STATIC(src, resident_file), NAMEOF_STATIC(src, protection), NAMEOF_STATIC(src, abstract_type), NAMEOF_STATIC(src, modified), NAMEOF_STATIC(src, dupes_allowed))
 	if(var_name == NAMEOF(src, config_entry_value))
 		if(protection & CONFIG_ENTRY_LOCKED)
 			return FALSE
@@ -118,6 +118,22 @@
 	config_entry_value = text2num(trim(str_val)) != 0
 	return TRUE
 
+/// List config entry, used for configuring a list of strings
+/datum/config_entry/str_list
+	abstract_type = /datum/config_entry/str_list
+	default = list()
+	dupes_allowed = TRUE
+	/// whether the string elements will be lowercased on ValidateAndSet or not.
+	var/lowercase = FALSE
+
+/datum/config_entry/str_list/ValidateAndSet(str_val)
+	if (!VASProcCallGuard(str_val))
+		return FALSE
+	str_val = trim(str_val)
+	if (str_val != "")
+		config_entry_value += lowercase ? lowertext(str_val) : str_val
+	return TRUE
+
 /datum/config_entry/number_list
 	abstract_type = /datum/config_entry/number_list
 	config_entry_value = list()
@@ -133,7 +149,7 @@
 		if(isnull(temp))
 			return FALSE
 		new_list += temp
-	if(!new_list.len)
+	if(!length(new_list))
 		return FALSE
 	config_entry_value = new_list
 	return TRUE

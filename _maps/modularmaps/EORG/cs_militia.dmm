@@ -1,10 +1,19 @@
 //MAP CONVERTED BY dmm2tgm.py THIS HEADER COMMENT PREVENTS RECONVERSION, DO NOT REMOVE
+"as" = (
+/obj/effect/landmark/eord_roomba,
+/turf/open/floor/wood,
+/area/deathmatch)
 "aB" = (
 /turf/open/floor/plating/ground/mars/random/dirt,
 /area/deathmatch)
 "bl" = (
 /obj/effect/landmark/weapon_spawn/tier1_weapon_spawn,
-/obj/structure/flora/desert/grass/three,
+/obj/structure/flora/desert/grass,
+/turf/open/floor/plating/ground/mars/random/sand,
+/area/deathmatch)
+"bE" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/landmark/weapon_spawn/tier2_weapon_spawn,
 /turf/open/floor/plating/ground/mars/random/sand,
 /area/deathmatch)
 "bP" = (
@@ -16,8 +25,21 @@
 /obj/structure/table/gamblingtable,
 /turf/open/floor/wood,
 /area/deathmatch)
+"bZ" = (
+/obj/structure/bed/chair/wood/wings{
+	dir = 8
+	},
+/turf/open/floor/plating/ground/mars/random/sand,
+/area/deathmatch)
+"cR" = (
+/obj/effect/landmark/weapon_spawn/tier2_weapon_spawn,
+/obj/effect/landmark/eord_roomba,
+/turf/open/floor/plating/asteroidplating{
+	color = "#888888"
+	},
+/area/deathmatch)
 "dg" = (
-/obj/structure/ore_box,
+/obj/effect/spawner/random/engineering/ore_box,
 /turf/open/floor/plating/ground/mars/random/sand,
 /area/deathmatch)
 "ds" = (
@@ -31,11 +53,22 @@
 /obj/structure/largecrate/random/barrel/blue,
 /turf/open/floor/wood,
 /area/deathmatch)
+"gb" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/landmark/weapon_spawn/tier3_weapon_spawn,
+/obj/structure/bed/chair/wood/wings,
+/turf/open/floor/plating/ground/mars/random/sand,
+/area/deathmatch)
 "gi" = (
 /obj/effect/landmark/deathmatch,
 /turf/open/floor/plating/ground/mars/dirttosand{
 	dir = 8
 	},
+/area/deathmatch)
+"gK" = (
+/obj/structure/window/framed/mainship/requisitions,
+/obj/structure/window/framed/wood,
+/turf/open/floor/wood,
 /area/deathmatch)
 "hw" = (
 /obj/effect/landmark/weapon_spawn/tier2_weapon_spawn,
@@ -45,17 +78,12 @@
 /area/deathmatch)
 "hy" = (
 /obj/structure/table/mainship,
-/obj/effect/spawner/random/plushie/nospawnninetyfive{
-	},
+/obj/effect/spawner/random/misc/plushie/nospawnninetyfive,
 /turf/open/floor/wood,
 /area/deathmatch)
 "iq" = (
 /obj/structure/closet/secure_closet/freezer,
 /turf/open/floor/wood,
-/area/deathmatch)
-"jg" = (
-/obj/structure/flora/desert/grass/seven,
-/turf/open/floor/plating/ground/mars/random/sand,
 /area/deathmatch)
 "kv" = (
 /turf/open/floor/plating/ground/mars/dirttosand{
@@ -81,7 +109,7 @@
 /turf/open/floor/wood,
 /area/deathmatch)
 "oE" = (
-/obj/structure/flora/desert/cactus/multiple/eleven,
+/obj/structure/flora/desert/cactus/multiple,
 /turf/open/floor/plating/ground/mars/random/sand,
 /area/deathmatch)
 "pl" = (
@@ -126,14 +154,22 @@
 /obj/effect/landmark/deathmatch,
 /turf/open/floor/plating/ground/mars/random/dirt,
 /area/deathmatch)
+"rs" = (
+/obj/effect/decal/cleanable/dirt,
+/turf/open/floor/plating/ground/mars/random/sand,
+/area/deathmatch)
+"rx" = (
+/turf/closed/mineral/smooth/desertdamrockwall/indestructible,
+/area/deathmatch)
+"rK" = (
+/obj/machinery/door/window/right,
+/turf/open/floor/wood,
+/area/deathmatch)
 "sv" = (
 /obj/structure/ladder{
 	height = 1;
 	id = "cs_militia_1";
 	pixel_y = 8
-	},
-/obj/structure/platform{
-	dir = 4
 	},
 /turf/open/floor/plating/asteroidplating{
 	color = "#888888"
@@ -185,11 +221,11 @@
 	},
 /area/deathmatch)
 "xg" = (
-/obj/structure/flora/desert/grass/three,
+/obj/structure/flora/desert/grass,
 /turf/open/floor/plating/ground/mars/random/sand,
 /area/deathmatch)
 "xp" = (
-/obj/structure/flora/desert/grass/seven,
+/obj/structure/flora/desert/grass,
 /turf/open/floor/plating/ground/mars/random/dirt,
 /area/deathmatch)
 "xA" = (
@@ -235,6 +271,14 @@
 	dir = 5
 	},
 /area/deathmatch)
+"BJ" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/landmark/weapon_spawn/tier1_weapon_spawn,
+/obj/structure/bed/chair/wood/wings{
+	dir = 4
+	},
+/turf/open/floor/plating/ground/mars/random/sand,
+/area/deathmatch)
 "BL" = (
 /obj/structure/table/mainship,
 /obj/effect/landmark/weapon_spawn/tier5_weapon_spawn,
@@ -252,6 +296,12 @@
 	dir = 10
 	},
 /area/deathmatch)
+"CF" = (
+/obj/effect/landmark/eord_roomba,
+/turf/open/floor/plating/asteroidplating{
+	color = "#888888"
+	},
+/area/deathmatch)
 "Dq" = (
 /obj/structure/platform{
 	dir = 4
@@ -260,36 +310,16 @@
 	color = "#888888"
 	},
 /area/deathmatch)
-"EP" = (
-/obj/structure/desertdam/decals/road/edge{
-	pixel_x = -16;
-	pixel_y = 16
-	},
-/obj/structure/desertdam/decals/road/edge{
-	dir = 1;
-	pixel_x = 16;
-	pixel_y = -16
-	},
-/obj/structure/desertdam/decals/road/edge{
-	dir = 4;
-	pixel_x = 16;
-	pixel_y = 16
-	},
-/obj/structure/desertdam/decals/road/edge{
-	dir = 8;
-	pixel_x = -16;
-	pixel_y = -16
-	},
-/obj/structure/ladder{
-	height = 2;
-	id = "cs_militia_2";
-	pixel_y = 8
-	},
+"DH" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/landmark/weapon_spawn/tier3_weapon_spawn,
 /turf/open/floor/plating/ground/mars/random/sand,
 /area/deathmatch)
+"EP" = (
+/turf/closed/wall/wood,
+/area/deathmatch)
 "EV" = (
-/obj/effect/spawner/random/plushie/nospawnninetynine{
-	},
+/obj/effect/spawner/random/misc/plushie/nospawnninetynine,
 /turf/open/floor/plating/asteroidplating{
 	color = "#888888"
 	},
@@ -337,14 +367,9 @@
 	},
 /turf/open/floor/plating/ground/mars/random/sand,
 /area/deathmatch)
-"IO" = (
-/obj/structure/platform{
-	dir = 8
-	},
-/obj/effect/landmark/deathmatch,
-/turf/open/floor/plating/asteroidplating{
-	color = "#888888"
-	},
+"Jj" = (
+/obj/structure/window/framed/wood,
+/turf/open/floor/wood,
 /area/deathmatch)
 "Kl" = (
 /obj/structure/ladder{
@@ -394,12 +419,22 @@
 /obj/structure/table/mainship,
 /turf/open/floor/wood,
 /area/deathmatch)
+"Po" = (
+/obj/structure/window/framed/mainship/hull,
+/obj/structure/window/framed/wood,
+/turf/open/floor/wood,
+/area/deathmatch)
 "PH" = (
 /obj/effect/decal/cleanable/cobweb,
 /turf/open/floor/wood,
 /area/deathmatch)
 "Qa" = (
 /turf/open/floor/wood/broken,
+/area/deathmatch)
+"Qf" = (
+/obj/structure/window/framed/mainship/hull,
+/obj/structure/window/framed/wood,
+/turf/open/floor/mainship/mono,
 /area/deathmatch)
 "QI" = (
 /turf/closed/wall,
@@ -408,6 +443,14 @@
 /turf/open/floor/plating/ground/mars/dirttosand{
 	dir = 8
 	},
+/area/deathmatch)
+"RZ" = (
+/obj/item/storage/belt/champion,
+/turf/open/floor/wood,
+/area/deathmatch)
+"Tb" = (
+/obj/structure/bed/chair/wood/wings,
+/turf/open/floor/plating/ground/mars/random/sand,
 /area/deathmatch)
 "TA" = (
 /obj/machinery/vending/boozeomat,
@@ -420,21 +463,18 @@
 	},
 /area/deathmatch)
 "Uv" = (
-/turf/closed/desertdamrockwall,
+/turf/closed/mineral/smooth/desertdamrockwall,
+/area/deathmatch)
+"US" = (
+/obj/structure/bed/chair/wood/wings{
+	dir = 4
+	},
+/turf/open/floor/plating/ground/mars/random/sand,
 /area/deathmatch)
 "Vo" = (
 /obj/effect/landmark/deathmatch,
-/obj/structure/flora/desert/grass/three,
+/obj/structure/flora/desert/grass,
 /turf/open/floor/plating/ground/mars/random/sand,
-/area/deathmatch)
-"Vq" = (
-/obj/structure/platform{
-	dir = 4
-	},
-/obj/effect/landmark/deathmatch,
-/turf/open/floor/plating/asteroidplating{
-	color = "#888888"
-	},
 /area/deathmatch)
 "Vu" = (
 /obj/structure/ladder{
@@ -473,6 +513,15 @@
 	color = "#888888"
 	},
 /area/deathmatch)
+"XA" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/landmark/weapon_spawn/tier1_weapon_spawn,
+/turf/open/floor/plating/ground/mars/random/sand,
+/area/deathmatch)
+"XG" = (
+/obj/effect/landmark/eord_roomba,
+/turf/open/floor/plating/ground/mars/random/sand,
+/area/deathmatch)
 "Yq" = (
 /turf/open/floor/plating/ground/mars/dirttosand{
 	dir = 5
@@ -486,61 +535,73 @@
 /obj/effect/landmark/weapon_spawn/tier1_weapon_spawn,
 /turf/open/floor/wood,
 /area/deathmatch)
+"YW" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/bed/chair/wood/wings,
+/turf/open/floor/plating/ground/mars/random/sand,
+/area/deathmatch)
 "Zh" = (
 /obj/structure/fence,
 /turf/open/floor/plating/ground/mars/random/dirt,
 /area/deathmatch)
+"ZK" = (
+/obj/machinery/door/window{
+	dir = 8
+	},
+/obj/effect/ai_node,
+/turf/open/floor/wood,
+/area/deathmatch)
 
 (1,1,1) = {"
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
 "}
 (2,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -585,10 +646,10 @@ WC
 WC
 WC
 WC
-Uv
+rx
 "}
 (3,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -609,7 +670,7 @@ kv
 uR
 uR
 uR
-jg
+xg
 uR
 Gk
 uR
@@ -633,10 +694,10 @@ WV
 GH
 WV
 WC
-Uv
+rx
 "}
 (4,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -677,14 +738,14 @@ Uv
 WC
 WC
 WC
-Dq
-Vq
+WV
+NB
 WV
 WC
-Uv
+rx
 "}
 (5,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -703,7 +764,7 @@ Uv
 uR
 uR
 Gk
-uR
+XG
 uR
 rf
 Gx
@@ -725,14 +786,14 @@ Uv
 WC
 WV
 WV
-WV
-WV
+GB
+GB
 WV
 WC
-Uv
+rx
 "}
 (6,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -746,7 +807,7 @@ Uv
 aB
 kv
 uR
-jg
+xg
 uR
 rf
 uR
@@ -777,10 +838,10 @@ WC
 WC
 WC
 WC
-Uv
+rx
 "}
 (7,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -825,10 +886,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (8,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -873,10 +934,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (9,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -889,7 +950,7 @@ kv
 uR
 oE
 uR
-jg
+xg
 uR
 QI
 Or
@@ -915,16 +976,16 @@ Uv
 Uv
 Uv
 WC
-WV
+CF
 WC
 Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (10,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -969,10 +1030,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (11,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1017,10 +1078,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (12,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1044,7 +1105,7 @@ QI
 LT
 LT
 LT
-LT
+as
 LT
 LT
 LT
@@ -1065,10 +1126,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (13,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1113,10 +1174,10 @@ WC
 WC
 Uv
 Uv
-Uv
+rx
 "}
 (14,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1131,7 +1192,7 @@ Uv
 uR
 uR
 uR
-jg
+xg
 uR
 Yq
 pl
@@ -1161,10 +1222,10 @@ WV
 WC
 Uv
 Uv
-Uv
+rx
 "}
 (15,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1209,10 +1270,10 @@ hw
 WC
 Uv
 Uv
-Uv
+rx
 "}
 (16,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1257,10 +1318,10 @@ WV
 WC
 Uv
 Uv
-Uv
+rx
 "}
 (17,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1280,7 +1341,7 @@ oE
 Gk
 uR
 uR
-jg
+xg
 QI
 uN
 uN
@@ -1291,8 +1352,8 @@ QI
 QI
 Uv
 WC
-WV
-WV
+Dq
+Dq
 WV
 WV
 WV
@@ -1305,10 +1366,10 @@ WV
 WC
 Uv
 Uv
-Uv
+rx
 "}
 (18,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1339,8 +1400,8 @@ QI
 QI
 Uv
 WC
-GB
-IO
+WV
+NB
 hw
 WC
 WC
@@ -1353,9 +1414,10 @@ WV
 WC
 Uv
 Uv
-Uv
+rx
 "}
 (19,1,1) = {"
+rx
 Uv
 Uv
 Uv
@@ -1371,8 +1433,7 @@ Uv
 Uv
 Uv
 Uv
-Uv
-jg
+xg
 uR
 uR
 uR
@@ -1401,10 +1462,10 @@ WV
 WC
 Uv
 Uv
-Uv
+rx
 "}
 (20,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1449,10 +1510,10 @@ WV
 WC
 Uv
 Uv
-Uv
+rx
 "}
 (21,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1466,15 +1527,15 @@ aB
 pl
 kv
 rf
+rs
+DH
+BJ
+US
 uR
-uR
-uR
-uR
-xg
-uR
-uR
-uR
-uR
+US
+US
+rs
+rs
 uR
 Gk
 uR
@@ -1493,14 +1554,14 @@ Uv
 Uv
 Uv
 WC
-hw
+cR
 WC
 Uv
 Uv
-Uv
+rx
 "}
 (22,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1514,15 +1575,15 @@ kv
 uT
 uR
 uR
-uR
+bE
 EP
-uR
-uR
-Gx
-RD
-Uv
-Uv
-Uv
+Jj
+Jj
+ZK
+Qf
+Qf
+EP
+XA
 uR
 uR
 uT
@@ -1545,10 +1606,10 @@ WV
 WC
 Uv
 Uv
-Uv
+rx
 "}
 (23,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1562,15 +1623,15 @@ uR
 uR
 uR
 uR
-uR
-uR
-uR
-Gx
-Uv
-Uv
-Uv
-Uv
-mY
+YW
+gK
+LK
+LT
+LT
+LT
+LK
+Po
+YW
 uR
 uR
 uR
@@ -1593,10 +1654,10 @@ WV
 WC
 Uv
 Uv
-Uv
+rx
 "}
 (24,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1608,17 +1669,17 @@ kv
 uR
 Gk
 uR
-Uv
-Uv
 uR
-uR
-Gx
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
+XG
+YW
+gK
+LT
+LT
+LT
+LT
+LT
+Po
+YW
 uR
 uR
 Gx
@@ -1634,17 +1695,17 @@ WV
 WV
 WV
 WV
-WV
-WV
+Dq
+Dq
 WV
 hw
 WC
 Uv
 Uv
-Uv
+rx
 "}
 (25,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1656,17 +1717,17 @@ uR
 uR
 bl
 uR
-Uv
-Uv
 uR
-Gk
-Yq
-Uv
-Uv
-Uv
-pl
-kv
 uR
+Tb
+gK
+LT
+LT
+RZ
+LT
+LT
+Po
+gb
 rf
 Gx
 Uv
@@ -1682,17 +1743,17 @@ hw
 WC
 WC
 WV
-GB
-GB
+WV
+WV
 WC
 WC
 WC
 Uv
 Uv
-Uv
+rx
 "}
 (26,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1706,15 +1767,15 @@ uR
 uR
 uR
 oE
-rf
-uR
-uR
-uR
-jg
-uR
-uR
-xg
-uR
+Tb
+gK
+LT
+LT
+LT
+LT
+LT
+Po
+YW
 uR
 Uv
 Uv
@@ -1737,10 +1798,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (27,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -1754,15 +1815,15 @@ Uv
 bP
 uR
 uR
-uR
-uR
-rf
-uR
-uR
-uR
-Gk
-uR
-uR
+YW
+gK
+LK
+LT
+LT
+LT
+LK
+Po
+Tb
 Gx
 Uv
 Uv
@@ -1785,10 +1846,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (28,1,1) = {"
-Uv
+rx
 Uv
 Uv
 mY
@@ -1802,16 +1863,16 @@ Uv
 Uv
 Uv
 gi
-RD
-RD
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
+XA
+EP
+gK
+gK
+rK
+Po
+Po
+EP
+rf
+vb
 Uv
 Uv
 Uv
@@ -1833,10 +1894,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (29,1,1) = {"
-Uv
+rx
 Uv
 Uv
 mY
@@ -1849,16 +1910,16 @@ Uv
 Uv
 Uv
 Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
+aB
+uR
+uR
+bZ
+bZ
+uR
+bZ
+bZ
+rs
+rs
 pl
 pl
 pl
@@ -1881,10 +1942,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (30,1,1) = {"
-Uv
+rx
 Uv
 aB
 kv
@@ -1929,15 +1990,15 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (31,1,1) = {"
-Uv
+rx
 Uv
 mY
 uR
 uR
-jg
+xg
 uR
 uR
 uR
@@ -1977,10 +2038,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (32,1,1) = {"
-Uv
+rx
 Uv
 mY
 uR
@@ -2025,10 +2086,10 @@ WC
 WC
 WC
 WC
-Uv
+rx
 "}
 (33,1,1) = {"
-Uv
+rx
 Uv
 mY
 uR
@@ -2041,7 +2102,7 @@ Yw
 bP
 uR
 uR
-jg
+xg
 uR
 oE
 uR
@@ -2071,12 +2132,12 @@ WC
 WC
 WV
 sv
-Vq
+NB
 WC
-Uv
+rx
 "}
 (34,1,1) = {"
-Uv
+rx
 aB
 kv
 rf
@@ -2114,17 +2175,17 @@ WV
 WV
 WV
 WV
-WV
+CF
 WV
 hw
 WV
-WV
-WV
+GB
+GB
 WC
-Uv
+rx
 "}
 (35,1,1) = {"
-Uv
+rx
 kv
 uR
 uR
@@ -2169,10 +2230,10 @@ WC
 WC
 WC
 WC
-Uv
+rx
 "}
 (36,1,1) = {"
-Uv
+rx
 uR
 uR
 uR
@@ -2217,10 +2278,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (37,1,1) = {"
-Uv
+rx
 uR
 uR
 Gx
@@ -2265,10 +2326,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (38,1,1) = {"
-Uv
+rx
 uR
 uR
 vb
@@ -2313,10 +2374,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (39,1,1) = {"
-Uv
+rx
 bP
 Vo
 Yq
@@ -2342,7 +2403,7 @@ uR
 uR
 uR
 uR
-jg
+xg
 uR
 uR
 uR
@@ -2361,10 +2422,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (40,1,1) = {"
-Uv
+rx
 mY
 uR
 uR
@@ -2409,10 +2470,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (41,1,1) = {"
-Uv
+rx
 Uv
 bP
 uR
@@ -2426,13 +2487,13 @@ rf
 Uv
 Uv
 uR
-jg
+xg
 uR
 Bs
 pl
 pl
 kv
-uR
+XG
 uR
 xg
 uR
@@ -2457,10 +2518,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (42,1,1) = {"
-Uv
+rx
 Uv
 Uv
 bP
@@ -2505,10 +2566,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (43,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -2553,10 +2614,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (44,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -2577,7 +2638,7 @@ uR
 uR
 uR
 uR
-jg
+xg
 uR
 rf
 uR
@@ -2601,10 +2662,10 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (45,1,1) = {"
-Uv
+rx
 Uv
 Uv
 Uv
@@ -2649,53 +2710,53 @@ Uv
 Uv
 Uv
 Uv
-Uv
+rx
 "}
 (46,1,1) = {"
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
-Uv
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
+rx
 "}

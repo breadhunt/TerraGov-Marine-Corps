@@ -61,15 +61,15 @@
 /area/bigredv2/outside/medical)
 "cr" = (
 /obj/structure/rack,
-/obj/effect/spawner/random/tool,
-/obj/effect/spawner/random/tool{
+/obj/effect/spawner/random/engineering/tool,
+/obj/effect/spawner/random/engineering/tool{
 	pixel_x = -1;
 	pixel_y = -4
 	},
 /turf/open/floor/plating,
 /area/bigredv2/outside/medical)
 "ct" = (
-/obj/machinery/sleep_console,
+/obj/machinery/computer/sleep_console,
 /turf/open/floor/tile/white,
 /area/bigredv2/outside/medical)
 "cB" = (
@@ -266,7 +266,7 @@
 /area/bigredv2/outside/medical)
 "hU" = (
 /obj/structure/table,
-/obj/item/organ/kidneys/prosthetic,
+/obj/effect/spawner/random/medical/organ,
 /turf/open/floor/tile/blue/whiteblue,
 /area/bigredv2/outside/medical)
 "iB" = (
@@ -291,8 +291,8 @@
 /area/bigredv2/outside/medical)
 "iU" = (
 /obj/structure/rack,
-/obj/effect/spawner/random/tool,
-/obj/effect/spawner/random/toolbox,
+/obj/effect/spawner/random/engineering/tool,
+/obj/effect/spawner/random/engineering/toolbox,
 /turf/open/floor/plating,
 /area/bigredv2/outside/medical)
 "jg" = (
@@ -314,6 +314,9 @@
 /area/bigredv2/outside/medical)
 "js" = (
 /obj/structure/bed/roller,
+/obj/machinery/atmospherics/pipe/simple/green/hidden{
+	dir = 4
+	},
 /turf/open/floor/tile/green/whitegreen{
 	dir = 8
 	},
@@ -331,8 +334,15 @@
 /turf/open/floor/tile/white,
 /area/bigredv2/outside/medical)
 "ku" = (
-/obj/effect/spawner/random/toolbox,
+/obj/effect/spawner/random/engineering/toolbox,
 /turf/open/floor/plating,
+/area/bigredv2/outside/medical)
+"kC" = (
+/obj/effect/ai_node,
+/obj/machinery/atmospherics/pipe/simple/green/hidden{
+	dir = 9
+	},
+/turf/open/floor/tile/white,
 /area/bigredv2/outside/medical)
 "kD" = (
 /obj/item/healthanalyzer,
@@ -424,7 +434,7 @@
 	},
 /area/bigredv2/outside/medical)
 "mu" = (
-/obj/effect/spawner/random/trash,
+/obj/effect/spawner/random/misc/trash,
 /turf/open/floor/plating,
 /area/bigredv2/outside/medical)
 "mz" = (
@@ -668,7 +678,7 @@
 /turf/open/floor/tile/green/whitegreencorner,
 /area/bigredv2/outside/medical)
 "sH" = (
-/obj/structure/window/framed/colony,
+/obj/effect/spawner/random/misc/structure/broken_window/colonyspawn,
 /turf/open/floor/tile/white,
 /area/bigredv2/outside/medical)
 "sN" = (
@@ -941,7 +951,7 @@
 /area/bigredv2/outside/medical)
 "zE" = (
 /obj/effect/decal/cleanable/dirt,
-/obj/machinery/alarm{
+/obj/machinery/air_alarm{
 	dir = 8
 	},
 /turf/open/floor/tile/green/whitegreen{
@@ -1253,9 +1263,8 @@
 /turf/open/floor/tile/green/whitegreenfull,
 /area/bigredv2/outside/medical)
 "IS" = (
-/obj/machinery/door/airlock/glass_medical{
-	id_tag = "mbayexit";
-	name = "Medbay Reception"
+/obj/machinery/door/airlock/glass{
+	dir = 1
 	},
 /turf/open/floor/tile/white,
 /area/bigredv2/outside/medical)
@@ -1265,7 +1274,7 @@
 /area/bigredv2/outside/medical)
 "IY" = (
 /obj/structure/table,
-/obj/effect/spawner/random/bomb_supply,
+/obj/effect/spawner/random/engineering/bomb_supply,
 /turf/open/floor/tile/blue/whiteblue{
 	dir = 5
 	},
@@ -1328,7 +1337,7 @@
 "Kw" = (
 /obj/item/clothing/glasses/regular/hipster,
 /obj/structure/rack,
-/obj/effect/spawner/random/cable,
+/obj/effect/spawner/random/engineering/cable,
 /obj/machinery/power/apc,
 /obj/structure/cable,
 /turf/open/floor/plating,
@@ -1403,7 +1412,7 @@
 /turf/open/floor/tile/white,
 /area/bigredv2/outside/medical)
 "Mb" = (
-/obj/structure/window/framed/colony,
+/obj/effect/spawner/random/misc/structure/broken_window/colonyspawn,
 /obj/machinery/door/poddoor/shutters/mainship{
 	dir = 2;
 	id = "Medical";
@@ -1499,7 +1508,7 @@
 /turf/open/floor/tile/dark,
 /area/bigredv2/outside/medical)
 "OI" = (
-/obj/structure/window/framed/colony,
+/obj/effect/spawner/random/misc/structure/broken_window/colonyspawn,
 /turf/open/floor/plating,
 /area/bigredv2/outside/medical)
 "Pe" = (
@@ -1543,8 +1552,8 @@
 /area/bigredv2/outside/medical)
 "PO" = (
 /obj/structure/table,
-/obj/effect/spawner/random/bomb_supply,
-/obj/effect/spawner/random/bomb_supply,
+/obj/effect/spawner/random/engineering/bomb_supply,
+/obj/effect/spawner/random/engineering/bomb_supply,
 /turf/open/floor/tile/blue/whiteblue{
 	dir = 9
 	},
@@ -1608,7 +1617,7 @@
 /area/bigredv2/outside/medical)
 "Rn" = (
 /obj/effect/decal/cleanable/dirt,
-/obj/item/tool/extinguisher,
+/obj/effect/spawner/random/engineering/extinguisher/regularweighted,
 /turf/open/floor/tile/green/whitegreencorner,
 /area/bigredv2/outside/medical)
 "Ru" = (
@@ -1656,8 +1665,8 @@
 /area/bigredv2/outside/medical)
 "Sg" = (
 /obj/structure/table,
-/obj/effect/spawner/random/bomb_supply,
-/obj/effect/spawner/random/bomb_supply,
+/obj/effect/spawner/random/engineering/bomb_supply,
+/obj/effect/spawner/random/engineering/bomb_supply,
 /turf/open/floor/tile/blue/whiteblue{
 	dir = 1
 	},
@@ -1692,7 +1701,7 @@
 /turf/open/floor/tile/white,
 /area/bigredv2/outside/medical)
 "Ti" = (
-/obj/structure/window/framed/colony,
+/obj/effect/spawner/random/misc/structure/broken_window/colonyspawn,
 /obj/machinery/door/poddoor/shutters/mainship{
 	id = "Medical";
 	name = "\improper Medical Storm Shutters"
@@ -1715,12 +1724,12 @@
 /turf/open/floor/tile/blue/whitebluefull,
 /area/bigredv2/outside/medical)
 "TT" = (
-/obj/machinery/body_scanconsole,
+/obj/machinery/computer/body_scanconsole,
 /obj/effect/decal/cleanable/dirt,
 /turf/open/floor/tile/green/whitegreen,
 /area/bigredv2/outside/medical)
 "Uf" = (
-/obj/machinery/body_scanconsole,
+/obj/machinery/computer/body_scanconsole,
 /turf/open/floor/tile/green/whitegreen{
 	dir = 6
 	},
@@ -1904,7 +1913,7 @@
 /turf/open/floor/tile/white,
 /area/bigredv2/outside/medical)
 "ZC" = (
-/obj/effect/spawner/random/trash,
+/obj/effect/spawner/random/misc/trash,
 /turf/open/floor/tile/white,
 /area/bigredv2/outside/medical)
 "ZO" = (
@@ -2003,7 +2012,7 @@ Zg
 bx
 nl
 hQ
-Hm
+fk
 zx
 SR
 tC
@@ -2031,7 +2040,7 @@ OI
 Yk
 jh
 rB
-hQ
+kC
 ys
 Cp
 OC

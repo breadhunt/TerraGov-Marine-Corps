@@ -4,17 +4,19 @@
  * Arguments:
  * * text: text we want to be displayed
  * * alert_type: typepath for screen text type we want to play here
+ * * override_color: color of the screen text
  */
-/mob/proc/play_screen_text(text, alert_type = /atom/movable/screen/text/screen_text)
+/mob/proc/play_screen_text(text, alert_type = /atom/movable/screen/text/screen_text, override_color = null)
 	if(!client)
 		return
 	var/atom/movable/screen/text/screen_text/text_box = new alert_type()
 	text_box.text_to_play = text
+	if(override_color)
+		text_box.color = override_color
 	LAZYADD(client.screen_texts, text_box)
 	if(LAZYLEN(client.screen_texts) == 1) //lets only play one at a time, for thematic effect and prevent overlap
-		INVOKE_ASYNC(text_box, /atom/movable/screen/text/screen_text.proc/play_to_client, client)
+		INVOKE_ASYNC(text_box, TYPE_PROC_REF(/atom/movable/screen/text/screen_text, play_to_client), client)
 		return
-	client.screen_texts += text_box
 
 
 /atom/movable/screen/text/screen_text
@@ -75,7 +77,7 @@
 			continue
 		maptext = "[style_open][copytext_char(text_to_play, 1, letter)][style_close]"
 		sleep(play_delay)
-	addtimer(CALLBACK(src, .proc/after_play, player), fade_out_delay)
+	addtimer(CALLBACK(src, PROC_REF(after_play), player), fade_out_delay)
 
 ///handles post-play effects like fade out after the fade out delay
 /atom/movable/screen/text/screen_text/proc/after_play(client/player)
@@ -83,7 +85,7 @@
 		end_play(player)
 		return
 	animate(src, alpha = 0, time = fade_out_time)
-	addtimer(CALLBACK(src, .proc/end_play, player), fade_out_time)
+	addtimer(CALLBACK(src, PROC_REF(end_play), player), fade_out_time)
 
 ///ends the play then deletes this screen object and plays the next one in queue if it exists
 /atom/movable/screen/text/screen_text/proc/end_play(client/player)

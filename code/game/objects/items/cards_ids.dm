@@ -15,6 +15,11 @@
 	name = "card"
 	desc = "Does card things."
 	icon = 'icons/obj/items/card.dmi'
+	worn_icon_list = list(
+		slot_l_hand_str = 'icons/mob/inhands/equipment/id_left.dmi',
+		slot_r_hand_str = 'icons/mob/inhands/equipment/id_right.dmi',
+	)
+	worn_icon_state = "card-id"
 	item_state_worn = TRUE
 	w_class = WEIGHT_CLASS_TINY
 	var/associated_account_number = 0
@@ -28,7 +33,6 @@
 	var/function = "storage"
 	var/data = "null"
 	var/special = null
-	item_state = "card-id"
 
 /obj/item/card/data/verb/label(t as text)
 	set name = "Label Disk"
@@ -36,14 +40,13 @@
 	set src in usr
 
 	if (t)
-		name = text("data disk- '[]'", t)
+		name = "data disk- '[t]'"
 	else
 		name = "data disk"
 
 /obj/item/card/data/clown
 	name = "\proper the coordinates to clown planet"
 	icon_state = "data"
-	item_state = "card-id"
 	layer = OBJ_LAYER
 	level = 2
 	desc = "This card contains coordinates to the fabled Clown Planet. Handle with care."
@@ -58,25 +61,24 @@
 	desc = "It's a card with a magnetic strip attached to some circuitry. It looks too busted to be used for anything but salvage."
 	name = "broken cryptographic sequencer"
 	icon_state = "emag"
-	item_state = "card-id"
 
 
 /obj/item/card/emag
 	desc = "It's a card with a magnetic strip attached to some circuitry."
 	name = "cryptographic sequencer"
 	icon_state = "emag"
-	item_state = "card-id"
-	flags_item = NOBLUDGEON
+	item_flags = NOBLUDGEON
 
 
 /obj/item/card/id
 	name = "identification card"
 	desc = "A card used to provide ID and determine access to a large array of machinery."
 	icon_state = "id"
-	item_state = "card-id"
 	var/access = list()
 	var/registered_name = "Unknown" // The name registered_name on the card
-	flags_equip_slot = ITEM_SLOT_ID
+	equip_slot_flags = ITEM_SLOT_ID
+	///Miscelaneous ID flags
+	var/id_flags = CAN_BUY_LOADOUT
 
 	var/blood_type = "\[UNSET\]"
 
@@ -85,8 +87,6 @@
 
 	///What category of items can you buy - used for armor and poucehs
 	var/marine_buy_choices = list()
-
-	var/can_buy_loadout = TRUE
 
 	//alt titles are handled a bit weirdly in order to unobtrusively integrate into existing ID system
 	var/assignment = null	//can be alt title or the actual job
@@ -99,7 +99,7 @@
 	var/iff_signal = NONE
 
 
-/obj/item/card/id/Initialize()
+/obj/item/card/id/Initialize(mapload)
 	. = ..()
 	marine_buy_choices = GLOB.marine_selector_cats.Copy() //by default you can buy the whole list
 	if(!ishuman(loc))
@@ -140,13 +140,13 @@
 	name = "identification card"
 	desc = "A silver card which shows honour and dedication."
 	icon_state = "silver"
-	item_state = "silver_id"
+	worn_icon_state = "silver_id"
 
 /obj/item/card/id/gold
 	name = "identification card"
 	desc = "A golden card which shows power and might."
 	icon_state = "gold"
-	item_state = "gold_id"
+	worn_icon_state = "gold_id"
 
 /obj/item/card/id/syndicate
 	name = "agent card"
@@ -221,7 +221,7 @@
 	name = "captain's spare ID"
 	desc = "The spare ID of the High Lord himself."
 	icon_state = "gold"
-	item_state = "gold_id"
+	worn_icon_state = "gold_id"
 	registered_name = CAPTAIN
 	assignment = CAPTAIN
 	access = ALL_MARINE_ACCESS
@@ -246,9 +246,40 @@
 	name = "dog tag"
 	desc = "A marine dog tag."
 	icon_state = "dogtag"
-	item_state = "dogtag"
+	worn_icon_state = "dogtag"
 	iff_signal = TGMC_LOYALIST_IFF
 	var/dogtag_taken = FALSE
+
+/obj/item/card/id/dogtag/update_icon_state()
+	. = ..()
+	if(dogtag_taken)
+		icon_state = initial(icon_state) + "_taken"
+		return
+	icon_state = initial(icon_state)
+
+/obj/item/card/id/dogtag/canStrip(mob/stripper, mob/owner)
+	. = ..()
+	if(!.)
+		return
+	if(dogtag_taken)
+		stripper.balloon_alert(stripper, "Info tag already taken")
+		return FALSE
+	if(owner.stat != DEAD)
+		stripper.balloon_alert(stripper, "[owner] isn't dead yet")
+		return FALSE
+
+/obj/item/card/id/dogtag/special_stripped_behavior(mob/stripper, mob/owner)
+	if(dogtag_taken)
+		return
+	stripper.balloon_alert(stripper, "Took info tag")
+	to_chat(stripper, span_notice("You take [owner]'s information tag, leaving the ID tag."))
+	dogtag_taken = TRUE
+	update_icon()
+	var/obj/item/dogtag/info_tag = new()
+	info_tag.fallen_names = list(registered_name)
+	info_tag.fallen_assignments = list(assignment)
+	stripper.put_in_hands(info_tag)
+	return TRUE
 
 // Vendor points for job override
 /obj/item/card/id/dogtag/smartgun
@@ -271,20 +302,26 @@
 		CAT_MEDSUP = MEDIC_TOTAL_BUY_POINTS,
 	)
 
+/obj/item/card/id/dogtag/fc
+	marine_points = list(
+		CAT_FCSUP = COMMANDER_TOTAL_BUY_POINTS,
+	)
+
 /obj/item/card/id/dogtag/full
 	marine_points = list(
 		CAT_SGSUP = DEFAULT_TOTAL_BUY_POINTS,
 		CAT_ENGSUP = ENGINEER_TOTAL_BUY_POINTS,
 		CAT_LEDSUP = DEFAULT_TOTAL_BUY_POINTS,
 		CAT_MEDSUP = MEDIC_TOTAL_BUY_POINTS,
+		CAT_FCSUP = COMMANDER_TOTAL_BUY_POINTS,
 	)
 
 /obj/item/card/id/dogtag/som
 	name = "\improper Sons of Mars dogtag"
 	desc = "Used by the Sons of Mars."
 	icon_state = "dogtag_som"
-	item_state = "dogtag_som"
-	iff_signal = SON_OF_MARS_IFF
+	worn_icon_state = "dogtag_som"
+	iff_signal = SOM_IFF
 
 
 /obj/item/card/id/dogtag/examine(mob/user)
@@ -300,10 +337,12 @@
 	icon = 'icons/obj/items/card.dmi'
 	w_class = WEIGHT_CLASS_TINY
 	var/fallen_names[0]
-	var/fallen_assignements[0]
+	var/fallen_assignments[0]
 
 /obj/item/dogtag/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(istype(I, /obj/item/dogtag))
 		var/obj/item/dogtag/D = I
@@ -311,23 +350,23 @@
 		name = "information dog tags"
 		if(D.fallen_names)
 			fallen_names += D.fallen_names
-		if(D.fallen_assignements)
-			fallen_assignements += D.fallen_assignements
+		if(D.fallen_assignments)
+			fallen_assignments += D.fallen_assignments
 		qdel(D)
 		return TRUE
 
 /obj/item/dogtag/examine(mob/user)
 	. = ..()
-	if(ishuman(user) && fallen_names && fallen_names.len)
-		if(fallen_names.len == 1)
-			to_chat(user, span_notice("It reads: \"[fallen_names[1]] - [fallen_assignements[1]]\"."))
+	if(ishuman(user) && fallen_names && length(fallen_names))
+		if(length(fallen_names) == 1)
+			to_chat(user, span_notice("It reads: \"[fallen_names[1]] - [fallen_assignments[1]]\"."))
 		else
 			var/msg = "<span class='notice'> It reads: "
 			for(var/x = 1 to length(fallen_names))
 				if (x == length(fallen_names))
-					msg += "\"[fallen_names[x]] - [fallen_assignements[x]]\""
+					msg += "\"[fallen_names[x]] - [fallen_assignments[x]]\""
 				else
-					msg += "\"[fallen_names[x]] - [fallen_assignements[x]]\", "
+					msg += "\"[fallen_names[x]] - [fallen_assignments[x]]\", "
 
 			msg += ".</span>"
 

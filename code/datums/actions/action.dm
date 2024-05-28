@@ -18,18 +18,18 @@ KEYBINDINGS
 	var/action_icon_state = "default"
 	var/background_icon = 'icons/mob/actions.dmi'
 	var/background_icon_state = "template"
-	/// holds a set of misc visual references to use with the overlay API. Always atleast one
+	///Holds a set of misc visual references to use with the overlay API. Always atleast one
 	var/list/visual_references = list()
 	/// Used for keybindings , use KEYBINDING_NORMAL or KEYBINDING_ALTERNATE for keybinding_activation or alternate_ability_activate
 	var/list/keybinding_signals = null
-	/// Defines what visual references will be initialized at round-start
+	///Defines what visual references will be initialized at round-start
 	var/action_type = ACTION_CLICK
-	/// Used for keeping track of the addition of the selected/active frames
+	///Used for keeping track of the addition of the selected/active frames
 	var/toggled = FALSE
 
 /datum/action/New(Target)
 	target = Target
-	RegisterSignal(target, COMSIG_PARENT_QDELETING, .proc/clean_action)
+	RegisterSignal(target, COMSIG_QDELETING, PROC_REF(clean_action))
 	button = new
 	button.icon = icon(background_icon, background_icon_state)
 	button.source_action = src
@@ -48,7 +48,7 @@ KEYBINDINGS
 		visual_references[VREF_MUTABLE_MAPTEXT] = maptext_list
 	switch(action_type)
 		if(ACTION_TOGGLE)
-			visual_references[VREF_MUTABLE_ACTIVE_FRAME] = mutable_appearance('icons/Marine/marine-weapons.dmi', "active", ACTION_LAYER_ACTION_ICON_STATE, FLOAT_PLANE)
+			visual_references[VREF_MUTABLE_ACTIVE_FRAME] = mutable_appearance('icons/mob/actions.dmi', "active", ACTION_LAYER_ACTION_ICON_STATE, FLOAT_PLANE)
 		if(ACTION_SELECT)
 			visual_references[VREF_MUTABLE_SELECTED_FRAME] = mutable_appearance('icons/mob/actions.dmi', "selected_frame", ACTION_LAYER_ACTION_ICON_STATE, FLOAT_PLANE)
 	visual_references[VREF_MUTABLE_ACTION_STATE] = mutable_appearance(action_icon, action_icon_state, HUD_LAYER, HUD_PLANE)
@@ -61,36 +61,35 @@ KEYBINDINGS
 	target = null
 	return ..()
 
+/// Cleans up the action if the owner is deleted
 /datum/action/proc/clean_action()
 	SIGNAL_HANDLER
+	SHOULD_CALL_PARENT(TRUE)
 	qdel(src)
 
 /datum/action/proc/should_show()
 	return TRUE
 
-/// Depending on the action type , toggles the selected/active frame to show without allowing stacking multiple overlays
+///Depending on the action type , toggles the selected/active frame to show without allowing stacking multiple overlays
 /datum/action/proc/set_toggle(value)
 	if(value == toggled)
-		return
-	if(value)
-		switch(action_type)
-			if(ACTION_SELECT)
-				button.add_overlay(visual_references[VREF_MUTABLE_SELECTED_FRAME])
-			if(ACTION_TOGGLE)
-				button.add_overlay(visual_references[VREF_MUTABLE_ACTIVE_FRAME])
-		toggled = TRUE
-		return
-	switch(action_type)
-		if(ACTION_SELECT)
-			button.cut_overlay(visual_references[VREF_MUTABLE_SELECTED_FRAME])
-		if(ACTION_TOGGLE)
-			button.cut_overlay(visual_references[VREF_MUTABLE_ACTIVE_FRAME])
-	toggled = FALSE
+		return FALSE
+	toggled = value
+	update_button_icon()
+	return TRUE
 
-/// A handler used to update the maptext and show the change immediately.
+///Setting this action as the active action
+/datum/action/proc/select()
+	set_toggle(TRUE)
+
+///Deselecting this action for use
+/datum/action/proc/deselect()
+	SIGNAL_HANDLER
+	set_toggle(FALSE)
+
+///A handler used to update the maptext and show the change immediately.
 /datum/action/proc/update_map_text(key_string, key_signal)
-	// The cutting needs to be done /BEFORE/ the string maptext gets changed
-	// Since byond internally recognizes it as a different image, and doesn't cut it properly
+	///The cutting needs to be done /BEFORE/ the string maptext gets changed. Since byond internally recognizes it as a different image, and doesn't cut it properly
 	var/mutable_appearance/reference = null
 	if(length(keybinding_signals) == 1)
 		reference = visual_references[VREF_MUTABLE_ACTION_STATE]
@@ -121,6 +120,17 @@ KEYBINDINGS
 			button.add_overlay(action_appearence)
 	if(background_icon_state != button.icon_state)
 		button.icon_state = background_icon_state
+	switch(action_type)
+		if(ACTION_SELECT)
+			button.cut_overlay(visual_references[VREF_MUTABLE_SELECTED_FRAME])
+		if(ACTION_TOGGLE)
+			button.cut_overlay(visual_references[VREF_MUTABLE_ACTIVE_FRAME])
+	if(toggled)
+		switch(action_type)
+			if(ACTION_SELECT)
+				button.add_overlay(visual_references[VREF_MUTABLE_SELECTED_FRAME])
+			if(ACTION_TOGGLE)
+				button.add_overlay(visual_references[VREF_MUTABLE_ACTIVE_FRAME])
 	handle_button_status_visuals()
 	return TRUE
 
@@ -140,7 +150,7 @@ KEYBINDINGS
 /datum/action/proc/keybind_activation()
 	SIGNAL_HANDLER
 	if(can_use_action())
-		INVOKE_ASYNC(src, .proc/action_activate)
+		INVOKE_ASYNC(src, PROC_REF(action_activate))
 	return COMSIG_KB_ACTIVATED
 
 ///Signal Handler for alternate actions
@@ -151,7 +161,12 @@ KEYBINDINGS
 /// Handler for what action to trigger, inherit from this and call parent before for extra actions
 /datum/action/proc/keybind_trigger(mob/source, datum/keybinding/kb_type)
 	SIGNAL_HANDLER
-	if(kb_type.keybind_signal == keybinding_signals[KEYBINDING_NORMAL])
+	/**
+	 * assumption: if no keybind ref passed you want to call normally.
+	 * would use _listen_lookup but that'd start getting cursed and overly expensive for what it is
+	 * Add it if you need it
+	 */
+	if(!kb_type || kb_type.keybind_signal == keybinding_signals[KEYBINDING_NORMAL])
 		return keybind_activation()
 	if(kb_type.keybind_signal == keybinding_signals[KEYBINDING_ALTERNATE])
 		return alternate_action_activate()
@@ -177,7 +192,7 @@ KEYBINDINGS
 	for(var/type in keybinding_signals)
 		var/signal = keybinding_signals[type]
 		if(signal)
-			RegisterSignal(owner, signal, .proc/keybind_trigger)
+			RegisterSignal(owner, signal, PROC_REF(keybind_trigger))
 			var/datum/keybinding/our_kb = GLOB.keybindings_by_signal[signal]
 			if(M.client && our_kb)
 				update_map_text(our_kb.get_keys_formatted(M.client), signal)
@@ -197,15 +212,15 @@ KEYBINDINGS
 	owner = null
 	SEND_SIGNAL(M, ACTION_REMOVED)
 
-//Should a AI element occasionally see if this ability should be used?
+///Should a AI element occasionally see if this ability should be used?
 /datum/action/proc/ai_should_start_consider()
 	return FALSE
 
-//When called, see if based on the surroundings should the AI use this ability
+///When called, see if based on the surroundings should the AI use this ability
 /datum/action/proc/ai_should_use(target)
 	return FALSE
 
-//This is the proc used to update all the action buttons.
+///This is the proc used to update all the action buttons.
 /mob/proc/update_action_buttons(reload_screen)
 	if(!hud_used || !client)
 		return

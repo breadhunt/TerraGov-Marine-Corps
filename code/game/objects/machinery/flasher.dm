@@ -34,6 +34,7 @@
 
 
 /obj/machinery/flasher/update_icon_state()
+	. = ..()
 	if(!(machine_stat & NOPOWER))
 		icon_state = "[base_state]1"
 	else
@@ -87,12 +88,11 @@
 
 
 /obj/machinery/flasher/emp_act(severity)
+	. = ..()
 	if(machine_stat & (BROKEN|NOPOWER))
-		..(severity)
 		return
 	if(prob(75/severity))
 		flash()
-	..(severity)
 
 /obj/machinery/flasher/portable/HasProximity(atom/movable/AM as mob|obj)
 	if ((disable) || (last_flash && world.time < last_flash + 150))
@@ -105,6 +105,8 @@
 
 /obj/machinery/flasher/portable/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 	if(iswrench(I))
 		anchored = !anchored
 
@@ -120,6 +122,8 @@
 
 /obj/machinery/flasher_button/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 	return attack_hand(user)
 
 /obj/machinery/flasher_button/attack_hand(mob/living/user)
@@ -142,7 +146,7 @@
 
 	for(var/obj/machinery/flasher/M in GLOB.machines)
 		if(M.id == id)
-			INVOKE_ASYNC(M, /obj/machinery/flasher.proc/flash)
+			INVOKE_ASYNC(M, TYPE_PROC_REF(/obj/machinery/flasher, flash))
 
 	sleep(5 SECONDS)
 

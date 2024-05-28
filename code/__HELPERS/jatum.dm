@@ -42,7 +42,7 @@
 			"path" = value
 		)
 
-	var/ref = "\ref[value]"
+	var/ref = text_ref(value)
 	var/existing_ref = seen_references[ref]
 	if(existing_ref)
 		return list(
@@ -50,7 +50,7 @@
 			"jatum\\id" = existing_ref)
 
 	// Simple incrementing ID system
-	var/ref_id = seen_references.len + 1
+	var/ref_id = length(seen_references) + 1
 	seen_references[ref] = ref_id
 
 	if(istype(value, /matrix)) // matricies work with json_encode so use a custom arglist
@@ -125,7 +125,7 @@
 		json_structure["jatum\\new_arglist"] = _jatum_serialize_value(new_arglist, seen_references)
 
 	for(var/var_name in D.vars)
-		if(var_name == "vars" || var_name == "parent_type" || var_name == "type")
+		if(var_name == "vars" || var_name == "parent_type" || var_name == "type" || var_name == "open_uis")
 			continue
 
 		var/d_value = D.vars[var_name]
@@ -148,7 +148,6 @@
 	try
 		structure = json_decode(json)
 	catch
-		log_debug("Jatum failed to deserialize, the json in question was : [json]")
 		return
 	if(!structure)
 		CRASH("Invalid JSON!")

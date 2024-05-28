@@ -1,23 +1,32 @@
 /obj/effect/acid_hole
 	name = "hole"
 	desc = "What could have done this? Something agile enough could probably climb through."
-	icon = 'icons/effects/new_acid.dmi'
-	icon_state = "hole_0"
+	icon = 'icons/obj/smooth_objects/acid-hole.dmi'
+	icon_state = "acid-hole-0"
+	smoothing_flags = SMOOTH_BITMASK
+	smoothing_groups = list(SMOOTH_GROUP_ACID_HOLE)
+	canSmoothWith = list( //smooths with everything a regular wall does, so as to keep orientation consistent
+		SMOOTH_GROUP_SURVIVAL_TITANIUM_WALLS,
+		SMOOTH_GROUP_AIRLOCK,
+		SMOOTH_GROUP_WINDOW_FRAME,
+		SMOOTH_GROUP_WINDOW_FULLTILE,
+	)
+	base_icon_state = "acid-hole"
 	anchored = TRUE
 	resistance_flags = RESIST_ALL
 	layer = LOWER_ITEM_LAYER
 	var/turf/closed/wall/holed_wall
 
-/obj/effect/acid_hole/Initialize()
+/obj/effect/acid_hole/Initialize(mapload)
 	. = ..()
 	if(iswallturf(loc))
 		var/turf/closed/wall/W = loc
 		W.acided_hole = src
 		holed_wall = W
 		holed_wall.opacity = FALSE
-		if(W.junctiontype & (NORTH|SOUTH))
+		if(W.smoothing_junction & (NORTH_JUNCTION|SOUTH_JUNCTION))
 			setDir(EAST)
-		if(W.junctiontype & (EAST|WEST))
+		if(W.smoothing_junction & (EAST_JUNCTION|WEST_JUNCTION))
 			setDir(SOUTH)
 
 
@@ -28,20 +37,15 @@
 		holed_wall = null
 	return ..()
 
-
-/obj/effect/acid_hole/fire_act()
-	return
-
-
 /obj/effect/acid_hole/MouseDrop_T(mob/M, mob/user)
-	if (!holed_wall)
+	. = ..()
+	if(!holed_wall)
 		return
-
 	if(M == user && isxeno(user))
 		use_wall_hole(user)
 
 
-/obj/effect/acid_hole/specialclick(mob/living/carbon/user)
+/obj/effect/acid_hole/CtrlClick(mob/living/carbon/user)
 	if(!isxeno(user))
 		return
 	if(!user.CanReach(src))
@@ -57,7 +61,7 @@
 		return
 
 	playsound(src, 'sound/effects/metal_creaking.ogg', 25, 1)
-	if(do_after(user,60, FALSE, holed_wall, BUSY_ICON_HOSTILE) && !QDELETED(src) && !user.lying_angle)
+	if(do_after(user, 60, IGNORE_HELD_ITEM, holed_wall, BUSY_ICON_HOSTILE) && !QDELETED(src) && !user.lying_angle)
 		holed_wall.take_damage(rand(2000,3500))
 		user.emote("roar")
 
@@ -69,7 +73,7 @@
 	var/mob_dir = get_dir(user, src)
 	var/crawl_dir = dir & mob_dir
 	if(!crawl_dir)
-		crawl_dir = turn(dir,180) & mob_dir
+		crawl_dir = REVERSE_DIR(dir) & mob_dir
 	if(!crawl_dir)
 		return
 
@@ -101,7 +105,7 @@
 
 	to_chat(user, span_notice("You start crawling through the hole."))
 
-	if(do_after(user, 15, FALSE, src, BUSY_ICON_HOSTILE) && !T.density && !user.lying_angle && !user.buckled)
+	if(do_after(user, 15, IGNORE_HELD_ITEM, src, BUSY_ICON_HOSTILE) && !T.density && !user.lying_angle && !user.buckled)
 		for(var/obj/O in T)
 			if(!O.CanPass(user, user.loc))
 				return
@@ -116,11 +120,13 @@
 //Throwing Shiet
 /obj/effect/acid_hole/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	var/mob_dir = get_dir(user, src)
 	var/crawl_dir = dir & mob_dir
 	if(!crawl_dir)
-		crawl_dir = turn(dir, 180) & mob_dir
+		crawl_dir = REVERSE_DIR(dir) & mob_dir
 	if(!crawl_dir)
 		return
 
@@ -140,7 +146,7 @@
 
 		to_chat(user, span_notice("You take the position to throw [G]."))
 
-		if(!do_after(user, 10, TRUE, src, BUSY_ICON_HOSTILE) || !T || T.density)
+		if(!do_after(user, 10, NONE, src, BUSY_ICON_HOSTILE) || !T || T.density)
 			return
 
 		user.visible_message(span_warning("[user] throws [G] through [src]!"), \
@@ -162,7 +168,7 @@
 
 		to_chat(user, span_notice("You take the position to throw [F]."))
 
-		if(!do_after(user,10, TRUE, src, BUSY_ICON_GENERIC) || !T || T.density)
+		if(!do_after(user, 10, NONE, src, BUSY_ICON_GENERIC) || !T || T.density)
 			return
 
 		user.visible_message(span_warning("[user] throws [F] through [src]!"), \

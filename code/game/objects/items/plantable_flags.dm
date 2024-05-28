@@ -3,8 +3,8 @@
 	desc = "It's a one time use flag built into a telescoping pole ripe for planting."
 	icon = 'icons/obj/items/plantable_flag.dmi'
 	icon_state = "flag_collapsed"
-	force = 3.0
-	throwforce = 2.0
+	force = 3
+	throwforce = 2
 	throw_speed = 1
 	throw_range = 4
 	w_class = WEIGHT_CLASS_SMALL
@@ -18,24 +18,24 @@
 
 /obj/item/flag_base/attack_self(mob/user)
 	to_chat(user, "<span class='warning'>You start to deploy the flag between your feet...")
-	if(!do_after(usr, 1 SECONDS, TRUE, src, BUSY_ICON_BUILD))
+	if(!do_after(usr, 1 SECONDS, NONE, src, BUSY_ICON_BUILD))
 		to_chat(user, "<span class='warning'>You decide against deploying the flag here.")
 		return
 
 	playsound(loc, 'sound/effects/thud.ogg', 100)
 	user.dropItemToGround(src)
 	is_collapsed = FALSE
-	update_icon_state()
+	update_appearance()
 
 
 /obj/item/flag_base/attack_hand(mob/living/user)
 	if(!is_collapsed)
-		if(!do_after(usr, 1 SECONDS, TRUE, src, BUSY_ICON_BUILD))
+		if(!do_after(usr, 1 SECONDS, NONE, src, BUSY_ICON_BUILD))
 			to_chat(user, "<span class='warning'>You decide against removing the flag here.")
 			return
 		is_collapsed = TRUE
-		update_icon_state()
-	. = ..()
+		update_appearance()
+	return ..()
 
 
 /obj/item/flag_base/update_icon_state()

@@ -26,16 +26,14 @@
 	// *** Flags *** //
 	caste_flags = CASTE_DO_NOT_ALERT_LOW_LIFE|CASTE_IS_A_MINION
 	can_flags = CASTE_CAN_BE_QUEEN_HEALED
+	caste_traits = null
 
 	// *** Defense *** //
 	soft_armor = list(MELEE = 30, BULLET = 30, LASER = 25, ENERGY = 20, BOMB = 20, BIO = 20, FIRE = 30, ACID = 20)
 
-	// *** Ranged Attack *** //
-	charge_type = CHARGE_TYPE_LARGE
-
 	minimap_icon = "xenominion"
 
 	actions = list(
-		/datum/action/xeno_action/xeno_resting,
-		/datum/action/xeno_action/activable/forward_charge/unprecise,
+		/datum/action/ability/xeno_action/xeno_resting,
+		/datum/action/ability/activable/xeno/charge/forward_charge/unprecise,
 	)

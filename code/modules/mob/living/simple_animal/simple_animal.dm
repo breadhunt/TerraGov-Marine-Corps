@@ -31,9 +31,9 @@
 	var/shouldwakeup = FALSE //convenience var for forcibly waking up an idling AI on next check.
 
 	//Interaction
-	var/response_help   = "pokes"
+	var/response_help = "pokes"
 	var/response_disarm = "shoves"
-	var/response_harm   = "hits"
+	var/response_harm = "hits"
 	var/harm_intent_damage = 3
 	var/force_threshold = 0 //Minimum force required to deal any damage
 	var/healable = TRUE
@@ -46,15 +46,12 @@
 	attack_sound = null
 	friendly = "nuzzles" //If the mob does no damage with it's attack
 	var/obj_damage = 0 //how much damage this simple animal does to objects, if any
-	var/attacked_sound = "punch" //Played when someone punches the creature
+	var/attacked_sound = SFX_PUNCH //Played when someone punches the creature
 	var/armour_penetration = 0 //How much armour they ignore, as a flat reduction from the targets armour value
 	var/melee_damage_type = BRUTE //Damage type of a simple mob's melee attack, should it do damage.
 	var/list/damage_coeff = list(BRUTE = 1, BURN = 1, TOX = 1, CLONE = 1, STAMINA = 0, OXY = 1) // 1 for full damage , 0 for none , -1 for 1:1 heal from that source
 
-	//Gibber thingy
-	var/nutrition = NUTRITION_WELLFED
-
-/mob/living/simple_animal/Initialize()
+/mob/living/simple_animal/Initialize(mapload)
 	. = ..()
 	GLOB.simple_animals[AIStatus] += src
 	if(gender == PLURAL)
@@ -176,15 +173,6 @@
 	if(changed)
 		animate(src, transform = ntransform, time = 2, easing = EASE_IN|EASE_OUT)
 
-
-/mob/living/simple_animal/bullet_act(obj/projectile/Proj)
-	if(!Proj || Proj.damage <= 0)
-		return FALSE
-
-	adjustBruteLoss(Proj.damage)
-	return TRUE
-
-
 /mob/living/simple_animal/attack_hand(mob/living/user)
 	. = ..()
 	switch(user.a_intent)
@@ -209,30 +197,28 @@
 			return TRUE
 
 
-/mob/living/simple_animal/attack_alien(mob/living/carbon/xenomorph/X, damage_amount = X.xeno_caste.melee_damage, damage_type = BRUTE, damage_flag = "", effects = TRUE, armor_penetration = 0, isrightclick = FALSE)
+/mob/living/simple_animal/attack_alien(mob/living/carbon/xenomorph/xeno_attacker, damage_amount = xeno_attacker.xeno_caste.melee_damage, damage_type = BRUTE, armor_type = MELEE, effects = TRUE, armor_penetration = xeno_attacker.xeno_caste.melee_ap, isrightclick = FALSE)
 	. = ..()
 	if(!.)
 		return
-	if(X.a_intent == INTENT_DISARM)
+	if(xeno_attacker.a_intent == INTENT_DISARM)
 		playsound(loc, 'sound/weapons/pierce.ogg', 25, 1, -1)
-		visible_message(span_danger("[X] [response_disarm] [name]!"), \
-				span_userdanger("[X] [response_disarm] [name]!"))
-		log_combat(X, src, "disarmed")
+		visible_message(span_danger("[xeno_attacker] [response_disarm] [name]!"), \
+				span_userdanger("[xeno_attacker] [response_disarm] [name]!"))
+		log_combat(xeno_attacker, src, "disarmed")
 	else
 		var/damage = rand(15, 30)
-		visible_message(span_danger("[X] has slashed at [src]!"), \
-				span_userdanger("[X] has slashed at [src]!"))
+		visible_message(span_danger("[xeno_attacker] has slashed at [src]!"), \
+				span_userdanger("[xeno_attacker] has slashed at [src]!"))
 		playsound(loc, 'sound/weapons/slice.ogg', 25, 1, -1)
 		attack_threshold_check(damage)
-		log_combat(X, src, "attacked")
+		log_combat(xeno_attacker, src, "attacked")
 	return TRUE
 
 
-/mob/living/simple_animal/Stat()
+/mob/living/simple_animal/get_status_tab_items()
 	. = ..()
-
-	if(statpanel("Game"))
-		stat("Health:", "[round((health / maxHealth) * 100)]%")
+	. += "Health: [round((health / maxHealth) * 100)]%"
 
 
 /mob/living/simple_animal/ex_act(severity)
@@ -241,12 +227,15 @@
 	switch(severity)
 		if(EXPLODE_DEVASTATE)
 			gib()
+			return
 		if(EXPLODE_HEAVY)
 			adjustBruteLoss(60)
-			UPDATEHEALTH(src)
 		if(EXPLODE_LIGHT)
 			adjustBruteLoss(30)
-			UPDATEHEALTH(src)
+		if(EXPLODE_WEAK)
+			adjustBruteLoss(15)
+
+	UPDATEHEALTH(src)
 
 
 /mob/living/simple_animal/get_idcard(hand_first)
@@ -270,7 +259,7 @@
 		visible_message(span_warning("[src] looks unharmed."))
 		return FALSE
 	else
-		apply_damage(damage, damagetype, blocked = get_soft_armor(armorcheck))
+		apply_damage(damage, damagetype, blocked = armorcheck)
 		UPDATEHEALTH(src)
 		return TRUE
 
@@ -322,33 +311,33 @@
 	set waitfor = FALSE
 	if(speak_chance)
 		if(prob(speak_chance) || override)
-			if(speak && speak.len)
-				if((emote_hear && emote_hear.len) || (emote_see && emote_see.len))
+			if(length(speak))
+				if((emote_hear && length(emote_hear)) || (emote_see && length(emote_see)))
 					var/length = speak.len
-					if(emote_hear && emote_hear.len)
+					if(emote_hear && length(emote_hear))
 						length += emote_hear.len
-					if(emote_see && emote_see.len)
+					if(emote_see && length(emote_see))
 						length += emote_see.len
 					var/randomValue = rand(1,length)
-					if(randomValue <= speak.len)
+					if(randomValue <= length(speak))
 						say(pick(speak), forced = "poly")
 					else
 						randomValue -= speak.len
-						if(emote_see && randomValue <= emote_see.len)
+						if(emote_see && randomValue <= length(emote_see))
 							emote("me [pick(emote_see)]", 1)
 						else
 							emote("me [pick(emote_hear)]", 2)
 				else
 					say(pick(speak), forced = "poly")
 			else
-				if(!(emote_hear && emote_hear.len) && (emote_see && emote_see.len))
+				if(!length(emote_hear) && length(emote_see))
 					emote("me", 1, pick(emote_see))
-				if((emote_hear && emote_hear.len) && !(emote_see && emote_see.len))
+				if(length(emote_hear) && !length(emote_see))
 					emote("me", 2, pick(emote_hear))
-				if((emote_hear && emote_hear.len) && (emote_see && emote_see.len))
-					var/length = emote_hear.len + emote_see.len
+				if(length(emote_hear) && length(emote_see))
+					var/length = length(emote_hear) + emote_see.len
 					var/pick = rand(1,length)
-					if(pick <= emote_see.len)
+					if(pick <= length(emote_see))
 						emote("me", 1, pick(emote_see))
 					else
 						emote("me", 2, pick(emote_hear))

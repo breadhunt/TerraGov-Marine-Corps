@@ -1,5 +1,5 @@
 //Color variant defines
-#define SPEED_COLOR ""
+#define NORMAL_COLOR ""
 #define RESTING_COLOR "white"
 #define STICKY_COLOR "green"
 
@@ -22,7 +22,7 @@
 
 	var/obj/alien/weeds/node/parent_node
 	///The color variant of the sprite
-	var/color_variant = SPEED_COLOR
+	var/color_variant = NORMAL_COLOR
 	///The healing buff when resting on this weed
 	var/resting_buff = 1
 	///If these weeds are not destroyed but just swapped
@@ -35,6 +35,10 @@
 
 /obj/alien/weeds/Initialize(mapload, obj/alien/weeds/node/node, swapped = FALSE)
 	. = ..()
+	var/static/list/connections = list(
+		COMSIG_FIND_FOOTSTEP_SOUND = PROC_REF(footstep_override)
+	)
+	AddElement(/datum/element/connect_loc, connections)
 
 	if(!isnull(node))
 		if(!istype(node))
@@ -55,7 +59,7 @@
 	for(var/mob/living/L in range(1, src))
 		SEND_SIGNAL(L, COMSIG_LIVING_WEEDS_ADJACENT_REMOVED)
 	SEND_SIGNAL(loc, COMSIG_TURF_WEED_REMOVED)
-	INVOKE_NEXT_TICK(src, .proc/update_neighbours, loc)
+	INVOKE_NEXT_TICK(src, PROC_REF(update_neighbours), loc)
 	return ..()
 
 /obj/alien/weeds/examine(mob/user)
@@ -109,9 +113,9 @@
 ///Set the parent_node to node
 /obj/alien/weeds/proc/set_parent_node(atom/node)
 	if(parent_node)
-		UnregisterSignal(parent_node, COMSIG_PARENT_QDELETING)
+		UnregisterSignal(parent_node, COMSIG_QDELETING)
 	parent_node = node
-	RegisterSignal(parent_node, COMSIG_PARENT_QDELETING, .proc/clean_parent_node)
+	RegisterSignal(parent_node, COMSIG_QDELETING, PROC_REF(clean_parent_node))
 
 ///Clean the parent node var
 /obj/alien/weeds/proc/clean_parent_node()
@@ -119,6 +123,11 @@
 	if(!parent_node.swapped)
 		SSweeds_decay.decaying_list += src
 	parent_node = null
+
+///overrides the turf's normal footstep sound
+/obj/alien/weeds/proc/footstep_override(atom/movable/source, list/footstep_overrides)
+	SIGNAL_HANDLER
+	footstep_overrides[FOOTSTEP_RESIN] = layer
 
 /obj/alien/weeds/sticky
 	name = "sticky weeds"
@@ -128,7 +137,7 @@
 /obj/alien/weeds/sticky/Initialize(mapload, obj/alien/weeds/node/node)
 	. = ..()
 	var/static/list/connections = list(
-		COMSIG_ATOM_ENTERED = .proc/slow_down_crosser
+		COMSIG_ATOM_ENTERED = PROC_REF(slow_down_crosser)
 	)
 	AddElement(/datum/element/connect_loc, connections)
 
@@ -150,7 +159,7 @@
 	if(!ishuman(crosser))
 		return
 
-	if(CHECK_MULTIPLE_BITFIELDS(crosser.flags_pass, HOVERING))
+	if(CHECK_MULTIPLE_BITFIELDS(crosser.pass_flags, HOVERING))
 		return
 
 	var/mob/living/carbon/human/victim = crosser
@@ -172,43 +181,63 @@
 /obj/alien/weeds/weedwall
 	layer = RESIN_STRUCTURE_LAYER
 	plane = GAME_PLANE
+	icon = 'icons/obj/smooth_objects/weedwall.dmi'
 	icon_state = "weedwall"
 
 /obj/alien/weeds/weedwall/update_icon_state()
+	. = ..()
 	var/turf/closed/wall/W = loc
-	icon_state = W.junctiontype ? "weedwall[W.junctiontype]" : initial(icon_state)
-	icon_state += color_variant
+	if(!istype(W))
+		icon_state = initial(icon_state)
+	else
+		icon_state = W.smoothing_junction ? "weedwall-[W.smoothing_junction]" : initial(icon_state)
+	if(color_variant == STICKY_COLOR)
+		icon = 'icons/obj/smooth_objects/weedwallsticky.dmi'
+	else if(color_variant == RESTING_COLOR)
+		icon = 'icons/obj/smooth_objects/weedwallrest.dmi'
 
 // =================
 // windowed weed wall
 /obj/alien/weeds/weedwall/window
 	layer = ABOVE_TABLE_LAYER
+	///The type of window we're expecting to grow on
+	var/window_type = /obj/structure/window/framed
 
 /obj/alien/weeds/weedwall/window/update_icon_state()
+	. = ..()
 	var/obj/structure/window/framed/F = locate() in loc
-	icon_state = F?.junction ? "weedwall[F.junction]" : initial(icon_state)
-	icon_state += color_variant
+	icon_state = F?.smoothing_junction ? "weedwall-[F.smoothing_junction]" : initial(icon_state)
+	if(color_variant == STICKY_COLOR)
+		icon = 'icons/obj/smooth_objects/weedwallsticky.dmi'
+	if(color_variant == RESTING_COLOR)
+		icon = 'icons/obj/smooth_objects/weedwallrest.dmi'
 
 /obj/alien/weeds/weedwall/window/MouseDrop_T(atom/dropping, mob/user)
-	var/obj/structure/window/framed/F = locate() in loc
-	if(!F)
+	var/obj/structure/window = locate(window_type) in loc
+	if(!window)
 		return ..()
-	return F.MouseDrop_T(dropping, user)
+	return window.MouseDrop_T(dropping, user)
 
-/obj/alien/weeds/weedwall/frame
-	layer = ABOVE_TABLE_LAYER
-
-/obj/alien/weeds/weedwall/frame/update_icon_state()
-	var/obj/structure/window_frame/WF = locate() in loc
-	icon_state = WF?.junction ? "weedframe[WF.junction]" : initial(icon_state)
-	icon_state += color_variant
-
-/obj/alien/weeds/weedwall/frame/MouseDrop_T(atom/dropping, mob/user)
-	var/obj/structure/window_frame/WF = locate() in loc
-	if(!WF)
+/obj/alien/weeds/weedwall/window/CtrlClick(mob/living/carbon/user)
+	var/obj/structure/window = locate(window_type) in loc
+	if(!window)
 		return ..()
-	return WF.MouseDrop_T(dropping, user)
+	return window.CtrlClick(user)
 
+/obj/alien/weeds/weedwall/window/attackby(obj/item/I, mob/user, params) //yes, this blocks attacking the weed itself, but if you destroy the frame you destroy the weed!
+	var/obj/structure/window = locate(window_type) in loc
+	if(!window)
+		return ..()
+	return window.attackby(I, user, params)
+
+/obj/alien/weeds/weedwall/window/attack_alien(mob/living/carbon/xenomorph/xeno_attacker, damage_amount = xeno_attacker.xeno_caste.melee_damage, damage_type = BRUTE, armor_type = MELEE, effects = TRUE, armor_penetration = xeno_attacker.xeno_caste.melee_ap, isrightclick = FALSE)
+	var/obj/structure/window = locate(window_type) in loc
+	if(!window)
+		return ..()
+	return window.attack_alien(xeno_attacker, damage_amount, damage_type, armor_type, effects, armor_penetration, isrightclick)
+
+/obj/alien/weeds/weedwall/window/frame
+	window_type = /obj/structure/window_frame
 
 // =================
 // weed node - grows other weeds
@@ -224,7 +253,7 @@
 	/// What type of weeds this node spreads
 	var/obj/alien/weeds/weed_type = /obj/alien/weeds
 	///The plasma cost multiplier for this node
-	var/plasma_cost_mult = 1
+	var/ability_cost_mult = 1
 
 /obj/alien/weeds/node/Initialize(mapload, obj/alien/weeds/node/node)
 	var/swapped = FALSE
@@ -274,16 +303,16 @@
 //Sticky weed node
 /obj/alien/weeds/node/sticky
 	name = STICKY_WEED
-	desc = "A weird, pulsating red node."
+	desc = "A weird, pulsating blue node."
 	weed_type = /obj/alien/weeds/sticky
 	color_variant = STICKY_COLOR
 	node_icon = "weednodegreen"
-	plasma_cost_mult = 3
+	ability_cost_mult = 3
 
 /obj/alien/weeds/node/sticky/Initialize(mapload, obj/alien/weeds/node/node)
 	. = ..()
 	var/static/list/connections = list(
-		COMSIG_ATOM_ENTERED = .proc/slow_down_crosser
+		COMSIG_ATOM_ENTERED = PROC_REF(slow_down_crosser)
 	)
 	AddElement(/datum/element/connect_loc, connections)
 
@@ -300,7 +329,7 @@
 	if(!ishuman(crosser))
 		return
 
-	if(CHECK_MULTIPLE_BITFIELDS(crosser.flags_pass, HOVERING))
+	if(CHECK_MULTIPLE_BITFIELDS(crosser.pass_flags, HOVERING))
 		return
 
 	var/mob/living/carbon/human/victim = crosser
@@ -313,9 +342,9 @@
 //Resting weed node
 /obj/alien/weeds/node/resting
 	name = RESTING_WEED
-	desc = "A weird, pulsating white node."
+	desc = "A weird, pulsating pale node."
 	weed_type = /obj/alien/weeds/resting
 	color_variant = RESTING_COLOR
 	node_icon = "weednodewhite"
 	resting_buff = RESTING_BUFF
-	plasma_cost_mult = 2
+	ability_cost_mult = 2

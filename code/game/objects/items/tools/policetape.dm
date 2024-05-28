@@ -3,7 +3,7 @@
 	name = "tape roll"
 	icon = 'icons/obj/policetape.dmi'
 	icon_state = "rollstart"
-	flags_item = NOBLUDGEON
+	item_flags = NOBLUDGEON
 	w_class = WEIGHT_CLASS_SMALL
 	var/turf/start
 	var/turf/end
@@ -18,10 +18,10 @@
 	var/crumpled = 0
 	var/icon_base
 
-/obj/item/tape/Initialize()
+/obj/item/tape/Initialize(mapload)
 	. = ..()
 	var/static/list/connections = list(
-		COMSIG_ATOM_ENTERED = .proc/on_cross,
+		COMSIG_ATOM_ENTERED = PROC_REF(on_cross),
 	)
 	AddElement(/datum/element/connect_loc, connections)
 

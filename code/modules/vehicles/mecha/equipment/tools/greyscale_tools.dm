@@ -20,13 +20,13 @@
 
 /obj/item/mecha_parts/mecha_equipment/armor/explosive
 	name = "explosive armor booster"
-	desc = "Increases armor against explosions by 50%."
+	desc = "Increases armor against explosions by 25%."
 	icon_state = "armor_explosive"
 	iconstate_name = "armor_explosive"
 	protect_name = "Explosive Armor"
 	mech_flags = EXOSUIT_MODULE_GREYSCALE
 	slowdown = 0.3
-	armor_mod = list(BOMB = 50)
+	armor_mod = list(BOMB = 25)
 
 
 /obj/item/mecha_parts/mecha_equipment/generator/greyscale
@@ -98,7 +98,7 @@
 	///reference to image that is used as an overlay
 	var/image/overlay
 
-/obj/item/mecha_parts/mecha_equipment/ability/Initialize()
+/obj/item/mecha_parts/mecha_equipment/ability/Initialize(mapload)
 	. = ..()
 	if(icon_state)
 		overlay = image('icons/mecha/mecha_ability_overlays.dmi', icon_state = icon_state, layer = 10)
@@ -128,7 +128,7 @@
 	///sound to loop when the dash is activated
 	var/datum/looping_sound/mech_overload/sound_loop
 
-/obj/item/mecha_parts/mecha_equipment/ability/dash/Initialize()
+/obj/item/mecha_parts/mecha_equipment/ability/dash/Initialize(mapload)
 	. = ..()
 	sound_loop = new
 
@@ -178,4 +178,4 @@
 	icon_state = "smoke_gas"
 	mech_flags = EXOSUIT_MODULE_GREYSCALE
 	ability_to_grant = /datum/action/vehicle/sealed/mecha/mech_smoke
-	smoke_type = /obj/effect/particle_effect/smoke/tactical
+	smoke_type = /datum/effect_system/smoke_spread/tactical

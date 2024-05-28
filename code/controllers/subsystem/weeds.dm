@@ -1,6 +1,7 @@
 SUBSYSTEM_DEF(weeds)
 	name = "Weed"
 	priority = FIRE_PRIORITY_WEED
+	flags = SS_NO_INIT
 	runlevels = RUNLEVEL_LOBBY|RUNLEVEL_SETUP|RUNLEVEL_GAME|RUNLEVEL_POSTGAME
 	wait = 5 SECONDS
 
@@ -55,7 +56,7 @@ SUBSYSTEM_DEF(weeds)
 		if(MC_TICK_CHECK)
 			return
 		// Adds a bit of jitter to the spawning weeds.
-		addtimer(CALLBACK(src, .proc/create_weed, T, creating[T]), rand(1, 3 SECONDS))
+		addtimer(CALLBACK(src, PROC_REF(create_weed), T, creating[T]), rand(1, 3 SECONDS))
 		pending -= T
 		spawn_attempts_by_node -= T
 		creating -= T
@@ -68,7 +69,7 @@ SUBSYSTEM_DEF(weeds)
 		return FALSE
 
 	for(var/turf/T AS in node.node_turfs)
-		if(pending[T] && (get_dist_euclide_square(node, T) >= get_dist_euclide_square(get_step(pending[T], 0), T)))
+		if(pending[T] && (get_dist_euclidean_square(node, T) >= get_dist_euclidean_square(get_step(pending[T], 0), T)))
 			continue
 		pending[T] = node
 		spawn_attempts_by_node[T] = 5 //5 attempts maximum
@@ -84,14 +85,14 @@ SUBSYSTEM_DEF(weeds)
 		if(istype(O, /obj/structure/window/framed))
 			weed_to_spawn = /obj/alien/weeds/weedwall/window
 		else if(istype(O, /obj/structure/window_frame))
-			weed_to_spawn = /obj/alien/weeds/weedwall/frame
+			weed_to_spawn = /obj/alien/weeds/weedwall/window/frame
 		else if(istype(O, /obj/machinery/door) && O.density)
 			return
 		else if(istype(O, /obj/alien/weeds))
 			if(istype(O, /obj/alien/weeds/node))
 				return
 			var/obj/alien/weeds/weed = O
-			if(weed.parent_node && weed.parent_node != node && get_dist_euclide_square(node, weed) >= get_dist_euclide_square(weed.parent_node, weed))
+			if(weed.parent_node && weed.parent_node != node && get_dist_euclidean_square(node, weed) >= get_dist_euclidean_square(weed.parent_node, weed))
 				return
 			if((weed.type == weed_to_spawn) && (weed.color_variant == node.color_variant))
 				weed.set_parent_node(node)

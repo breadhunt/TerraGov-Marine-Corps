@@ -2,7 +2,9 @@
 	name = "exosuit control console"
 	desc = "Used to remotely locate or lockdown exosuits."
 	icon = 'icons/obj/machines/computer.dmi'
-	icon_state = "mecha"
+	icon_state = "computer"
+	screen_overlay = "mecha"
+	broken_icon = "computer_blue_broken"
 	req_access = list()
 
 /obj/machinery/computer/mecha/ui_interact(mob/user, datum/tgui/ui)
@@ -124,7 +126,7 @@
 	if(recharging)
 		return
 	if(chassis)
-		addtimer(CALLBACK(src, /obj/item/mecha_parts/mecha_tracking/proc/recharge), 5 SECONDS, TIMER_UNIQUE | TIMER_OVERRIDE)
+		addtimer(CALLBACK(src, TYPE_PROC_REF(/obj/item/mecha_parts/mecha_tracking, recharge)), 5 SECONDS, TIMER_UNIQUE | TIMER_OVERRIDE)
 		recharging = TRUE
 
 /**

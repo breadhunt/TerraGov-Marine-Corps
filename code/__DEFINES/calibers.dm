@@ -19,6 +19,7 @@
 #define CALIBER_357 ".357 Magnum"
 #define CALIBER_454 ".454 Casull" //Mateba
 #define CALIBER_762X38 "7.62x38mm Rimmed" //UPP
+#define CALIBER_12x7 "12.7 Magnum"
 
 // SMGs
 #define CALIBER_46X30 "4.6x30mm"
@@ -36,6 +37,7 @@
 #define CALIBER_556X45 "5.56x45mm"
 #define CALIBER_16G "16 gauge" //Autoshotty, but coded like a rifle so eeh
 #define CALIBER_4570 ".45-70 Government"
+#define CALIBER_3006 ".30-06"
 #define CALIBER_492X34_CASELESS "4.92x34mm caseless"
 #define CALIBER_10X28_CASELESS "10x28mm caseless" //Spec scout and OG Smartgun
 #define CALIBER_762X51 "7.62x51mm" //Minigun
@@ -50,6 +52,7 @@
 // --- Snipers ---
 #define CALIBER_86X70 "8.6x70mm"
 #define CALIBER_10X99 "10x99mm"
+#define CALIBER_14X5 "14x5mm"
 #define CALIBER_762X54 "7.62x54mm Rimmed" //SVD and mosin
 #define CALIBER_557 ".557/440" //Martini Henry
 #define CALIBER_RAILGUN "rail projectile"
@@ -61,7 +64,7 @@
 #define CALIBER_67MM "67mm shell"
 #define CALIBER_68MM "68mm rocket"
 #define CALIBER_37MM "37mm"
-#define CALIBER_75MM "75mm" //Heavy Recoilless Rifle
+#define CALIBER_15CM "155mm" //Heavy Infantry Support Gun
 
 #define CALIBER_ROCKETARRAY "rocket array"
 #define CALIBER_ROCKETTOY "toy rocket"
@@ -69,6 +72,7 @@
 // --- Special ---
 #define CALIBER_FUEL "Fuel"
 #define CALIBER_FUEL_THICK "UT-Napthal Fuel"
+#define CALIBER_WATER "Water"
 #define CALIBER_10X28 "10x28mm" //Sentry, OG Smartgun and SR-26 Sniper?
 #define CALIBER_86 "86mm" //MBT Main Cannon
 #define CALIBER_PEPPERBALL "SAN Ball " //Pepperball gun

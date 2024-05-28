@@ -9,10 +9,10 @@
 	icon_state = "lightstick_blue0"
 	var/s_color = "blue"
 
-/obj/item/lightstick/Initialize()
+/obj/item/lightstick/Initialize(mapload)
 	. = ..()
 	var/static/list/connections = list(
-		COMSIG_ATOM_ENTERED = .proc/on_cross,
+		COMSIG_ATOM_ENTERED = PROC_REF(on_cross),
 	)
 	AddElement(/datum/element/connect_loc, connections)
 
@@ -39,7 +39,7 @@
 		return
 
 	to_chat(user, "You start pulling out \the [src].")
-	if(!do_after(user,20, TRUE, src, BUSY_ICON_GENERIC))
+	if(!do_after(user,20, NONE, src, BUSY_ICON_GENERIC))
 		return
 
 	anchored = FALSE

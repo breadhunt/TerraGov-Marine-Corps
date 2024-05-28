@@ -5,7 +5,7 @@
 	power_channel = ENVIRON
 	resistance_flags = DROPSHIP_IMMUNE
 
-/obj/machinery/door/poddoor/shutters/Initialize()
+/obj/machinery/door/poddoor/shutters/Initialize(mapload)
 	. = ..()
 	if(density && closed_layer)
 		layer = closed_layer
@@ -24,7 +24,7 @@
 	do_animate("opening")
 	icon_state = "shutter0"
 	playsound(loc, 'sound/machines/shutter.ogg', 25)
-	addtimer(CALLBACK(src, .proc/do_open), 1 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(do_open)), 1 SECONDS)
 	return TRUE
 
 /obj/machinery/door/poddoor/shutters/proc/do_open()
@@ -35,7 +35,7 @@
 	if(operating)
 		operating = FALSE
 	if(autoclose)
-		addtimer(CALLBACK(src, .proc/autoclose), 150)
+		addtimer(CALLBACK(src, PROC_REF(autoclose)), 150)
 
 /obj/machinery/door/poddoor/shutters/close()
 	if(operating)
@@ -48,14 +48,15 @@
 	if(visible)
 		set_opacity(TRUE)
 	playsound(loc, 'sound/machines/shutter.ogg', 25)
-	addtimer(CALLBACK(src, .proc/do_close), 1 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(do_close)), 1 SECONDS)
 	return TRUE
 
 /obj/machinery/door/poddoor/shutters/proc/do_close()
 	operating = FALSE
 
 
-/obj/machinery/door/poddoor/shutters/update_icon()
+/obj/machinery/door/poddoor/shutters/update_icon_state()
+	. = ..()
 	if(operating)
 		return
 	icon_state = "shutter[density]"
@@ -73,12 +74,10 @@
 	icon = 'icons/obj/doors/mainship/blastdoors_shutters.dmi'
 	name = "Timed Emergency Shutters"
 	use_power = FALSE
-	smoothing_behavior = NO_SMOOTHING
-	smoothing_groups = NONE
 
 
-/obj/machinery/door/poddoor/shutters/timed_late/Initialize()
-	RegisterSignal(SSdcs, list(COMSIG_GLOB_OPEN_TIMED_SHUTTERS_LATE, COMSIG_GLOB_OPEN_TIMED_SHUTTERS_CRASH, COMSIG_GLOB_OPEN_TIMED_SHUTTERS_XENO_HIVEMIND), .proc/open)
+/obj/machinery/door/poddoor/shutters/timed_late/Initialize(mapload)
+	RegisterSignals(SSdcs, list(COMSIG_GLOB_OPEN_TIMED_SHUTTERS_LATE, COMSIG_GLOB_OPEN_TIMED_SHUTTERS_CRASH, COMSIG_GLOB_OPEN_TIMED_SHUTTERS_XENO_HIVEMIND, COMSIG_GLOB_CAMPAIGN_MISSION_STARTED), PROC_REF(open))
 	return ..()
 
 
@@ -117,7 +116,7 @@
 	icon = 'icons/obj/doors/mainship/blastdoors_shutters.dmi'
 	resistance_flags = RESIST_ALL|DROPSHIP_IMMUNE
 	id = "ghhjmugggggtgggbg" // do not have any button or thing have an ID assigned to this, it is a very bad idea.
-	smoothing_groups = SMOOTH_GENERAL_STRUCTURES|SMOOTH_CANTERBURY
+	smoothing_groups = list(SMOOTH_GROUP_SURVIVAL_TITANIUM_WALLS)
 
 
 /obj/machinery/door/poddoor/shutters/mainship/open
@@ -147,6 +146,9 @@
 /obj/machinery/door/poddoor/shutters/mainship/open/checkpoint/south
 	id = "southcheckpoint"
 
+/obj/machinery/door/poddoor/shutters/mainship/open/medical
+	name = "Medbay Lockdown Shutters"
+	id = "medbay_lockdown"
 
 /obj/machinery/door/poddoor/shutters/mainship/open/indestructible
 	resistance_flags = RESIST_ALL|DROPSHIP_IMMUNE
@@ -195,10 +197,6 @@
 /obj/machinery/door/poddoor/shutters/mainship/req/ro
 	name = "\improper RO Line"
 	id = "ROlobby"
-
-/obj/machinery/door/poddoor/shutters/mainship/req/ro/rebel
-	id = "ROlobby_rebel"
-
 /obj/machinery/door/poddoor/shutters/mainship/req/ro1
 	name = "\improper RO Line 1"
 	id = "ROlobby1"
@@ -233,9 +231,6 @@
 	id = "cic_armory"
 	icon_state = "shutter1"
 
-/obj/machinery/door/poddoor/shutters/mainship/cic/armory/rebel
-	id = "cic_armory_rebel"
-
 /obj/machinery/door/poddoor/shutters/mainship/engineering/armory
 	name = "\improper Engineering Armory Shutters"
 	id = "engi_armory"
@@ -245,9 +240,9 @@
 	name = "\improper Privacy Shutters"
 	id = "cl_shutters"
 
-/obj/machinery/door/poddoor/shutters/mainship/corporate
+/obj/machinery/door/poddoor/shutters/mainship/fc_office
 	name = "\improper Privacy Shutters"
-	id = "cl_shutters"
+	id = "fc_shutters"
 
 /obj/machinery/door/poddoor/shutters/mainship/cell
 	name = "\improper Containment Cell"

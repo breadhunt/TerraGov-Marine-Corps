@@ -3,11 +3,14 @@
 	desc = "A hand-held emergency light."
 	icon = 'icons/obj/lighting.dmi'
 	icon_state = "flashlight"
-	item_state = "flashlight"
+	worn_icon_list = list(
+		slot_l_hand_str = 'icons/mob/inhands/equipment/lights_left.dmi',
+		slot_r_hand_str = 'icons/mob/inhands/equipment/lights_right.dmi',
+	)
+	worn_icon_state = "flashlight"
 	w_class = WEIGHT_CLASS_SMALL
-	flags_atom = CONDUCT
-	flags_equip_slot = ITEM_SLOT_BELT
-	materials = list(/datum/material/metal = 50, /datum/material/glass = 20)
+	atom_flags = CONDUCT
+	equip_slot_flags = ITEM_SLOT_BELT
 	actions_types = list(/datum/action/item_action)
 	light_range = 5
 	light_power = 3 //luminosity when on
@@ -17,7 +20,7 @@
 	///If this flashlight affected by nightfall
 	var/nightfall_immune = FALSE
 
-/obj/item/flashlight/Initialize()
+/obj/item/flashlight/Initialize(mapload)
 	. = ..()
 	GLOB.nightfall_toggleable_lights += src
 
@@ -37,12 +40,12 @@
 	update_action_button_icons()
 	update_icon()
 
-/obj/item/flashlight/attack_alien(mob/living/carbon/xenomorph/X, isrightclick = FALSE)
-	if(turn_light(X, FALSE) != CHECKS_PASSED)
+/obj/item/flashlight/attack_alien(mob/living/carbon/xenomorph/xeno_attacker, damage_amount = xeno_attacker.xeno_caste.melee_damage, damage_type = BRUTE, armor_type = MELEE, effects = TRUE, armor_penetration = xeno_attacker.xeno_caste.melee_ap, isrightclick = FALSE)
+	if(turn_light(xeno_attacker, FALSE) != CHECKS_PASSED)
 		return
-	playsound(loc, "alien_claw_metal", 25, 1)
-	X.do_attack_animation(src, ATTACK_EFFECT_CLAW)
-	to_chat(X, span_warning("We disable the metal thing's lights.") )
+	playsound(loc, SFX_ALIEN_CLAW_METAL, 25, 1)
+	xeno_attacker.do_attack_animation(src, ATTACK_EFFECT_CLAW)
+	to_chat(xeno_attacker, span_warning("We disable the metal thing's lights.") )
 
 /obj/item/flashlight/update_icon_state()
 	. = ..()
@@ -62,6 +65,8 @@
 
 /obj/item/flashlight/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(istype(I, /obj/item/tool/screwdriver))
 		if(!raillight_compatible) //No fancy messages, just no
@@ -89,8 +94,8 @@
 
 
 		var/mob/living/carbon/human/H = M	//mob has protective eyewear
-		if(ishuman(M) && ((H.head && H.head.flags_inventory & COVEREYES) || (H.wear_mask && H.wear_mask.flags_inventory & COVEREYES) || (H.glasses && H.glasses.flags_inventory & COVEREYES)))
-			to_chat(user, span_notice("You're going to need to remove that [(H.head && H.head.flags_inventory & COVEREYES) ? "helmet" : (H.wear_mask && H.wear_mask.flags_inventory & COVEREYES) ? "mask": "glasses"] first."))
+		if(ishuman(M) && ((H.head && H.head.inventory_flags & COVEREYES) || (H.wear_mask && H.wear_mask.inventory_flags & COVEREYES) || (H.glasses && H.glasses.inventory_flags & COVEREYES)))
+			to_chat(user, span_notice("You're going to need to remove that [(H.head && H.head.inventory_flags & COVEREYES) ? "helmet" : (H.wear_mask && H.wear_mask.inventory_flags & COVEREYES) ? "mask": "glasses"] first."))
 			return
 
 		if(M == user)	//they're using it on themselves
@@ -117,8 +122,8 @@
 	name = "penlight"
 	desc = "A pen-sized light, used by medical staff."
 	icon_state = "penlight"
-	item_state = ""
-	flags_atom = CONDUCT
+	worn_icon_state = ""
+	atom_flags = CONDUCT
 	light_range = 2
 	w_class = WEIGHT_CLASS_TINY
 	raillight_compatible = FALSE
@@ -127,7 +132,7 @@
 	name = "low-power flashlight"
 	desc = "A miniature lamp, that might be used by small robots."
 	icon_state = "penlight"
-	item_state = ""
+	worn_icon_state = ""
 	light_range = 2
 	w_class = WEIGHT_CLASS_TINY
 	raillight_compatible = FALSE
@@ -137,7 +142,7 @@
 	name = "desk lamp"
 	desc = "A desk lamp with an adjustable mount."
 	icon_state = "lamp"
-	item_state = "lamp"
+	worn_icon_state = "lamp"
 	light_range = 5
 	w_class = WEIGHT_CLASS_BULKY
 	light_on = FALSE
@@ -148,7 +153,7 @@
 	name = "Menorah"
 	desc = "For celebrating Chanukah."
 	icon_state = "menorah"
-	item_state = "menorah"
+	worn_icon_state = "menorah"
 	light_range = 2
 	w_class = WEIGHT_CLASS_BULKY
 
@@ -156,7 +161,7 @@
 /obj/item/flashlight/lamp/green
 	desc = "A classic green-shaded desk lamp."
 	icon_state = "lampgreen"
-	item_state = "lampgreen"
+	worn_icon_state = "lampgreen"
 	light_range = 5
 
 /obj/item/flashlight/lamp/verb/toggle_light()
@@ -171,82 +176,14 @@
 	if(!usr.stat)
 		attack_self(usr)
 
-/obj/item/flashlight/lamp/attack_alien(mob/living/carbon/xenomorph/X, damage_amount = X.xeno_caste.melee_damage, damage_type = BRUTE, damage_flag = "", effects = TRUE, armor_penetration = 0, isrightclick = FALSE)
-	if(X.status_flags & INCORPOREAL)
+/obj/item/flashlight/lamp/attack_alien(mob/living/carbon/xenomorph/xeno_attacker, damage_amount = xeno_attacker.xeno_caste.melee_damage, damage_type = BRUTE, armor_type = MELEE, effects = TRUE, armor_penetration = xeno_attacker.xeno_caste.melee_ap, isrightclick = FALSE)
+	if(xeno_attacker.status_flags & INCORPOREAL)
 		return FALSE
-	X.do_attack_animation(src, ATTACK_EFFECT_SMASH)
+	xeno_attacker.do_attack_animation(src, ATTACK_EFFECT_SMASH)
 	playsound(loc, 'sound/effects/metalhit.ogg', 20, TRUE)
-	X.visible_message(span_danger("\The [X] smashes [src]!"), \
+	xeno_attacker.visible_message(span_danger("\The [xeno_attacker] smashes [src]!"), \
 	span_danger("We smash [src]!"), null, 5)
 	deconstruct(FALSE)
-
-// FLARES
-
-/obj/item/flashlight/flare
-	name = "flare"
-	desc = "A NT standard emergency flare. There are instructions on the side, it reads 'pull cord, make light'."
-	w_class = WEIGHT_CLASS_SMALL
-	light_power = 6 //As bright as a flashlight, but more disposable. Doesn't burn forever though
-	icon_state = "flare"
-	item_state = "flare"
-	actions = list()	//just pull it manually, neckbeard.
-	raillight_compatible = FALSE
-	activation_sound = 'sound/items/flare.ogg'
-	nightfall_immune = TRUE
-	var/fuel = 0
-	var/on_damage = 7
-
-/obj/item/flashlight/flare/Initialize()
-	. = ..()
-	fuel = rand(800, 1000) // Sorry for changing this so much but I keep under-estimating how long X number of ticks last in seconds.
-
-/obj/item/flashlight/flare/turn_light(mob/user = null, toggle_on , cooldown = 1 SECONDS, sparks = FALSE, forced = FALSE, atom/originated_turf = null, distance_max = 0)
-	. = ..()
-	if(. != CHECKS_PASSED)
-		return
-	if(toggle_on)
-		return
-	fuel = 0 //Flares are one way; if you turn them off, you're snuffing them out.
-	heat = 0
-	force = initial(force)
-	damtype = initial(damtype)
-	icon_state = "[initial(icon_state)]-empty"
-
-/obj/item/flashlight/flare/attack_alien(mob/living/carbon/xenomorph/X, isrightclick)
-	return
-
-/obj/item/flashlight/flare/proc/turn_off()
-	turn_light(null, FALSE, 0, FALSE, TRUE)
-
-/obj/item/flashlight/flare/attack_self(mob/user)
-
-	// Usual checks
-	if(!fuel)
-		to_chat(user, span_notice("It's out of fuel."))
-		return
-	if(light_on)
-		return
-
-	. = ..()
-	// All good, turn it on.
-	if(.)
-		user.visible_message(span_notice("[user] activates the flare."), span_notice("You pull the cord on the flare, activating it!"))
-		force = on_damage
-		heat = 1500
-		damtype = BURN
-		addtimer(CALLBACK(src, .proc/turn_off), fuel)
-		if(iscarbon(user))
-			var/mob/living/carbon/C = usr
-			C.toggle_throw_mode()
-
-/obj/item/flashlight/flare/on/Initialize()
-	. = ..()
-	light_on = TRUE
-	heat = 1500
-	turn_light(null, TRUE)
-	force = on_damage
-	damtype = BURN
-	addtimer(CALLBACK(src, .proc/turn_off), fuel)
 
 /obj/item/flashlight/slime
 	gender = PLURAL
@@ -254,7 +191,7 @@
 	desc = "A glowing ball of what appears to be amber."
 	icon = 'icons/obj/lighting.dmi'
 	icon_state = "floor1" //not a slime extract sprite but... something close enough!
-	item_state = "slime"
+	worn_icon_state = "slime"
 	w_class = WEIGHT_CLASS_TINY
 	light_range = 6
 	light_on = TRUE //Bio-luminesence has one setting, on.

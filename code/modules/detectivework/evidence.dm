@@ -5,7 +5,7 @@
 	desc = "An empty evidence bag."
 	icon = 'icons/obj/items/storage/storage.dmi'
 	icon_state = "evidenceobj"
-	item_state = ""
+	worn_icon_state = ""
 	w_class = WEIGHT_CLASS_SMALL
 	var/obj/item/stored_item = null
 
@@ -23,8 +23,8 @@
 			return
 	else
 		//If it isn't on the floor. Do some checks to see if it's in our hands or a box. Otherwise give up.
-		if(istype(I.loc,/obj/item/storage))	//in a container.
-			var/sdepth = I.storage_depth(user)
+		if(I.item_flags & IN_STORAGE) //in a container.
+			var/sdepth = I.storage_datum.storage_depth(user)
 			if (sdepth == -1 || sdepth > 1)
 				return	//too deeply nested to access
 
@@ -49,7 +49,7 @@
 		to_chat(user, span_notice("[I] won't fit in [src]."))
 		return
 
-	if(contents.len)
+	if(length(contents))
 		to_chat(user, span_notice("[src] already has something inside it."))
 		return
 
@@ -76,7 +76,7 @@
 
 
 /obj/item/evidencebag/attack_self(mob/user as mob)
-	if(contents.len)
+	if(length(contents))
 		var/obj/item/I = contents[1]
 		user.visible_message("[user] takes [I] out of [src]", "You take [I] out of [src].",\
 		"You hear someone rustle around in a plastic bag, and remove something.")
@@ -108,8 +108,12 @@
 	desc = "Used to take fingerprints."
 	icon = 'icons/obj/items/card.dmi'
 	icon_state = "fingerprint0"
-	var/amount = 10.0
-	item_state = "paper"
+	var/amount = 10
+	worn_icon_list = list(
+		slot_l_hand_str = 'icons/mob/inhands/items/civilian_left.dmi',
+		slot_r_hand_str = 'icons/mob/inhands/items/civilian_right.dmi',
+	)
+	worn_icon_state = "paper"
 	throwforce = 1
 	w_class = WEIGHT_CLASS_TINY
 	throw_speed = 3
@@ -121,4 +125,8 @@
 	desc = "Apply finger print card."
 	icon = 'icons/obj/items/items.dmi'
 	icon_state = "fcardholder0"
-	item_state = "clipboard"
+	worn_icon_list = list(
+		slot_l_hand_str = 'icons/mob/inhands/items/civilian_left.dmi',
+		slot_r_hand_str = 'icons/mob/inhands/items/civilian_right.dmi',
+	)
+	worn_icon_state = "clipboard"

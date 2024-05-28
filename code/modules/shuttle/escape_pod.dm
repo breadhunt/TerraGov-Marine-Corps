@@ -32,6 +32,7 @@
 		for(var/mob/living/carbon/human/marine in T.GetAllContents())
 			if(marine.stat == DEAD)
 				continue
+			ADD_TRAIT(T, TRAIT_HAS_ESCAPED, TRAIT_HAS_ESCAPED)
 			SSevacuation.human_escaped++
 
 /obj/docking_port/mobile/escape_pod/proc/launch(manual = FALSE)
@@ -42,7 +43,7 @@
 		launch_status = EARLY_LAUNCHED
 	else
 		launch_status = ENDGAME_LAUNCHED
-	addtimer(CALLBACK(src, .proc/do_launch), ignitionTime, TIMER_UNIQUE)
+	addtimer(CALLBACK(src, PROC_REF(do_launch)), ignitionTime, TIMER_UNIQUE)
 
 /obj/docking_port/mobile/escape_pod/proc/prep_for_launch()
 	open_all_doors()
@@ -50,7 +51,7 @@
 
 /obj/docking_port/mobile/escape_pod/proc/open_all_doors()
 	for(var/obj/machinery/door/airlock/evacuation/D in doors)
-		INVOKE_ASYNC(D, /obj/machinery/door/airlock/evacuation/.proc/force_open)
+		INVOKE_ASYNC(D, TYPE_PROC_REF(/obj/machinery/door/airlock/evacuation, force_open))
 
 /obj/docking_port/mobile/escape_pod/proc/unprep_for_launch()
 	// dont close the door it might trap someone inside
@@ -59,7 +60,7 @@
 
 /obj/docking_port/mobile/escape_pod/proc/close_all_doors()
 	for(var/obj/machinery/door/airlock/evacuation/D in doors)
-		INVOKE_ASYNC(D, /obj/machinery/door/airlock/evacuation/.proc/force_close)
+		INVOKE_ASYNC(D, TYPE_PROC_REF(/obj/machinery/door/airlock/evacuation, force_close))
 
 /obj/docking_port/mobile/escape_pod/proc/do_launch()
 	if(!can_launch)
@@ -100,6 +101,7 @@
 	name = "escape pod controller"
 	icon = 'icons/obj/airlock_machines.dmi'
 	icon_state = "airlock_control_standby"
+	screen_overlay = null
 	power_channel = ENVIRON
 	density = FALSE
 
@@ -158,7 +160,8 @@
 
 /obj/machinery/cryopod/evacuation/climb_in(mob/living/carbon/user, mob/helper)
 	. = ..()
-	user.ghostize(FALSE)
+	if(.)
+		user.ghostize(FALSE)
 
 /obj/machinery/door/airlock/evacuation
 	name = "\improper Evacuation Airlock"
@@ -208,5 +211,5 @@
 /obj/machinery/door/airlock/evacuation/attack_hand(mob/living/user)
 	return TRUE
 
-/obj/machinery/door/airlock/evacuation/attack_alien(mob/living/carbon/xenomorph/X, damage_amount = X.xeno_caste.melee_damage, damage_type = BRUTE, damage_flag = "", effects = TRUE, armor_penetration = 0, isrightclick = FALSE)
+/obj/machinery/door/airlock/evacuation/attack_alien(mob/living/carbon/xenomorph/xeno_attacker, damage_amount = xeno_attacker.xeno_caste.melee_damage, damage_type = BRUTE, armor_type = MELEE, effects = TRUE, armor_penetration = xeno_attacker.xeno_caste.melee_ap, isrightclick = FALSE)
 	return FALSE //Probably a better idea that these cannot be forced open.

@@ -1,14 +1,14 @@
 /mob/living/carbon
 	gender = MALE
 	buckle_flags = CAN_BE_BUCKLED|BUCKLE_PREVENTS_PULL
-	var/datum/species/species //Contains icon generation and language information, set during New().
-
-	var/life_tick = 0      // The amount of life ticks that have processed on this mob.
-	var/analgesic = 0 // when this is set, the mob isn't affected by shock or pain
-						// life should decrease this by 1 every tick
-
-	var/obj/item/restraints/handcuffs/handcuffed //Whether or not the mob is handcuffed
-
+	///Contains icon generation and language information, set during New().
+	var/datum/species/species
+	///The amount of life ticks that have processed on this mob.
+	var/life_tick = 0
+	///when this is set, the mob isn't affected by shock or pain. life should decrease this by 1 every tick
+	var/analgesic = 0
+	///Whether or not the mob is handcuffed
+	var/obj/item/restraints/handcuffs/handcuffed
 	///Tracks whether we can breath right now. Used for a hud icon and for message generation.
 	var/oxygen_alert = FALSE
 	var/phoron_alert = FALSE
@@ -16,8 +16,8 @@
 	var/pressure_alert = FALSE
 
 	var/list/internal_organs = list()
-
-	var/drunkenness = 0 //Overall drunkenness - check handle_status_effects() in life.dm for effects
+	///Overall drunkenness - check handle_status_effects() in life.dm for effects
+	var/drunkenness = 0
 
 	var/rotate_on_lying = TRUE
 
@@ -40,3 +40,14 @@
 
 	/// % Chance of exploding on death, incremented by total damage taken if not initially zero.
 	var/gib_chance = 0
+	///list of abilities this mob has access to
+	var/list/datum/action/ability/mob_abilities = list()
+	///Currently selected ability
+	var/datum/action/ability/activable/selected_ability
+	///carbon overlay layers
+	var/list/overlays_standing[TOTAL_LAYERS]
+
+/mob/living/carbon/proc/transfer_identity(mob/living/carbon/destination)
+	if(!istype(destination))
+		return
+	destination.blood_type = blood_type

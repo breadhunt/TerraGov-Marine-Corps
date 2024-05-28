@@ -152,11 +152,11 @@
 	message_admins("Distress beacon: '[name]' activated. Looking for candidates.")
 
 	if(announce)
-		priority_announce("A distress beacon has been launched from the [SSmapping.configs[SHIP_MAP].map_name].", "Priority Alert", sound = 'sound/AI/distressbeacon.ogg')
+		priority_announce("A distress beacon has been launched from the [SSmapping.configs[SHIP_MAP].map_name].", title = "Distress Beacon", type = ANNOUNCEMENT_PRIORITY, sound = 'sound/AI/distressbeacon.ogg', color_override = "orange")
 
 	SSticker.mode.on_distress_cooldown = TRUE
 
-	candidate_timer = addtimer(CALLBACK(src, .proc/do_activate, announce), 1 MINUTES, TIMER_STOPPABLE)
+	candidate_timer = addtimer(CALLBACK(src, PROC_REF(do_activate), announce), 1 MINUTES, TIMER_STOPPABLE)
 
 /datum/emergency_call/proc/do_activate(announce = TRUE)
 	candidate_timer = null
@@ -192,7 +192,7 @@
 		SSticker.mode.picked_call = null
 		SSticker.mode.on_distress_cooldown = TRUE
 
-		cooldown_timer = addtimer(CALLBACK(src, .proc/reset), COOLDOWN_COMM_REQUEST, TIMER_STOPPABLE)
+		cooldown_timer = addtimer(CALLBACK(src, PROC_REF(reset)), COOLDOWN_COMM_REQUEST, TIMER_STOPPABLE)
 		return
 
 	var/list/datum/mind/picked_candidates = list()
@@ -251,7 +251,7 @@
 
 	candidates.Cut() //Blank out the candidates list for next time.
 
-	cooldown_timer = addtimer(CALLBACK(src, .proc/reset), COOLDOWN_COMM_REQUEST, TIMER_STOPPABLE)
+	cooldown_timer = addtimer(CALLBACK(src, PROC_REF(reset)), COOLDOWN_COMM_REQUEST, TIMER_STOPPABLE)
 
 /datum/emergency_call/proc/add_candidate(mob/M)
 	if(!M.client)

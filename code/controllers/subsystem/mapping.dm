@@ -9,6 +9,7 @@ SUBSYSTEM_DEF(mapping)
 	var/list/map_templates = list()
 
 	var/list/shuttle_templates = list()
+	var/list/minidropship_templates = list()
 
 	///list of all modular mapping templates
 	var/list/modular_templates = list()
@@ -21,6 +22,31 @@ SUBSYSTEM_DEF(mapping)
 
 	var/list/reservation_ready = list()
 	var/clearing_reserved_turfs = FALSE
+
+	/// List of z level (as number) -> plane offset of that z level
+	/// Used to maintain the plane cube
+	var/list/z_level_to_plane_offset = list()
+	/// List of z level (as number) -> list of all z levels vertically connected to ours
+	/// Useful for fast grouping lookups and such
+	var/list/z_level_to_stack = list()
+	/// List of z level (as number) -> The lowest plane offset in that z stack
+	var/list/z_level_to_lowest_plane_offset = list()
+	// This pair allows for easy conversion between an offset plane, and its true representation
+	// Both are in the form "input plane" -> output plane(s)
+	/// Assoc list of string plane values to their true, non offset representation
+	var/list/plane_offset_to_true
+	/// Assoc list of true string plane values to a list of all potential offset planess
+	var/list/true_to_offset_planes
+	/// Assoc list of string plane to the plane's offset value
+	var/list/plane_to_offset
+	/// List of planes that do not allow for offsetting
+	var/list/plane_offset_blacklist
+	/// List of render targets that do not allow for offsetting
+	var/list/render_offset_blacklist
+	/// List of plane masters that are of critical priority
+	var/list/critical_planes
+	/// The largest plane offset we've generated so far
+	var/max_plane_offset = 0
 
 	// Z-manager stuff
 	var/ground_start  // should only be used for maploading-related tasks
@@ -35,6 +61,9 @@ SUBSYSTEM_DEF(mapping)
 	///The number of connected clients for the previous round
 	var/last_round_player_count
 
+	///shows the gravity value for each z level
+	var/list/gravity_by_z_level = list()
+
 //dlete dis once #39770 is resolved
 /datum/controller/subsystem/mapping/proc/HACK_LoadMapConfig()
 	if(!configs)
@@ -43,10 +72,10 @@ SUBSYSTEM_DEF(mapping)
 			var/client/C = i
 			winset(C, null, "mainwindow.title='[CONFIG_GET(string/title)] - [SSmapping.configs[SHIP_MAP].map_name]'")
 
-/datum/controller/subsystem/mapping/Initialize(timeofday)
+/datum/controller/subsystem/mapping/Initialize()
 	HACK_LoadMapConfig()
 	if(initialized)
-		return
+		return SS_INIT_SUCCESS
 
 	for(var/i in ALL_MAPTYPES)
 		var/datum/map_config/MC = configs[i]
@@ -70,7 +99,8 @@ SUBSYSTEM_DEF(mapping)
 	transit = add_new_zlevel("Transit/Reserved", list(ZTRAIT_RESERVED = TRUE))
 	repopulate_sorted_areas()
 	initialize_reserved_level(transit.z_value)
-	return ..()
+	calculate_default_z_level_gravities()
+	return SS_INIT_SUCCESS
 
 //Loads the number of players we had last round, for use in modular mapping
 /datum/controller/subsystem/mapping/proc/load_last_round_playercount()
@@ -92,12 +122,12 @@ SUBSYSTEM_DEF(mapping)
 			continue
 		in_transit[T] = T.get_docked()
 	var/go_ahead = world.time + wipe_safety_delay
-	if(in_transit.len)
+	if(length(in_transit))
 		message_admins("Shuttles in transit detected. Attempting to fast travel. Timeout is [wipe_safety_delay/10] seconds.")
 	var/list/cleared = list()
 	for(var/i in in_transit)
-		INVOKE_ASYNC(src, .proc/safety_clear_transit_dock, i, in_transit[i], cleared)
-	UNTIL((go_ahead < world.time) || (cleared.len == in_transit.len))
+		INVOKE_ASYNC(src, PROC_REF(safety_clear_transit_dock), i, in_transit[i], cleared)
+	UNTIL((go_ahead < world.time) || (length(cleared) == length(in_transit)))
 	do_wipe_turf_reservations()
 	clearing_reserved_turfs = FALSE
 
@@ -112,11 +142,14 @@ SUBSYSTEM_DEF(mapping)
 	flags |= SS_NO_INIT
 	initialized = SSmapping.initialized
 	map_templates = SSmapping.map_templates
+	minidropship_templates = SSmapping.minidropship_templates
 	shuttle_templates = SSmapping.shuttle_templates
 	modular_templates = SSmapping.modular_templates
 	unused_turfs = SSmapping.unused_turfs
 	turf_reservations = SSmapping.turf_reservations
 	used_turfs = SSmapping.used_turfs
+	transit = SSmapping.transit
+	areas_in_z = SSmapping.areas_in_z
 
 	configs = SSmapping.configs
 	next_map_configs = SSmapping.next_map_configs
@@ -125,14 +158,13 @@ SUBSYSTEM_DEF(mapping)
 
 	z_list = SSmapping.z_list
 
-#define INIT_ANNOUNCE(X) to_chat(world, span_notice("[X]")); log_world(X)
+#define INIT_ANNOUNCE(X) to_chat(world, span_alert("<b>[X]</b>")); log_world(X)
 /datum/controller/subsystem/mapping/proc/LoadGroup(list/errorList, name, path, files, list/traits, list/default_traits, silent = FALSE)
 	. = list()
 	var/start_time = REALTIMEOFDAY
 
 	if (!islist(files))  // handle single-level maps
 		files = list(files)
-
 	// check that the total z count of all maps matches the list of traits
 	var/total_z = 0
 	var/list/parsed_maps = list()
@@ -145,17 +177,15 @@ SUBSYSTEM_DEF(mapping)
 			continue
 		parsed_maps[pm] = total_z  // save the start Z of this file
 		total_z += bounds[MAP_MAXZ] - bounds[MAP_MINZ] + 1
-
 	if (!length(traits))  // null or empty - default
 		for (var/i in 1 to total_z)
 			traits += list(default_traits)
-	else if (total_z != traits.len)  // mismatch
-		INIT_ANNOUNCE("WARNING: [traits.len] trait sets specified for [total_z] z-levels in [path]!")
-		if (total_z < traits.len)  // ignore extra traits
+	else if (total_z != length(traits))  // mismatch
+		INIT_ANNOUNCE("WARNING: [length(traits)] trait sets specified for [total_z] z-levels in [path]!")
+		if (total_z < length(traits))  // ignore extra traits
 			traits.Cut(total_z + 1)
-		while (total_z > traits.len)  // fall back to defaults on extra levels
+		while (total_z > length(traits))  // fall back to defaults on extra levels
 			traits += list(default_traits)
-
 	// preload the relevant space_level datums
 	var/start_z = world.maxz + 1
 	var/i = 0
@@ -185,10 +215,16 @@ SUBSYSTEM_DEF(mapping)
 	var/datum/map_config/ground_map = configs[GROUND_MAP]
 	INIT_ANNOUNCE("Loading [ground_map.map_name]...")
 	LoadGroup(FailedZs, ground_map.map_name, ground_map.map_path, ground_map.map_file, ground_map.traits, ZTRAITS_GROUND)
+	// Also saving this as a feedback var as we don't have ship_name in the round table.
+	SSblackbox.record_feedback("text", "ground_map", 1, ground_map.map_name)
 
+	#if !(defined(CIBUILDING) && !defined(ALL_MAPS))
 	var/datum/map_config/ship_map = configs[SHIP_MAP]
 	INIT_ANNOUNCE("Loading [ship_map.map_name]...")
 	LoadGroup(FailedZs, ship_map.map_name, ship_map.map_path, ship_map.map_file, ship_map.traits, ZTRAITS_MAIN_SHIP)
+	// Also saving this as a feedback var as we don't have ship_name in the round table.
+	SSblackbox.record_feedback("text", "ship_map", 1, ship_map.map_name)
+	#endif
 
 	if(SSdbcore.Connect())
 		var/datum/db_query/query_round_map_name = SSdbcore.NewQuery({"
@@ -197,14 +233,10 @@ SUBSYSTEM_DEF(mapping)
 		query_round_map_name.Execute()
 		qdel(query_round_map_name)
 
-	// Also saving this as a feedback var as we don't have ship_name in the round table.
-	SSblackbox.record_feedback("text", "ground_map", 1, ground_map.map_name)
-	SSblackbox.record_feedback("text", "ship_map", 1, ship_map.map_name)
-
 	if(LAZYLEN(FailedZs))	//but seriously, unless the server's filesystem is messed up this will never happen
 		var/msg = "RED ALERT! The following map files failed to load: [FailedZs[1]]"
-		if(FailedZs.len > 1)
-			for(var/I in 2 to FailedZs.len)
+		if(length(FailedZs) > 1)
+			for(var/I in 2 to length(FailedZs))
 				msg += ", [FailedZs[I]]"
 		msg += ". Yell at your server host!"
 		INIT_ANNOUNCE(msg)
@@ -243,7 +275,7 @@ SUBSYSTEM_DEF(mapping)
 	. = list()
 	var/list/Lines = file2list(filename)
 
-	if(!Lines.len)
+	if(!length(Lines))
 		return
 	for (var/t in Lines)
 		if (!t)
@@ -282,6 +314,10 @@ SUBSYSTEM_DEF(mapping)
 		shuttle_templates[S.shuttle_id] = S
 		map_templates[S.shuttle_id] = S
 
+	for(var/drop_path in typesof(/datum/map_template/shuttle/minidropship))
+		var/datum/map_template/shuttle/drop = new drop_path()
+		minidropship_templates += drop
+
 /datum/controller/subsystem/mapping/proc/preloadModularTemplates()
 	for(var/item in subtypesof(/datum/map_template/modular))
 		var/datum/map_template/modular/modular_type = item
@@ -305,7 +341,6 @@ SUBSYSTEM_DEF(mapping)
 			if(reserve.Reserve(width, height, i))
 				return reserve
 		//If we didn't return at this point, theres a good chance we ran out of room on the exisiting reserved z levels, so lets try a new one
-		log_debug("Ran out of space in existing transit levels, adding a new one")
 		num_of_res_levels += 1
 		var/datum/space_level/newReserved = add_new_zlevel("Transit/Reserved [num_of_res_levels]", list(ZTRAIT_RESERVED = TRUE))
 		initialize_reserved_level(newReserved.z_value)
@@ -315,13 +350,11 @@ SUBSYSTEM_DEF(mapping)
 		CRASH("Despite adding a fresh reserved zlevel still failed to get a reservation")
 	else
 		if(!level_trait(z, ZTRAIT_RESERVED))
-			log_debug("Cannot block reserve on a non-ZTRAIT_RESERVED level")
 			qdel(reserve)
 			return
 		else
 			if(reserve.Reserve(width, height, z))
 				return reserve
-	log_debug("unknown reservation failure")
 	QDEL_NULL(reserve)
 
 //This is not for wiping reserved levels, use wipe_reservations() for that.
@@ -338,7 +371,7 @@ SUBSYSTEM_DEF(mapping)
 		// No need to empty() these, because it's world init and they're
 		// already /turf/open/space/basic.
 		var/turf/T = t
-		T.flags_atom |= UNUSED_RESERVATION_TURF_1
+		T.atom_flags |= UNUSED_RESERVATION_TURF_1
 	unused_turfs["[z]"] = block
 	reservation_ready["[z]"] = TRUE
 	clearing_reserved_turfs = FALSE
@@ -349,7 +382,7 @@ SUBSYSTEM_DEF(mapping)
 		T.empty(RESERVED_TURF_TYPE, RESERVED_TURF_TYPE, null, TRUE)
 		LAZYINITLIST(unused_turfs["[T.z]"])
 		unused_turfs["[T.z]"] |= T
-		T.flags_atom |= UNUSED_RESERVATION_TURF_1
+		T.atom_flags |= UNUSED_RESERVATION_TURF_1
 		GLOB.areas_by_type[world.area].contents += T
 		CHECK_TICK
 
@@ -371,6 +404,22 @@ SUBSYSTEM_DEF(mapping)
 	reserve_turfs(clearing)
 
 /datum/controller/subsystem/mapping/proc/reg_in_areas_in_z(list/areas)
-	for(var/B in areas)
-		var/area/A = B
-		A.reg_in_areas_in_z()
+	for(var/area/new_area AS in areas)
+		new_area.reg_in_areas_in_z()
+
+///Generates baseline gravity levels for all z-levels based off traits
+/datum/controller/subsystem/mapping/proc/calculate_default_z_level_gravities()
+	for(var/z_level in 1 to length(z_list))
+		calculate_z_level_gravity(z_level)
+
+///Calculates the gravity for a z-level
+/datum/controller/subsystem/mapping/proc/calculate_z_level_gravity(z_level_number)
+	if(!isnum(z_level_number) || z_level_number < 1)
+		return FALSE
+
+	var/max_gravity = 1 //we default to standard grav
+
+	max_gravity = level_trait(z_level_number, ZTRAIT_GRAVITY) ? level_trait(z_level_number, ZTRAIT_GRAVITY) : 1
+
+	gravity_by_z_level["[z_level_number]"] = max_gravity
+	return max_gravity

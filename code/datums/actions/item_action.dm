@@ -25,9 +25,10 @@
 	return ..()
 
 /datum/action/item_action/action_activate()
-	if(target)
-		var/obj/item/I = target
-		I.ui_action_click(owner, src, holder_item)
+	if(!target)
+		return FALSE
+	var/obj/item/I = target
+	return I.ui_action_click(owner, src, holder_item)
 
 /datum/action/item_action/can_use_action()
 	if(QDELETED(owner) || owner.incapacitated() || owner.lying_angle)
@@ -55,13 +56,14 @@
 	name = "Toggle [target]"
 	button.name = name
 
-/datum/action/item_action/toggle/suit_toggle/update_button_icon()
-	set_toggle(holder_item.light_on)
-	return ..()
-
-/datum/action/item_action/toggle/motion_detector/action_activate()
+/datum/action/item_action/toggle/action_activate()
 	. = ..()
-	update_button_icon()
+	if(!.)
+		return
+	set_toggle(!toggled)
+
+/datum/action/item_action/toggle/suit_toggle
+	keybinding_signals = list(KEYBINDING_NORMAL = COMSIG_KB_SUITLIGHT)
 
 /datum/action/item_action/firemode
 	// just here so players see what key is it bound to
@@ -76,6 +78,12 @@
 /datum/action/item_action/firemode/New()
 	. = ..()
 	holder_gun = holder_item
+	update_button_icon()
+
+/datum/action/item_action/firemode/action_activate()
+	. = ..()
+	if(!.)
+		return
 	update_button_icon()
 
 
@@ -114,31 +122,3 @@
 /datum/action/item_action/aim_mode/action_activate()
 	var/obj/item/weapon/gun/I = target
 	I.toggle_auto_aim_mode(owner)
-
-
-/datum/action/item_action/toggle/hydro
-	/// This references the TL84 flamer
-	var/obj/item/weapon/gun/flamer/big_flamer/marinestandard/holder_flamer
-	use_obj_appeareance = FALSE
-
-/datum/action/item_action/toggle/hydro/New()
-	. = ..()
-	holder_flamer = holder_item
-	RegisterSignal(holder_flamer, COMSIG_ITEM_HYDRO_CANNON_TOGGLED, .proc/update_toggle_button_icon)
-
-/datum/action/item_action/toggle/hydro/update_button_icon()
-	if(holder_flamer.hydro_active)
-		action_icon_state = "TL_84_Water"
-	else
-		action_icon_state = "TL_84_Flame"
-	set_toggle(holder_flamer.hydro_active)
-	return ..()
-
-///Signal handler for when the hydro cannon is activated
-/datum/action/item_action/toggle/hydro/proc/update_toggle_button_icon()
-	SIGNAL_HANDLER
-	update_button_icon()
-
-/datum/action/item_action/toggle/hydro/Destroy()
-	holder_flamer=null
-	return ..()

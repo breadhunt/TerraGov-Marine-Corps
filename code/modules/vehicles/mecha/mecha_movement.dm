@@ -1,7 +1,7 @@
 /// Sets the direction of the mecha and all of its occcupents, required for FOV. Alternatively one could make a recursive contents registration and register topmost direction changes in the fov component
 /obj/vehicle/sealed/mecha/setDir(newdir)
 	. = ..()
-	for(var/mob/living/occupant as anything in occupants)
+	for(var/mob/living/occupant AS in occupants)
 		occupant.setDir(newdir)
 
 ///Plays the mech step sound effect. Split from movement procs so that other mechs (HONK) can override this one specific part.
@@ -22,12 +22,12 @@
 	. = TRUE
 	if(!canmove || !(user in return_drivers()))
 		return
-	vehicle_move(direction)
+	vehicle_move(user, direction)
 
-/obj/vehicle/sealed/mecha/vehicle_move(direction, forcerotate = FALSE)
-	if(!COOLDOWN_CHECK(src, cooldown_vehicle_move))
-		return FALSE
-	COOLDOWN_START(src, cooldown_vehicle_move, move_delay)
+/obj/vehicle/sealed/mecha/vehicle_move(mob/living/user, direction, forcerotate = FALSE)
+	. = ..()
+	if(!.)
+		return
 	if(completely_disabled)
 		return FALSE
 	if(!direction)

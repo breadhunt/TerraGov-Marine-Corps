@@ -11,7 +11,7 @@
 	// Loading the same shuttle map at a different time will produce distinct area instances.
 	unique = FALSE
 
-///area/shuttle/Initialize()
+///area/shuttle/Initialize(mapload)
 //	if(!canSmoothWithAreas)
 //		canSmoothWithAreas = type
 //	. = ..()
@@ -27,7 +27,7 @@
 /area/shuttle/dropship/Initialize(mapload, ...)
 	. = ..()
 	var/area/area = get_area(src)
-	area.flags_area |= MARINE_BASE
+	area.area_flags |= MARINE_BASE
 
 /area/shuttle/dropship/alamo
 	name = "Dropship Alamo"
@@ -43,11 +43,12 @@
 
 /area/shuttle/minidropship
 	name = "Tadpole Drop Shuttle"
+	area_flags = NO_CONSTRUCTION
 
 /area/shuttle/minidropship/Initialize(mapload, ...)
 	. = ..()
 	var/area/area = get_area(src)
-	area.flags_area |= MARINE_BASE
+	area.area_flags |= MARINE_BASE
 
 /area/shuttle/ert
 	name = "Emergency Response Team"
@@ -72,6 +73,7 @@
 
 /area/shuttle/escape_pod
 	name = "Escape Pod"
+	minimap_color = MINIMAP_AREA_ESCAPE
 
 /area/shuttle/custom
 	name = "Custom player shuttle"
@@ -94,15 +96,16 @@
 
 /area/shuttle/mining
 	name = "Mining Shuttle"
-//	blob_allowed = FALSE
 
 /area/shuttle/labor
 	name = "Labor Camp Shuttle"
-//	blob_allowed = FALSE
 
 /area/shuttle/supply
 	name = "Supply Shuttle"
-//	blob_allowed = FALSE
+
+/area/shuttle/vehicle_supply
+	name = "Vehicle Supply Shuttle"
+
 /*
 /area/shuttle/escape
 	name = "Emergency Shuttle"
@@ -182,7 +185,7 @@
 /area/shuttle/canterbury/Initialize(mapload, ...)
 	. = ..()
 	var/area/area = get_area(src)
-	area.flags_area |= MARINE_BASE
+	area.area_flags |= MARINE_BASE
 
 /area/shuttle/canterbury/cic
 	name = "Combat Information Center"

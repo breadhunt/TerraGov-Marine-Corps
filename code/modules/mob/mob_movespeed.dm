@@ -61,17 +61,6 @@ Key procs
 		update_movespeed(FALSE)
 	return TRUE
 
-///Handles the special case of editing the movement var
-/mob/vv_edit_var(var_name, var_value)
-	var/slowdown_edit = (var_name == NAMEOF(src, cached_multiplicative_slowdown))
-	var/diff
-	if(slowdown_edit && isnum(cached_multiplicative_slowdown) && isnum(var_value))
-		remove_movespeed_modifier(MOVESPEED_ID_ADMIN_VAREDIT)
-		diff = var_value - cached_multiplicative_slowdown
-	. = ..()
-	if(. && slowdown_edit && isnum(diff))
-		add_movespeed_modifier(MOVESPEED_ID_ADMIN_VAREDIT, TRUE, 100, NONE, TRUE, diff)
-
 ///Is there a movespeed modifier for this mob
 /mob/proc/has_movespeed_modifier(id)
 	return LAZYACCESS(movespeed_modification, id)
@@ -125,19 +114,12 @@ Key procs
 
 ///Check if a movespeed modifier is identical to another
 /mob/proc/movespeed_modifier_identical_check(list/mod1, list/mod2)
-	if(!islist(mod1) || !islist(mod2) || mod1.len < MOVESPEED_DATA_INDEX_MAX || mod2.len < MOVESPEED_DATA_INDEX_MAX)
+	if(!islist(mod1) || !islist(mod2) || length(mod1) < MOVESPEED_DATA_INDEX_MAX || length(mod2) < MOVESPEED_DATA_INDEX_MAX)
 		return FALSE
 	for(var/i in 1 to MOVESPEED_DATA_INDEX_MAX)
 		if(mod1[i] != mod2[i])
 			return FALSE
 	return TRUE
-
-///Calculate the total slowdown of all movespeed modifiers
-/mob/proc/total_multiplicative_slowdown()
-	. = 0
-	for(var/id in get_movespeed_modifiers())
-		var/list/data = movespeed_modification[id]
-		. += data[MOVESPEED_DATA_INDEX_MULTIPLICATIVE_SLOWDOWN]
 
 ///Checks if a move speed modifier is valid and not missing any data
 /proc/movespeed_data_null_check(list/data)		//Determines if a data list is not meaningful and should be discarded.
@@ -156,7 +138,7 @@ Key procs
 	var/list/assembled = list()
 	for(var/our_id in movespeed_modification)
 		var/list/our_data = movespeed_modification[our_id]
-		if(!islist(our_data) || (our_data.len < MOVESPEED_DATA_INDEX_PRIORITY) || movespeed_data_null_check(our_data))
+		if(!islist(our_data) || (length(our_data) < MOVESPEED_DATA_INDEX_PRIORITY) || movespeed_data_null_check(our_data))
 			movespeed_modification -= our_id
 			continue
 		var/our_priority = our_data[MOVESPEED_DATA_INDEX_PRIORITY]

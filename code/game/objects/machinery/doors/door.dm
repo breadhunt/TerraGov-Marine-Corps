@@ -6,7 +6,7 @@
 	anchored = TRUE
 	opacity = TRUE
 	density = TRUE
-	throwpass = FALSE
+	allow_pass_flags = NONE
 	move_resist = MOVE_FORCE_VERY_STRONG
 	layer = DOOR_OPEN_LAYER
 	explosion_block = 2
@@ -21,31 +21,40 @@
 	var/operating = FALSE
 	var/autoclose = FALSE
 	var/glass = FALSE
+	/// Unrestricted sides. A bitflag for which direction (if any) can open the door with no access
+	var/unres_sides = NONE
 	var/normalspeed = TRUE
 	var/locked = FALSE
 	var/welded = FALSE
 	var/not_weldable = FALSE // stops people welding the door if true
 	var/openspeed = 10 //How many seconds does it take to open it? Default 1 second. Use only if you have long door opening animations
 	var/list/fillers
-	smoothing_behavior = CARDINAL_SMOOTHING
-	smoothing_groups = SMOOTH_GENERAL_STRUCTURES
+	///used for determining emergency access
+	var/emergency = FALSE
+	///bool for determining linked state
+	var/cyclelinkeddir = FALSE
+	///what airlock we are linked with
+	var/obj/machinery/door/airlock/cycle_linked_airlock
 
 	//Multi-tile doors
 	dir = EAST
 	var/width = 1
 
-/obj/machinery/door/Initialize()
+/obj/machinery/door/Initialize(mapload)
 	. = ..()
 	if(density)
 		layer = closed_layer
-		update_flags_heat_protection(get_turf(src))
+		update_heat_protection_flags(get_turf(src))
 	else
 		layer = open_layer
 
 	if(width > 1)
 		handle_multidoor()
 	var/turf/current_turf = get_turf(src)
-	current_turf.flags_atom &= ~ AI_BLOCKED
+	current_turf.atom_flags &= ~ AI_BLOCKED
+
+	if(glass)
+		allow_pass_flags |= PASS_GLASS
 
 /obj/machinery/door/Destroy()
 	for(var/o in fillers)
@@ -89,12 +98,6 @@
 		for(var/m in O.buckled_mobs)
 			Bumped(m)
 
-
-/obj/machinery/door/CanAllowThrough(atom/movable/mover, turf/target)
-	. = ..()
-	if(istype(mover) && CHECK_BITFIELD(mover.flags_pass, PASSGLASS))
-		return !opacity
-
 /obj/machinery/door/proc/bumpopen(mob/user as mob)
 	if(operating)
 		return
@@ -103,11 +106,17 @@
 		user = null
 
 	if(density)
-		if(allowed(user))
+		if(allowed(user) || emergency || unrestricted_side(user))
+			if(cycle_linked_airlock)
+				if(!emergency && !cycle_linked_airlock.emergency && allowed(user))
+					cycle_linked_airlock.close()
 			open()
 		else
 			flick("door_deny", src)
 
+///Allows for specific sides of airlocks to be unrestricted (IE, can exit maint freely, but need access to enter)
+/obj/machinery/door/proc/unrestricted_side(mob/opener)
+	return get_dir(src, opener) & unres_sides
 
 /obj/machinery/door/attack_hand(mob/living/user)
 	. = ..()
@@ -137,15 +146,14 @@
 
 
 /obj/machinery/door/emp_act(severity)
-	if(prob(20/severity) && (istype(src,/obj/machinery/door/airlock) || istype(src,/obj/machinery/door/window)) )
+	. = ..()
+	if(prob(30/severity) && (istype(src,/obj/machinery/door/airlock) || istype(src,/obj/machinery/door/window)) )
 		open()
-	if(prob(40/severity))
+	if(prob(60/severity))
 		if(secondsElectrified == 0)
 			secondsElectrified = -1
 			spawn(300)
 				secondsElectrified = 0
-	..()
-
 
 /obj/machinery/door/ex_act(severity)
 	if(CHECK_BITFIELD(resistance_flags, INDESTRUCTIBLE))
@@ -163,7 +171,8 @@
 				s.start()
 
 
-/obj/machinery/door/update_icon()
+/obj/machinery/door/update_icon_state()
+	. = ..()
 	if(density)
 		icon_state = "door1"
 	else
@@ -196,7 +205,7 @@
 	for(var/t in fillers)
 		var/obj/effect/opacifier/O = t
 		O.set_opacity(FALSE)
-	addtimer(CALLBACK(src, .proc/finish_open), openspeed)
+	addtimer(CALLBACK(src, PROC_REF(finish_open)), openspeed)
 	return TRUE
 
 /obj/machinery/door/proc/finish_open()
@@ -208,9 +217,10 @@
 		operating = FALSE
 
 	if(autoclose)
-		addtimer(CALLBACK(src, .proc/autoclose), normalspeed ? 150 + openspeed : 5)
+		addtimer(CALLBACK(src, PROC_REF(autoclose)), normalspeed ? 150 + openspeed : 5)
 
 /obj/machinery/door/proc/close()
+	SIGNAL_HANDLER_DOES_SLEEP
 	if(density)
 		return TRUE
 	if(operating)
@@ -220,7 +230,7 @@
 	density = TRUE
 	layer = closed_layer
 	do_animate("closing")
-	addtimer(CALLBACK(src, .proc/finish_close), openspeed)
+	addtimer(CALLBACK(src, PROC_REF(finish_close)), openspeed)
 
 /obj/machinery/door/proc/finish_close()
 	update_icon()
@@ -237,7 +247,7 @@
 /obj/machinery/door/proc/hasPower()
 	return !CHECK_BITFIELD(machine_stat, NOPOWER)
 
-/obj/machinery/door/proc/update_flags_heat_protection(turf/source)
+/obj/machinery/door/proc/update_heat_protection_flags(turf/source)
 
 /obj/machinery/door/proc/autoclose()
 	if(!density && !operating && !locked && !welded && autoclose)

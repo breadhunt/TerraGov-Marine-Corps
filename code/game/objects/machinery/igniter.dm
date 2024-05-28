@@ -25,12 +25,13 @@
 	icon_state = "igniter[on]"
 
 
-/obj/machinery/igniter/Initialize()
+/obj/machinery/igniter/Initialize(mapload)
 	. = ..()
 	icon_state = "igniter[on]"
 
 
-/obj/machinery/igniter/update_icon()
+/obj/machinery/igniter/update_icon_state()
+	. = ..()
 	if(is_operational())
 		icon_state = "igniter[on]"
 	else
@@ -52,17 +53,17 @@
 	var/base_state = "migniter"
 	anchored = TRUE
 
-/obj/machinery/sparker/update_icon()
-	if ( !(machine_stat & NOPOWER) && disable == 0 )
-
+/obj/machinery/sparker/update_icon_state()
+	. = ..()
+	if(!(machine_stat & NOPOWER) && disable == 0)
 		icon_state = "[base_state]"
-//		src.sd_SetLuminosity(2)
 	else
 		icon_state = "[base_state]-p"
-//		src.sd_SetLuminosity(0)
 
 /obj/machinery/sparker/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(istype(I, /obj/item/detective_scanner))
 		return
@@ -97,11 +98,10 @@
 	return 1
 
 /obj/machinery/sparker/emp_act(severity)
+	. = ..()
 	if(machine_stat & (BROKEN|NOPOWER))
-		..(severity)
 		return
 	ignite()
-	..(severity)
 
 /obj/machinery/ignition_switch/attack_ai(mob/user)
 	return attack_hand(user)
@@ -109,6 +109,8 @@
 
 /obj/machinery/ignition_switch/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 	return attack_hand(user)
 
 /obj/machinery/ignition_switch/attack_hand(mob/living/user)
@@ -127,13 +129,13 @@
 
 	for(var/obj/machinery/sparker/M in GLOB.machines)
 		if (M.id == src.id)
-			INVOKE_ASYNC(M, /obj/machinery/sparker.proc/ignite)
+			INVOKE_ASYNC(M, TYPE_PROC_REF(/obj/machinery/sparker, ignite))
 
 	for(var/obj/machinery/igniter/M in GLOB.machines)
 		if(M.id == src.id)
 			use_power(active_power_usage)
 			M.on = !( M.on )
-			M.icon_state = text("igniter[]", M.on)
+			M.icon_state = "igniter[M.on]"
 
 	sleep(5 SECONDS)
 

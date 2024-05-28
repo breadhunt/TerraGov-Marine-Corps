@@ -11,18 +11,24 @@
 	gender = PLURAL
 	icon = 'icons/obj/items/items.dmi'
 	icon_state = "table_parts"
-	item_state = "table_parts"
-	materials = list(/datum/material/metal = 7500) //A table, takes two sheets to build
-	flags_atom = CONDUCT
+	worn_icon_list = list(
+		slot_l_hand_str = 'icons/mob/inhands/equipment/engineering_left.dmi',
+		slot_r_hand_str = 'icons/mob/inhands/equipment/engineering_right.dmi',
+	)
+	worn_icon_state = "table_parts"
+	atom_flags = CONDUCT
 	attack_verb = list("slammed", "bashed", "battered", "bludgeoned", "thrashed", "whacked")
 	var/table_type = /obj/structure/table //what type of table it creates when assembled
 	var/deconstruct_type = /obj/item/stack/sheet/metal
 
 /obj/item/frame/table/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
+	var/turf/table_turf = get_turf(src)
 	if(iswrench(I) && deconstruct_type)
-		new deconstruct_type(loc)
+		new deconstruct_type(table_turf)
 		qdel(src)
 
 	else if(istype(I, /obj/item/stack/rods))
@@ -31,7 +37,7 @@
 			to_chat(user, span_warning("You need at least four rods to reinforce [src]."))
 			return
 
-		new /obj/item/frame/table/reinforced(loc)
+		new /obj/item/frame/table/reinforced(table_turf)
 		to_chat(user, span_notice("You reinforce [src]."))
 		user.temporarilyRemoveItemFromInventory(src)
 		qdel(src)
@@ -43,8 +49,8 @@
 			to_chat(user, span_warning("You need at least two wood sheets to swap the metal parts of [src]."))
 			return
 
-		new /obj/item/frame/table/wood(loc)
-		new /obj/item/stack/sheet/metal(loc)
+		new /obj/item/frame/table/wood(table_turf)
+		new /obj/item/stack/sheet/metal(table_turf)
 		to_chat(user, span_notice("You replace the metal parts of [src]."))
 		user.temporarilyRemoveItemFromInventory(src)
 		qdel(src)
@@ -65,6 +71,17 @@
 	deconstruct_type = null
 
 /*
+* Mainship Table Parts
+*/
+
+/obj/item/frame/table/mainship
+	table_type = /obj/structure/table/mainship
+
+/obj/item/frame/table/mainship/nometal
+	deconstruct_type = null
+	table_type = /obj/structure/table/mainship/nometal
+
+/*
 * Reinforced Table Parts
 */
 
@@ -73,9 +90,7 @@
 	desc = "A kit for a table, including a large, flat metal surface and four legs. This kit has side panels. Some assembly required."
 	icon = 'icons/obj/items/items.dmi'
 	icon_state = "reinf_tableparts"
-	materials = list(/datum/material/metal = 15000) //A reinforced table. Two sheets of metal and four rods
 	table_type = /obj/structure/table/reinforced
-
 
 /*
 * Wooden Table Parts
@@ -85,12 +100,14 @@
 	name = "wooden table parts"
 	desc = "A kit for a table, including a large, flat wooden surface and four legs. Some assembly required."
 	icon_state = "wood_tableparts"
-	flags_atom = null
+	atom_flags = null
 	table_type = /obj/structure/table/woodentable
 	deconstruct_type = /obj/item/stack/sheet/wood
 
 /obj/item/frame/table/wood/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(istype(I, /obj/item/stack/tile/carpet))
 		var/obj/item/stack/tile/carpet/C = I
@@ -115,12 +132,14 @@
 	name = "gamble table parts"
 	desc = "A kit for a table, including a large, flat wooden and carpet surface and four legs. Some assembly required."
 	icon_state = "gamble_tableparts"
-	flags_atom = null
+	atom_flags = null
 	table_type = /obj/structure/table/gamblingtable
 	deconstruct_type = /obj/item/stack/sheet/wood
 
 /obj/item/frame/table/gambling/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(iscrowbar(I))
 		to_chat(user, span_notice("You pry the carpet out of [src]."))
@@ -141,13 +160,18 @@
 	name = "rack parts"
 	desc = "A kit for a storage rack with multiple metal shelves. Relatively cheap, useful for mass storage. Some assembly required."
 	icon = 'icons/obj/items/items.dmi'
+	worn_icon_list = list(
+		slot_l_hand_str = 'icons/mob/inhands/equipment/engineering_left.dmi',
+		slot_r_hand_str = 'icons/mob/inhands/equipment/engineering_right.dmi',
+	)
 	icon_state = "rack_parts"
-	flags_atom = CONDUCT
-	materials = list(/datum/material/metal = 3750)
+	atom_flags = CONDUCT
 
 
 /obj/item/frame/rack/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(iswrench(I))
 		new /obj/item/stack/sheet/metal(loc)

@@ -4,7 +4,9 @@
 	name = "supply drop console"
 	desc = "used by shipside staff to issue supply drops to squad beacons"
 	icon_state = "supplydrop"
+	screen_overlay = "supplydrop_screen"
 	interaction_flags = INTERACT_MACHINE_TGUI
+	circuit = /obj/item/circuitboard/computer/supplydrop
 	///Time between two supply drops
 	var/launch_cooldown = 30 SECONDS
 	///The beacon we will send the supplies
@@ -21,11 +23,9 @@
 	var/faction = FACTION_TERRAGOV
 	COOLDOWN_DECLARE(next_fire)
 
-/obj/machinery/computer/supplydrop_console/rebel
-	faction = FACTION_TERRAGOV_REBEL
-
-/obj/machinery/computer/supplydrop_console/Initialize()
+/obj/machinery/computer/supplydrop_console/Initialize(mapload)
 	. = ..()
+	RegisterSignal(SSdcs, COMSIG_GLOB_SUPPLY_BEACON_CREATED, PROC_REF(ping_beacon))
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/machinery/computer/supplydrop_console/LateInitialize()
@@ -34,6 +34,11 @@
 		if(_supply_pad.faction == faction)
 			supply_pad = _supply_pad
 			return
+
+/// Used to notify of a new beacon target
+/obj/machinery/computer/supplydrop_console/proc/ping_beacon()
+	SIGNAL_HANDLER
+	playsound(src,'sound/machines/terminal_prompt_confirm.ogg', 50, TRUE)
 
 /obj/machinery/computer/supplydrop_console/Destroy()
 	supply_beacon = null
@@ -69,21 +74,27 @@
 
 	switch(action)
 		if("select_beacon")
-			var/datum/supply_beacon/supply_beacon_choice = GLOB.supply_beacon[tgui_input_list(ui.user, "Select the beacon to send supplies", "Beacon choice", GLOB.supply_beacon)]
-			if(!istype(supply_beacon_choice))
+			var/list/beacon_list = GLOB.supply_beacon.Copy()
+			for(var/beacon_name in beacon_list)
+				var/datum/supply_beacon/beacon = beacon_list[beacon_name]
+				if(!is_ground_level(beacon.drop_location.z))
+					beacon_list -= beacon_name
+					continue
+			var/datum/supply_beacon/supply_beacon_choice = beacon_list[tgui_input_list(ui.user, "Select the beacon to send supplies", "Beacon choice", beacon_list)]
+			if(!istype(supply_beacon_choice) && is_ground_level(supply_beacon.drop_location.z))
 				return
 			supply_beacon = supply_beacon_choice
-			RegisterSignal(supply_beacon, COMSIG_PARENT_QDELETING, .proc/clean_supply_beacon)
+			RegisterSignal(supply_beacon, COMSIG_QDELETING, PROC_REF(clean_supply_beacon), override = TRUE)
 			refresh_pad()
 		if("set_x")
 			var/new_x = text2num(params["set_x"])
-			if(!new_x)
+			if(!isnum(new_x))
 				return
 			x_offset = new_x
 
 		if("set_y")
 			var/new_y = text2num(params["set_y"])
-			if(!new_y)
+			if(!isnum(new_y))
 				return
 			y_offset = new_y
 
@@ -102,7 +113,7 @@
 				to_chat(usr, "[icon2html(src, usr)] [span_warning("There wasn't any supplies found on the squads supply pad. Double check the pad.")]")
 				return
 
-			if(!istype(supply_beacon.drop_location))
+			if(!istype(supply_beacon.drop_location) || !is_ground_level(supply_beacon.drop_location.z))
 				to_chat(usr, "[icon2html(src, usr)] [span_warning("The [supply_beacon.name] was not detected on the ground.")]")
 				return
 			if(isspaceturf(supply_beacon.drop_location) || supply_beacon.drop_location.density)
@@ -126,7 +137,7 @@
 	for(var/obj/C in supply_pad.loc)
 		if(is_type_in_typecache(C, GLOB.supply_drops) && !C.anchored) //Can only send vendors, crates, unmanned vehicles and large crates
 			supplies.Add(C)
-		if(supplies.len > MAX_SUPPLY_DROPS)
+		if(length(supplies) > MAX_SUPPLY_DROPS)
 			break
 
 ///Start the supply drop process
@@ -152,7 +163,7 @@
 		C.anchored = TRUE //to avoid accidental pushes
 	playsound(supply_pad.loc, 'sound/effects/bamf.ogg', 50, TRUE)
 	visible_message("[icon2html(supply_beacon, viewers(supply_beacon))] [span_boldnotice("The [supply_pad.name] begins to beep!")]")
-	addtimer(CALLBACK(src, .proc/fire_supplydrop, supplies, x_offset, y_offset), 10 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(fire_supplydrop), supplies, x_offset, y_offset), 10 SECONDS)
 
 ///Make the supplies teleport
 /obj/machinery/computer/supplydrop_console/proc/fire_supplydrop(list/supplies, x_offset, y_offset)
@@ -168,7 +179,11 @@
 		visible_message("[icon2html(supply_pad, usr)] [span_warning("Launch aborted! Supply beacon signal lost.")]")
 		return
 
-	if(!supplies.len)
+	if(!is_ground_level(supply_beacon.drop_location.z))
+		visible_message("[icon2html(supply_pad, usr)] [span_warning("Launch aborted! Supply beacon is not groundside.")]")
+		return
+
+	if(!length(supplies))
 		visible_message("[icon2html(supply_pad, usr)] [span_warning("Launch aborted! No deployable object detected on the drop pad.")]")
 		return
 

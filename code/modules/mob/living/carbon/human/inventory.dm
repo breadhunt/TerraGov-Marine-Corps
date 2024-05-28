@@ -1,37 +1,34 @@
 ///async signal wrapper for do_quick_equip
-/mob/living/carbon/human/proc/async_do_quick_equip()
+/mob/living/carbon/human/proc/async_do_quick_equip(atom/source, datum/keybinding/human/quick_equip/equip_slot)
 	SIGNAL_HANDLER
-	. = COMSIG_KB_ACTIVATED //The return value must be a flag compatible with the signals triggering this.
-	INVOKE_ASYNC(src, .proc/do_quick_equip)
+	INVOKE_ASYNC(src, PROC_REF(do_quick_equip), initial(equip_slot.quick_equip_slot))
+	return COMSIG_KB_ACTIVATED //The return value must be a flag compatible with the signals triggering this.
 
-///async signal wrapper for do_quick_equip
-/mob/living/carbon/human/proc/async_do_quick_equip_alt()
-	SIGNAL_HANDLER
-	. = COMSIG_KB_ACTIVATED //The return value must be a flag compatible with the signals triggering this.
-	INVOKE_ASYNC(src, .proc/do_quick_equip, TRUE)
-
-/// runs equip, if passed use_alternate = TRUE will try to use the alternate preference slot
-/mob/living/carbon/human/proc/do_quick_equip(use_alternate = FALSE)
+/// runs equip, quick_equip_used is the # in INVOKE_ASYNC
+/mob/living/carbon/human/proc/do_quick_equip(quick_equip_slot = 0)
 	if(incapacitated() || lying_angle)
 		return
 
-	var/slot_requested = use_alternate ?  client?.prefs?.preferred_slot_alt : client?.prefs?.preferred_slot
+	var/slot_requested = client?.prefs?.quick_equip[quick_equip_slot] || VALID_EQUIP_SLOTS
 	var/obj/item/I = get_active_held_item()
-	if(!I)
+	if(!I) //draw item
 		if(next_move > world.time)
 			return
-		if(slot_requested)
+
+		if(slot_requested) //Equips from quick_equip 1-5
 			if(draw_from_slot_if_possible(slot_requested))
 				next_move = world.time + 1
 				return
-		for(var/slot in SLOT_DRAW_ORDER)
+
+		var/list/slot_to_draw = client?.prefs?.slot_draw_order_pref || SLOT_DRAW_ORDER //Equips from draw order in prefs
+		for(var/slot in slot_to_draw)
 			if(draw_from_slot_if_possible(slot))
 				next_move = world.time + 1
 				return
-	else
-		if(s_active && s_active.can_be_inserted(I))
-			s_active.handle_item_insertion(I, FALSE, src)
-			return
+
+	else //store item
+		if(s_active?.on_attackby(s_active, I, src)) //stored in currently open storage
+			return TRUE
 		if(slot_requested)
 			if(equip_to_slot_if_possible(I, slot_requested, FALSE, FALSE, FALSE))
 				return
@@ -45,7 +42,7 @@
 
 /mob/living/carbon/human/proc/equip_in_one_of_slots(obj/item/W, list/slots, del_on_fail = 1)
 	for (var/slot in slots)
-		if (equip_to_slot_if_possible(W, slots[slot], 1, del_on_fail = 0))
+		if (equip_to_slot_if_possible(W, slot, ignore_delay = TRUE, warning = FALSE))
 			return slot
 	if (del_on_fail)
 		qdel(W)
@@ -141,15 +138,15 @@
 		if(ITEM_UNEQUIP_UNEQUIPPED)
 			return
 	if(I == wear_suit)
+		wear_suit = null
 		if(s_store)
 			dropItemToGround(s_store)
-		wear_suit = null
 		I.unequipped(src, SLOT_WEAR_SUIT)
-		if(I.flags_inv_hide & HIDESHOES)
+		if(I.inv_hide_flags & HIDESHOES)
 			update_inv_shoes()
-		if(I.flags_inv_hide & (HIDEALLHAIR|HIDETOPHAIR|HIDELOWHAIR) )
+		if(I.inv_hide_flags & (HIDEALLHAIR|HIDETOPHAIR|HIDELOWHAIR) )
 			update_hair()
-		if(I.flags_inv_hide & HIDEJUMPSUIT)
+		if(I.inv_hide_flags & HIDEJUMPSUIT)
 			update_inv_w_uniform()
 		update_inv_wear_suit()
 		. = ITEM_UNEQUIP_UNEQUIPPED
@@ -169,19 +166,19 @@
 		. = ITEM_UNEQUIP_UNEQUIPPED
 	else if(I == head)
 		var/updatename = 0
-		if(head.flags_inv_hide & HIDEFACE)
+		if(head.inv_hide_flags & HIDEFACE)
 			updatename = 1
 		head = null
 		I.unequipped(src, SLOT_HEAD)
 		if(updatename)
 			name = get_visible_name()
-		if(I.flags_inv_hide & (HIDEALLHAIR|HIDETOPHAIR|HIDELOWHAIR))
+		if(I.inv_hide_flags & (HIDEALLHAIR|HIDETOPHAIR|HIDELOWHAIR|HIDE_EXCESS_HAIR))
 			update_hair()	//rebuild hair
-		if(I.flags_inv_hide & HIDEEARS)
+		if(I.inv_hide_flags & HIDEEARS)
 			update_inv_ears()
-		if(I.flags_inv_hide & HIDEMASK)
+		if(I.inv_hide_flags & HIDEMASK)
 			update_inv_wear_mask()
-		if(I.flags_inv_hide & HIDEEYES)
+		if(I.inv_hide_flags & HIDEEYES)
 			update_inv_glasses()
 		update_inv_head()
 		. = ITEM_UNEQUIP_UNEQUIPPED
@@ -239,193 +236,186 @@
 
 /mob/living/carbon/human/wear_mask_update(obj/item/I, equipping)
 	name = get_visible_name() // doing this without a check, still cheaper than doing it every Life() tick -spookydonut
-	if(I.flags_inv_hide & (HIDEALLHAIR|HIDETOPHAIR|HIDELOWHAIR))
+	if(I.inv_hide_flags & (HIDEALLHAIR|HIDETOPHAIR|HIDELOWHAIR))
 		update_hair()	//rebuild hair
-	if(I.flags_inv_hide & HIDEEARS)
+	if(I.inv_hide_flags & HIDEEARS)
 		update_inv_ears()
-	if(I.flags_inv_hide & HIDEEYES)
+	if(I.inv_hide_flags & HIDEEYES)
 		update_inv_glasses()
 	return ..()
 
 
 //This is an UNSAFE proc. Use mob_can_equip() before calling this one! Or rather use equip_to_slot_if_possible()
 //set redraw_mob to 0 if you don't wish the hud to be updated - if you're doing it manually in your own proc.
-/mob/living/carbon/human/equip_to_slot(obj/item/W, slot)
+/mob/living/carbon/human/equip_to_slot(obj/item/item_to_equip, slot, bitslot = FALSE)
 	if(!slot)
 		return
-	if(!istype(W))
+	if(!istype(item_to_equip))
 		return
+	if(bitslot)
+		var/oldslot = slot
+		slot = slotbit2slotdefine(oldslot)
 	if(!has_limb_for_slot(slot))
 		return
 
-	if(W == l_hand)
+	if(item_to_equip == l_hand)
 		l_hand = null
-		W.unequipped(src, SLOT_L_HAND)
+		item_to_equip.unequipped(src, SLOT_L_HAND)
 		update_inv_l_hand()
-		//removes item's actions, may be readded once re-equipped to the new slot
-		for(var/datum/action/A AS in W.actions)
-			A.remove_action(src)
 
-	else if(W == r_hand)
+	else if(item_to_equip == r_hand)
 		r_hand = null
-		W.unequipped(src, SLOT_R_HAND)
+		item_to_equip.unequipped(src, SLOT_R_HAND)
 		update_inv_r_hand()
-		//removes item's actions, may be readded once re-equipped to the new slot
-		for(var/datum/action/A AS in W.actions)
-			A.remove_action(src)
 
-	W.screen_loc = null
-	W.loc = src
-	W.layer = ABOVE_HUD_LAYER
-	W.plane = ABOVE_HUD_PLANE
+	//removes item's actions, may be readded once re-equipped to the new slot
+	for(var/datum/action/A AS in item_to_equip.actions)
+		A.remove_action(src)
+
+	item_to_equip.screen_loc = null
+	item_to_equip.loc = src
+	item_to_equip.layer = ABOVE_HUD_LAYER
+	item_to_equip.plane = ABOVE_HUD_PLANE
+
+	item_to_equip.forceMove(src)
+
+	var/obj/item/selected_slot //the item in the specific slot we're trying to insert into, if applicable
 
 	switch(slot)
 		if(SLOT_BACK)
-			back = W
-			W.equipped(src, slot)
+			back = item_to_equip
+			item_to_equip.equipped(src, slot)
 			update_inv_back()
 		if(SLOT_WEAR_MASK)
-			wear_mask = W
-			W.equipped(src, slot)
-			wear_mask_update(W, TRUE)
+			wear_mask = item_to_equip
+			item_to_equip.equipped(src, slot)
+			wear_mask_update(item_to_equip, TRUE)
 		if(SLOT_HANDCUFFED)
-			update_handcuffed(W)
+			update_handcuffed(item_to_equip)
 		if(SLOT_L_HAND)
-			l_hand = W
-			W.equipped(src, slot)
+			l_hand = item_to_equip
+			item_to_equip.equipped(src, slot)
 			update_inv_l_hand()
 		if(SLOT_R_HAND)
-			r_hand = W
-			W.equipped(src, slot)
+			r_hand = item_to_equip
+			item_to_equip.equipped(src, slot)
 			update_inv_r_hand()
 		if(SLOT_BELT)
-			belt = W
-			W.equipped(src, slot)
+			belt = item_to_equip
+			item_to_equip.equipped(src, slot)
 			update_inv_belt()
 		if(SLOT_WEAR_ID)
-			wear_id = W
-			W.equipped(src, slot)
+			wear_id = item_to_equip
+			item_to_equip.equipped(src, slot)
 			update_inv_wear_id()
 			name = get_visible_name()
 		if(SLOT_EARS)
-			wear_ear = W
-			W.equipped(src, slot)
+			wear_ear = item_to_equip
+			item_to_equip.equipped(src, slot)
 			update_inv_ears()
 		if(SLOT_GLASSES)
-			glasses = W
-			W.equipped(src, slot)
-			var/obj/item/clothing/glasses/G = W
+			glasses = item_to_equip
+			item_to_equip.equipped(src, slot)
+			var/obj/item/clothing/glasses/G = item_to_equip
 			if(G.vision_flags || G.darkness_view || G.invis_override || G.invis_view || !isnull(G.lighting_alpha))
 				update_sight()
 			update_inv_glasses()
 		if(SLOT_GLOVES)
-			gloves = W
-			W.equipped(src, slot)
+			gloves = item_to_equip
+			item_to_equip.equipped(src, slot)
 			update_inv_gloves()
 		if(SLOT_HEAD)
-			head = W
-			if(head.flags_inv_hide & HIDEFACE)
+			head = item_to_equip
+			if(head.inv_hide_flags & HIDEFACE)
 				name = get_visible_name()
-			if(head.flags_inv_hide & (HIDEALLHAIR|HIDETOPHAIR|HIDELOWHAIR))
+			if(head.inv_hide_flags & (HIDEALLHAIR|HIDETOPHAIR|HIDELOWHAIR|HIDE_EXCESS_HAIR))
 				update_hair()	//rebuild hair
-			if(head.flags_inv_hide & HIDEEARS)
+			if(head.inv_hide_flags & HIDEEARS)
 				update_inv_ears()
-			if(head.flags_inv_hide & HIDEMASK)
+			if(head.inv_hide_flags & HIDEMASK)
 				update_inv_wear_mask()
-			if(head.flags_inv_hide & HIDEEYES)
+			if(head.inv_hide_flags & HIDEEYES)
 				update_inv_glasses()
-			W.equipped(src, slot)
+			item_to_equip.equipped(src, slot)
 			update_inv_head()
 		if(SLOT_SHOES)
-			shoes = W
-			W.equipped(src, slot)
+			shoes = item_to_equip
+			item_to_equip.equipped(src, slot)
 			update_inv_shoes()
 		if(SLOT_WEAR_SUIT)
-			wear_suit = W
-			if(wear_suit.flags_inv_hide & HIDESHOES)
+			wear_suit = item_to_equip
+			if(wear_suit.inv_hide_flags & HIDESHOES)
 				update_inv_shoes()
-			if(wear_suit.flags_inv_hide & HIDEJUMPSUIT)
+			if(wear_suit.inv_hide_flags & HIDEJUMPSUIT)
 				update_inv_w_uniform()
-			if( wear_suit.flags_inv_hide & (HIDEALLHAIR|HIDETOPHAIR|HIDELOWHAIR) )
+			if( wear_suit.inv_hide_flags & (HIDEALLHAIR|HIDETOPHAIR|HIDELOWHAIR) )
 				update_hair()
-			W.equipped(src, slot)
+			item_to_equip.equipped(src, slot)
 			update_inv_wear_suit()
 		if(SLOT_W_UNIFORM)
-			w_uniform = W
-			W.equipped(src, slot)
+			w_uniform = item_to_equip
+			item_to_equip.equipped(src, slot)
 			update_inv_w_uniform()
 		if(SLOT_L_STORE)
-			l_store = W
-			W.equipped(src, slot)
+			l_store = item_to_equip
+			item_to_equip.equipped(src, slot)
 			update_inv_pockets()
 		if(SLOT_R_STORE)
-			r_store = W
-			W.equipped(src, slot)
+			r_store = item_to_equip
+			item_to_equip.equipped(src, slot)
 			update_inv_pockets()
 		if(SLOT_S_STORE)
-			s_store = W
-			W.equipped(src, slot)
+			s_store = item_to_equip
+			item_to_equip.equipped(src, slot)
 			update_inv_s_store()
 		if(SLOT_IN_BOOT)
-			var/obj/item/clothing/shoes/marine/B = shoes
-			B.attackby(W, src)
+			selected_slot = shoes
 		if(SLOT_IN_BACKPACK)
-			var/obj/item/storage/S = back
-			S.handle_item_insertion(W, TRUE, src)
+			selected_slot = back
 		if(SLOT_IN_SUIT)
-			if(istype(wear_suit, /obj/item/clothing/suit/modular))
-				var/obj/item/clothing/suit/modular/T = wear_suit
-				var/obj/item/armor_module/storage/U = T.attachments_by_slot[ATTACHMENT_SLOT_STORAGE]
-				var/obj/item/storage/S = U.storage
-				S.handle_item_insertion(W, FALSE, src)
-				S.close(src)
-			if(istype(wear_suit, /obj/item/clothing/suit/storage)) //old suits use the pocket var instead of storage attachments
-				var/obj/item/clothing/suit/storage/T = wear_suit
-				var/obj/item/storage/internal/S = T.pockets
-				S.handle_item_insertion(W, FALSE, src)
-				S.close(src)
+			selected_slot = wear_suit
 		if(SLOT_IN_BELT)
-			var/obj/item/storage/belt/S = belt
-			S.handle_item_insertion(W, FALSE, src)
+			selected_slot = belt
 		if(SLOT_IN_HEAD)
-			if(istype(head, /obj/item/clothing/head/modular))
-				var/obj/item/clothing/head/modular/T = head
-				var/obj/item/armor_module/storage/U = T.attachments_by_slot[ATTACHMENT_SLOT_STORAGE]
-				var/obj/item/storage/S = U.storage
-				S.handle_item_insertion(W, FALSE, src)
-				S.close(src)
-			if(istype(head, /obj/item/clothing/head/helmet/marine)) //old hats use pocket var instead of storage attachments
-				var/obj/item/clothing/head/helmet/marine/T = head
-				var/obj/item/storage/internal/S = T.pockets
-				S.handle_item_insertion(W, FALSE, src)
-				S.close(src)
+			selected_slot = head
 		if(SLOT_IN_HOLSTER)
-			var/obj/item/storage/S = belt
-			S.handle_item_insertion(W, FALSE, src)
+			selected_slot = belt
 		if(SLOT_IN_B_HOLSTER)
-			var/obj/item/storage/S = back
-			S.handle_item_insertion(W, FALSE, src)
+			selected_slot = back
 		if(SLOT_IN_S_HOLSTER)
-			var/obj/item/storage/S = s_store
-			S.handle_item_insertion(W, FALSE, src)
+			selected_slot = s_store
 		if(SLOT_IN_STORAGE)
-			var/obj/item/storage/S = s_active
-			S.handle_item_insertion(W, FALSE, src)
+			selected_slot = s_active
 		if(SLOT_IN_L_POUCH)
-			var/obj/item/storage/S = l_store
-			S.handle_item_insertion(W, FALSE, src)
+			selected_slot = l_store
 		if(SLOT_IN_R_POUCH)
-			var/obj/item/storage/S = r_store
-			S.handle_item_insertion(W, FALSE, src)
+			selected_slot = r_store
 		if(SLOT_IN_ACCESSORY)
-			var/obj/item/armor_module/storage/U = w_uniform.attachments_by_slot[ATTACHMENT_SLOT_UNIFORM]
-			var/obj/item/storage/S = U.storage
-			S.handle_item_insertion(W, FALSE, src)
+			selected_slot = w_uniform
 		else
-			CRASH("[src] tried to equip [W] to [slot] in equip_to_slot().")
+			CRASH("[src] tried to equip [item_to_equip] to [slot] in equip_to_slot().")
 
-	return TRUE
+	if(!selected_slot)
+		return FALSE
 
+	var/datum/storage/selected_storage
+	if(isdatumstorage(selected_slot))
+		selected_storage = selected_slot
+	else if(selected_slot.storage_datum)
+		selected_storage = selected_slot.storage_datum
+	else if(isclothing(selected_slot))
+		var/obj/item/clothing/selected_clothing = selected_slot
+		for(var/key AS in selected_clothing.attachments_by_slot)
+			var/atom/attachment = selected_clothing.attachments_by_slot[key]
+			if(!attachment?.storage_datum)
+				continue
+			selected_storage = attachment.storage_datum
+			break
+
+	if(!selected_storage)
+		return FALSE
+
+	return selected_storage.handle_item_insertion(item_to_equip, FALSE, src)
 
 /mob/living/carbon/human/get_item_by_slot(slot_id)
 	switch(slot_id)
@@ -467,6 +457,8 @@
 			return shoes
 		if(SLOT_IN_B_HOLSTER)
 			return back
+		if(SLOT_IN_BELT)
+			return belt
 		if(SLOT_IN_HOLSTER)
 			return belt
 		if(SLOT_IN_STORAGE)
@@ -482,48 +474,85 @@
 		if(SLOT_IN_HEAD)
 			return head
 
+/mob/living/carbon/human/get_item_by_slot_bit(slot_bit)
+	switch(slot_bit)
+		if(ITEM_SLOT_OCLOTHING)
+			return wear_suit
+		if(ITEM_SLOT_ICLOTHING)
+			return w_uniform
+		if(ITEM_SLOT_GLOVES)
+			return gloves
+		if(ITEM_SLOT_EYES)
+			return glasses
+		if(ITEM_SLOT_EARS)
+			return wear_ear
+		if(ITEM_SLOT_MASK)
+			return wear_mask
+		if(ITEM_SLOT_HEAD)
+			return head
+		if(ITEM_SLOT_FEET)
+			return shoes
+		if(ITEM_SLOT_ID)
+			return wear_id
+		if(ITEM_SLOT_BELT)
+			return belt
+		if(ITEM_SLOT_BACK)
+			return back
+		if(ITEM_SLOT_R_POCKET)
+			return r_store
+		if(ITEM_SLOT_L_POCKET)
+			return l_store
+		if(ITEM_SLOT_SUITSTORE)
+			return s_store
+		if(ITEM_SLOT_HANDCUFF)
+			return handcuffed
+		if(ITEM_SLOT_L_HAND)
+			return l_hand
+		if(ITEM_SLOT_R_HAND)
+			return r_hand
+
+/mob/living/carbon/human/get_equipped_slot(obj/equipped_item)
+	if(..())
+		return
+
+	if(equipped_item == wear_suit)
+		. = SLOT_WEAR_SUIT
+	else if(equipped_item == w_uniform)
+		. = SLOT_W_UNIFORM
+	else if(equipped_item == shoes)
+		. = SLOT_SHOES
+	else if(equipped_item == belt)
+		. = SLOT_BELT
+	else if(equipped_item == gloves)
+		. = SLOT_GLOVES
+	else if(equipped_item == glasses)
+		. = SLOT_GLASSES
+	else if(equipped_item == head)
+		. = SLOT_HEAD
+	else if(equipped_item == wear_ear)
+		. = SLOT_EARS
+	else if(equipped_item == wear_id)
+		. = SLOT_WEAR_ID
+	else if(equipped_item == r_store)
+		. = SLOT_R_STORE
+	else if(equipped_item == l_store)
+		. = SLOT_L_STORE
+	else if(equipped_item == s_store)
+		. = SLOT_S_STORE
 
 /mob/living/carbon/human/stripPanelUnequip(obj/item/I, mob/M, slot_to_process)
-	if(I.flags_item & ITEM_ABSTRACT)
-		return
-	if(I.flags_item & NODROP)
-		to_chat(src, span_warning("You can't remove \the [I.name], it appears to be stuck!"))
+	if(!I.canStrip(M))
 		return
 	log_combat(src, M, "attempted to remove [key_name(I)] ([slot_to_process])")
 
 	M.visible_message(span_danger("[src] tries to remove [M]'s [I.name]."), \
 					span_userdanger("[src] tries to remove [M]'s [I.name]."), null, 5)
-	if(do_mob(src, M, HUMAN_STRIP_DELAY, BUSY_ICON_HOSTILE))
+	if(do_after(src, HUMAN_STRIP_DELAY, NONE, M, BUSY_ICON_HOSTILE))
 		if(Adjacent(M) && I && I == M.get_item_by_slot(slot_to_process))
 			M.dropItemToGround(I)
 			log_combat(src, M, "removed [key_name(I)] ([slot_to_process])")
 			if(isidcard(I))
 				message_admins("[ADMIN_TPMONTY(src)] took the [I] of [ADMIN_TPMONTY(M)].")
-
-	if(M)
-		if(interactee == M && Adjacent(M))
-			M.show_inv(src)
-
-
-/mob/living/carbon/human/stripPanelEquip(obj/item/I, mob/M, slot_to_process)
-	if(I && !(I.flags_item & ITEM_ABSTRACT))
-		if(I.flags_item & NODROP)
-			to_chat(src, span_warning("You can't put \the [I.name] on [M], it's stuck to your hand!"))
-			return
-		if(!I.mob_can_equip(M, slot_to_process, TRUE))
-			to_chat(src, span_warning("You can't put \the [I.name] on [M]!"))
-			return
-		visible_message(span_notice("[src] tries to put [I] on [M]."), null , null, 5)
-		if(do_mob(src, M, HUMAN_STRIP_DELAY, BUSY_ICON_GENERIC))
-			if(!M.get_item_by_slot(slot_to_process))
-				if(I.mob_can_equip(M, slot_to_process, TRUE))//Placing an item on the mob
-					dropItemToGround(I)
-					if(!QDELETED(I)) //Might be self-deleted?
-						M.equip_to_slot_if_possible(I, slot_to_process, 1, 0, 1, 1)
-
-	if(M)
-		if(interactee == M && Adjacent(M))
-			M.show_inv(src)
 
 
 /mob/living/carbon/human/proc/equipOutfit(outfit, visualsOnly = FALSE)

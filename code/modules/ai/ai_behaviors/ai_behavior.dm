@@ -35,13 +35,15 @@ Registers signals, handles the pathfinding element addition/removal alongside ma
 	///When this timer is up, we force a change of node to ensure that the ai will never stay stuck trying to go to a specific node
 	var/anti_stuck_timer
 	///Minimum health percentage before the ai tries to run away
-	var/minimum_health = 0
+	var/minimum_health = 0.4
 	///If the mob attached to the ai is offered on xeno creation
 	var/is_offered_on_creation = FALSE
 	///Are we waiting for advanced pathfinding
 	var/registered_for_node_pathfinding = FALSE
 	///Are we already registered for normal pathfinding
 	var/registered_for_move = FALSE
+	///Should we lose the escorted atom if we change action
+	var/weak_escort = FALSE
 
 /datum/ai_behavior/New(loc, mob/parent_to_assign, atom/escorted_atom)
 	..()
@@ -54,7 +56,7 @@ Registers signals, handles the pathfinding element addition/removal alongside ma
 	//We always use the escorted atom as our reference point for looking for target. So if we don't have any escorted atom, we take ourselve as the reference
 	START_PROCESSING(SSprocessing, src)
 	if(is_offered_on_creation)
-		LAZYDISTINCTADD(GLOB.ssd_living_mobs, mob_parent)
+		LAZYOR(GLOB.ssd_living_mobs, mob_parent)
 
 /datum/ai_behavior/Destroy(force, ...)
 	. = ..()
@@ -68,10 +70,10 @@ Registers signals, handles the pathfinding element addition/removal alongside ma
 	if(escorted_atom)
 		global_set_escorted_atom(null, escorted_atom)
 	else
-		RegisterSignal(SSdcs, COMSIG_GLOB_AI_MINION_RALLY, .proc/global_set_escorted_atom)
-	RegisterSignal(SSdcs, COMSIG_GLOB_AI_GOAL_SET, .proc/set_goal_node)
+		RegisterSignal(SSdcs, COMSIG_GLOB_AI_MINION_RALLY, PROC_REF(global_set_escorted_atom))
+	RegisterSignal(SSdcs, COMSIG_GLOB_AI_GOAL_SET, PROC_REF(set_goal_node))
 	set_goal_node(null, null, GLOB.goal_nodes[identifier])
-	RegisterSignal(goal_node, COMSIG_PARENT_QDELETING, .proc/clean_goal_node)
+	RegisterSignal(goal_node, COMSIG_QDELETING, PROC_REF(clean_goal_node))
 	late_initialize()
 
 ///Set behaviour to base behavior
@@ -104,10 +106,12 @@ Registers signals, handles the pathfinding element addition/removal alongside ma
 	UnregisterSignal(SSdcs, COMSIG_GLOB_AI_MINION_RALLY)
 	UnregisterSignal(SSdcs, COMSIG_GLOB_AI_GOAL_SET)
 	if(goal_node)
-		UnregisterSignal(goal_node, COMSIG_PARENT_QDELETING)
+		UnregisterSignal(goal_node, COMSIG_QDELETING)
 
 ///Cleanup old state vars, start the movement towards our new target
 /datum/ai_behavior/proc/change_action(next_action, atom/next_target, special_distance_to_maintain)
+	if(QDELETED(mob_parent))
+		return
 	cleanup_current_action(next_action)
 	#ifdef TESTING
 	switch(next_action)
@@ -136,7 +140,7 @@ Registers signals, handles the pathfinding element addition/removal alongside ma
 	if(next_target)
 		atom_to_walk_to = next_target
 		if(!registered_for_move)
-			INVOKE_ASYNC(src, .proc/scheduled_move)
+			INVOKE_ASYNC(src, PROC_REF(scheduled_move))
 
 	register_action_signals(current_action)
 	if(current_action == MOVING_TO_SAFETY)
@@ -174,7 +178,7 @@ Registers signals, handles the pathfinding element addition/removal alongside ma
 	else
 		set_current_node(current_node.get_best_adj_node(list(NODE_LAST_VISITED = -1), identifier))
 	if(!current_node)
-		addtimer(CALLBACK(src, .proc/look_for_next_node), 1 SECONDS)// Shouldn't happen unless you spam goal nodes
+		addtimer(CALLBACK(src, PROC_REF(look_for_next_node)), 1 SECONDS)// Shouldn't happen unless you spam goal nodes
 		return
 	current_node.set_weight(identifier, NODE_LAST_VISITED, world.time)
 	change_action(MOVING_TO_NODE, current_node)
@@ -182,9 +186,9 @@ Registers signals, handles the pathfinding element addition/removal alongside ma
 ///Set the current node to next_node
 /datum/ai_behavior/proc/set_current_node(obj/effect/ai_node/next_node)
 	if(current_node)
-		UnregisterSignal(current_node, COMSIG_PARENT_QDELETING)
+		UnregisterSignal(current_node, COMSIG_QDELETING)
 	if(next_node)
-		RegisterSignal(current_node, COMSIG_PARENT_QDELETING, .proc/look_for_next_node)
+		RegisterSignal(current_node, COMSIG_QDELETING, PROC_REF(look_for_next_node))
 	current_node = next_node
 
 ///Signal handler when the ai is blocked by an obstacle
@@ -228,7 +232,7 @@ Registers signals, handles the pathfinding element addition/removal alongside ma
 		return
 	atom_to_walk_to = turfs_in_path[length(turfs_in_path)]
 	if(!registered_for_move)
-		INVOKE_ASYNC(src, .proc/scheduled_move)
+		INVOKE_ASYNC(src, PROC_REF(scheduled_move))
 	turfs_in_path.len--
 	return COMSIG_MAINTAIN_POSITION
 
@@ -248,21 +252,23 @@ Registers signals, handles the pathfinding element addition/removal alongside ma
 	if(identifier && src.identifier != identifier)
 		return
 	if(goal_node)
-		UnregisterSignal(goal_node, COMSIG_PARENT_QDELETING)
+		UnregisterSignal(goal_node, COMSIG_QDELETING)
 	goal_node = new_goal_node
 	goal_nodes = null
-	RegisterSignal(goal_node, COMSIG_PARENT_QDELETING, .proc/clean_goal_node)
+	RegisterSignal(goal_node, COMSIG_QDELETING, PROC_REF(clean_goal_node))
 
-///Set the escorted atom
-/datum/ai_behavior/proc/set_escorted_atom(datum/source, atom/atom_to_escort)
+///Set the escorted atom.
+/datum/ai_behavior/proc/set_escorted_atom(datum/source, atom/atom_to_escort, new_escort_is_weak)
 	SIGNAL_HANDLER
 	clean_escorted_atom()
 	escorted_atom = atom_to_escort
-	UnregisterSignal(SSdcs, COMSIG_GLOB_AI_MINION_RALLY)
-	RegisterSignal(escorted_atom, COMSIG_ESCORTED_ATOM_CHANGING, .proc/set_escorted_atom)
-	RegisterSignal(escorted_atom, COMSIG_PARENT_QDELETING, .proc/clean_escorted_atom)
-	RegisterSignal(escorted_atom, COMSIG_ESCORTING_ATOM_BEHAVIOUR_CHANGED, .proc/set_agressivity)
-	base_action = ESCORTING_ATOM
+	weak_escort = new_escort_is_weak
+	if(!weak_escort)
+		UnregisterSignal(SSdcs, COMSIG_GLOB_AI_MINION_RALLY)
+		base_action = ESCORTING_ATOM
+	RegisterSignal(escorted_atom, COMSIG_ESCORTED_ATOM_CHANGING, PROC_REF(set_escorted_atom))
+	RegisterSignal(escorted_atom, COMSIG_QDELETING, PROC_REF(clean_escorted_atom))
+	RegisterSignal(escorted_atom, COMSIG_ESCORTING_ATOM_BEHAVIOUR_CHANGED, PROC_REF(set_agressivity))
 	change_action(ESCORTING_ATOM, escorted_atom)
 
 ///Change atom to walk to if the order comes from a corresponding commander
@@ -279,10 +285,10 @@ Registers signals, handles the pathfinding element addition/removal alongside ma
 	SIGNAL_HANDLER
 	if(!escorted_atom)
 		return
-	UnregisterSignal(escorted_atom, list(COMSIG_ESCORTED_ATOM_CHANGING ,COMSIG_PARENT_QDELETING, COMSIG_ESCORTING_ATOM_BEHAVIOUR_CHANGED))
+	UnregisterSignal(escorted_atom, list(COMSIG_ESCORTED_ATOM_CHANGING ,COMSIG_QDELETING, COMSIG_ESCORTING_ATOM_BEHAVIOUR_CHANGED))
 	escorted_atom = null
 	base_action = initial(base_action)
-	RegisterSignal(SSdcs, COMSIG_GLOB_AI_MINION_RALLY, .proc/global_set_escorted_atom)
+	RegisterSignal(SSdcs, COMSIG_GLOB_AI_MINION_RALLY, PROC_REF(global_set_escorted_atom))
 
 ///Set the target distance to be normal (initial) or very low (almost passive)
 /datum/ai_behavior/proc/set_agressivity(datum/source, should_be_agressive = TRUE)
@@ -304,14 +310,14 @@ These are parameter based so the ai behavior can choose to (un)register the sign
 /datum/ai_behavior/proc/register_action_signals(action_type)
 	switch(action_type)
 		if(MOVING_TO_NODE)
-			RegisterSignal(mob_parent, COMSIG_STATE_MAINTAINED_DISTANCE, .proc/finished_node_move)
+			RegisterSignal(mob_parent, COMSIG_STATE_MAINTAINED_DISTANCE, PROC_REF(finished_node_move))
 			if(SStime_track.time_dilation_avg > CONFIG_GET(number/ai_anti_stuck_lag_time_dilation_threshold))
-				anti_stuck_timer = addtimer(CALLBACK(src, .proc/look_for_next_node, TRUE, TRUE), 10 SECONDS, TIMER_STOPPABLE)
+				anti_stuck_timer = addtimer(CALLBACK(src, PROC_REF(look_for_next_node), TRUE, TRUE), 10 SECONDS, TIMER_STOPPABLE)
 				return
-			anti_stuck_timer = addtimer(CALLBACK(src, .proc/ask_for_pathfinding, TRUE, TRUE), 10 SECONDS, TIMER_STOPPABLE)
+			anti_stuck_timer = addtimer(CALLBACK(src, PROC_REF(ask_for_pathfinding), TRUE, TRUE), 10 SECONDS, TIMER_STOPPABLE)
 		if(FOLLOWING_PATH)
-			RegisterSignal(mob_parent, COMSIG_STATE_MAINTAINED_DISTANCE, .proc/finished_path_move)
-			anti_stuck_timer = addtimer(CALLBACK(src, .proc/look_for_next_node, TRUE, TRUE), 10 SECONDS, TIMER_STOPPABLE)
+			RegisterSignal(mob_parent, COMSIG_STATE_MAINTAINED_DISTANCE, PROC_REF(finished_path_move))
+			anti_stuck_timer = addtimer(CALLBACK(src, PROC_REF(look_for_next_node), TRUE, TRUE), 10 SECONDS, TIMER_STOPPABLE)
 
 /datum/ai_behavior/proc/unregister_action_signals(action_type)
 	switch(action_type)
@@ -324,6 +330,8 @@ These are parameter based so the ai behavior can choose to (un)register the sign
 
 /// Move the ai and schedule the next move
 /datum/ai_behavior/proc/scheduled_move()
+	if(QDELETED(mob_parent))
+		return
 	if(!atom_to_walk_to)
 		registered_for_move = FALSE
 		return
@@ -331,7 +339,7 @@ These are parameter based so the ai behavior can choose to (un)register the sign
 	var/next_move = mob_parent.cached_multiplicative_slowdown + mob_parent.next_move_slowdown
 	if(next_move <= 0)
 		next_move = 1
-	addtimer(CALLBACK(src, .proc/scheduled_move), next_move, NONE, SSpathfinder)
+	addtimer(CALLBACK(src, PROC_REF(scheduled_move)), next_move, NONE, SSpathfinder)
 	registered_for_move = TRUE
 
 /// Moves the ai toward its atom_to_walk_to
@@ -349,7 +357,7 @@ These are parameter based so the ai behavior can choose to (un)register the sign
 		if(!get_dir(mob_parent, atom_to_walk_to)) //We're right on top, move out of it
 			step_dir = pick(CARDINAL_ALL_DIRS)
 			var/turf/next_turf = get_step(mob_parent, step_dir)
-			if(!(next_turf.flags_atom & AI_BLOCKED) && !mob_parent.Move(get_step(mob_parent, step_dir), step_dir))
+			if(!(next_turf.atom_flags & AI_BLOCKED) && !mob_parent.Move(get_step(mob_parent, step_dir), step_dir))
 				SEND_SIGNAL(mob_parent, COMSIG_OBSTRUCTED_MOVE, step_dir)
 			else if(ISDIAGONALDIR(step_dir))
 				mob_parent.next_move_slowdown += (DIAG_MOVEMENT_ADDED_DELAY_MULTIPLIER - 1) * mob_parent.cached_multiplicative_slowdown //Not perfect but good enough
@@ -357,7 +365,7 @@ These are parameter based so the ai behavior can choose to (un)register the sign
 		if(prob(sidestep_prob))
 			step_dir = pick(LeftAndRightOfDir(get_dir(mob_parent, atom_to_walk_to)))
 			var/turf/next_turf = get_step(mob_parent, step_dir)
-			if(!(next_turf.flags_atom & AI_BLOCKED) && !mob_parent.Move(get_step(mob_parent, step_dir), step_dir))
+			if(!(next_turf.atom_flags & AI_BLOCKED) && !mob_parent.Move(get_step(mob_parent, step_dir), step_dir))
 				SEND_SIGNAL(mob_parent, COMSIG_OBSTRUCTED_MOVE, step_dir)
 			else if(ISDIAGONALDIR(step_dir))
 				mob_parent.next_move_slowdown += (DIAG_MOVEMENT_ADDED_DELAY_MULTIPLIER - 1) * mob_parent.cached_multiplicative_slowdown
@@ -367,10 +375,10 @@ These are parameter based so the ai behavior can choose to (un)register the sign
 	else
 		step_dir = get_dir(mob_parent, atom_to_walk_to)
 	var/turf/next_turf = get_step(mob_parent, step_dir)
-	if(next_turf.flags_atom & AI_BLOCKED || (!mob_parent.Move(next_turf, step_dir) && !(SEND_SIGNAL(mob_parent, COMSIG_OBSTRUCTED_MOVE, step_dir) & COMSIG_OBSTACLE_DEALT_WITH)))
+	if(next_turf?.atom_flags & AI_BLOCKED || (!mob_parent.Move(next_turf, step_dir) && !(SEND_SIGNAL(mob_parent, COMSIG_OBSTRUCTED_MOVE, step_dir) & COMSIG_OBSTACLE_DEALT_WITH)))
 		step_dir = pick(LeftAndRightOfDir(step_dir))
 		next_turf = get_step(mob_parent, step_dir)
-		if(next_turf.flags_atom & AI_BLOCKED)
+		if(next_turf?.atom_flags & AI_BLOCKED)
 			return
 		if(mob_parent.Move(get_step(mob_parent, step_dir), step_dir) && ISDIAGONALDIR(step_dir))
 			mob_parent.next_move_slowdown += (DIAG_MOVEMENT_ADDED_DELAY_MULTIPLIER - 1) * mob_parent.cached_multiplicative_slowdown

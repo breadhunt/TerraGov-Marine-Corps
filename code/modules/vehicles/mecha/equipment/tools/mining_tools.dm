@@ -55,7 +55,7 @@
 				playsound(src,'sound/effects/drill.ogg',40,TRUE)
 			else if(isobj(target))
 				var/obj/O = target
-				O.take_damage(15, BRUTE, 0, FALSE, get_dir(chassis, target))
+				O.take_damage(15, BRUTE, MELEE, FALSE, get_dir(chassis, target))
 				playsound(src,'sound/effects/drill.ogg',40,TRUE)
 
 			// If we caused a qdel drilling the target, we can stop drilling them.
@@ -92,10 +92,10 @@
 						span_userdanger("[chassis] is drilling you with [src]!"))
 	log_combat(user, target, "drilled", "[name]", "INTENT: [user.a_intent ? "On" : "Off"])(DAMTYPE: [uppertext(damtype)])")
 	//drill makes a hole
-	target.apply_damage(10, BRUTE, BODY_ZONE_CHEST, updating_health = TRUE)
+	target.apply_damage(10, BRUTE, BODY_ZONE_CHEST, MELEE, updating_health = TRUE)
 
 	//blood splatters
-	new /obj/effect/temp_visual/dir_setting/bloodsplatter(target.drop_location(), get_dir(chassis, target))
+	new /obj/effect/temp_visual/dir_setting/bloodsplatter(target.drop_location(), Get_Angle(chassis, target))
 
 /obj/item/mecha_parts/mecha_equipment/drill/diamonddrill
 	name = "diamond-tipped exosuit drill"

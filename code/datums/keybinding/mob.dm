@@ -125,7 +125,7 @@
 	user.swap_hand()
 	return TRUE
 
-/datum/keybinding/mob/say
+/*/datum/keybinding/mob/say
 	name = "say"
 	full_name = "Say"
 	hotkey_keys = list("T")
@@ -138,22 +138,7 @@
 		return
 	var/mob/M = user.mob
 	M.say_wrapper()
-	return TRUE
-
-/datum/keybinding/mob/me
-	name = "me"
-	full_name = "Me"
-	hotkey_keys = list("M")
-	description = ""
-	keybind_signal = COMSIG_KB_MOB_ME_DOWN
-
-/datum/keybinding/mob/me/down(client/user)
-	. = ..()
-	if(.)
-		return
-	var/mob/M = user.mob
-	M.me_wrapper()
-	return TRUE
+	return TRUE*/
 
 /datum/keybinding/mob/activate_inhand
 	hotkey_keys = list("Z")
@@ -188,38 +173,6 @@
 	else
 		user.mob.dropItemToGround(I)
 	return TRUE
-
-
-/datum/keybinding/mob/examine
-	hotkey_keys = list("Shift")
-	name = "examine_kb"
-	full_name = "Examine"
-	description = "Hold this hotkey_keys and click to examine things."
-	keybind_signal = COMSIG_KB_MOB_EXAMINE_DOWN
-
-
-/datum/keybinding/mob/examine/down(client/user)
-	. = ..()
-	if(.)
-		return
-	RegisterSignal(user.mob, list(COMSIG_MOB_CLICKON, COMSIG_OBSERVER_CLICKON), .proc/examinate)
-	RegisterSignal(user.mob, list(COMSIG_MOB_MOUSEDOWN, COMSIG_MOB_MOUSEUP), .keybinding/proc/intercept_mouse_special)
-	return TRUE
-
-
-/datum/keybinding/mob/examine/up(client/user)
-	UnregisterSignal(user.mob, list(COMSIG_MOB_MOUSEDOWN, COMSIG_MOB_MOUSEUP, COMSIG_MOB_CLICKON, COMSIG_OBSERVER_CLICKON))
-	return TRUE
-
-
-/datum/keybinding/mob/examine/proc/examinate(datum/source, atom/A, params)
-	SIGNAL_HANDLER
-	var/mob/user = source
-	if(!user.client || !(user.client.eye == user || user.client.eye == user.loc))
-		UnregisterSignal(user, list(COMSIG_MOB_CLICKON, COMSIG_OBSERVER_CLICKON))
-		return
-	user.examinate(A)
-	return COMSIG_MOB_CLICK_HANDLED
 
 /datum/keybinding/mob/toggle_move_intent
 	hotkey_keys = list("5")
@@ -337,14 +290,21 @@
 /datum/keybinding/mob/toggle_minimap
 	name = "toggle_minimap"
 	full_name = "Toggle minimap"
-	description = "Toggle the minimap screen"
+	description = "Toggle your character's inherent or headset-based minimap screen"
 	keybind_signal = COMSIG_KB_TOGGLE_MINIMAP
+
+/datum/keybinding/mob/toggle_external_minimap
+	name = "toggle_external_minimap"
+	full_name = "Toggle external minimap"
+	description = "Toggle external minimap screens received from e.g. consoles or similar objects"
+	keybind_signal = COMSIG_KB_TOGGLE_EXTERNAL_MINIMAP
 
 /datum/keybinding/mob/toggle_self_harm
 	name = "toggle_self_harm"
 	full_name = "Toggle self harm"
 	description = "Toggle being able to hit yourself"
 	keybind_signal = COMSIG_KB_SELFHARM
+	hotkey_keys = list("0")
 
 /datum/keybinding/mob/toggle_self_harm/down(client/user)
 	. = ..()
@@ -352,3 +312,32 @@
 		return
 	user.mob.do_self_harm = !user.mob.do_self_harm
 	user.mob.balloon_alert(user.mob, "You can [user.mob.do_self_harm ? "now" : "no longer"] hit yourself")
+
+/datum/keybinding/mob/interactive_emote
+	name = "interactive_emote"
+	full_name = "Do interactive emote"
+	description = "Perform an interactive emote with another player."
+	keybind_signal = COMSIG_KB_INTERACTIVE_EMOTE
+
+/datum/keybinding/mob/interactive_emote/down(client/user)
+	. = ..()
+	if(. || !isliving(user.mob) || CHECK_BITFIELD(user.mob.status_flags, INCORPOREAL) || !user.mob.can_interact(user.mob))
+		return
+
+	var/list/adjacent_mobs = cheap_get_living_near(user.mob, 1)
+	adjacent_mobs.Remove(user.mob)	//Get rid of self
+	for(var/mob/M AS in adjacent_mobs)
+		if(!M.client)
+			adjacent_mobs.Remove(M)	//Get rid of non-players
+
+	if(!length(adjacent_mobs))
+		return
+
+	if(length(adjacent_mobs) == 1)
+		user.mob.interaction_emote(adjacent_mobs[1])
+		return
+
+	var/mob/target = tgui_input_list(user, "Who do you want to interact with?", "Select a target", adjacent_mobs)
+	if(!target || !user.mob.Adjacent(target))	//In case the target moved away while selecting them
+		return
+	user.mob.interaction_emote(target)

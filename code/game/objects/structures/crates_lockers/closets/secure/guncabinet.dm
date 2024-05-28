@@ -8,7 +8,7 @@
 	icon_closed ="base"
 	icon_opened = "base"
 
-/obj/structure/closet/secure_closet/guncabinet/Initialize()
+/obj/structure/closet/secure_closet/guncabinet/Initialize(mapload)
 	. = ..()
 	update_icon()
 
@@ -83,22 +83,9 @@
 	new /obj/item/storage/box/visual/grenade/impact(src)
 	new /obj/item/storage/box/explosive_mines(src)
 
-
-/obj/structure/closet/secure_closet/guncabinet/spec_boxes/PopulateContents()
-	new /obj/item/storage/box/spec/demolitionist(src)
-	new /obj/item/storage/box/spec/heavy_grenadier(src)
-	new /obj/item/storage/box/spec/heavy_gunner(src)
-	new /obj/item/storage/box/spec/pyro(src)
-	new /obj/item/storage/box/spec/scout(src)
-	new /obj/item/storage/box/spec/scoutshotgun(src)
-	new /obj/item/storage/box/spec/sniper(src)
-	new /obj/item/storage/box/spec/tracker(src)
-
-
 /obj/structure/closet/secure_closet/guncabinet/highpower/PopulateContents()
 	new /obj/item/weapon/gun/pistol/highpower(src)
 	new /obj/item/ammo_magazine/pistol/highpower(src)
-
 
 /obj/structure/closet/secure_closet/guncabinet/incendiary
 	req_access = list(ACCESS_MARINE_RESEARCH)
@@ -161,3 +148,27 @@
 	new /obj/item/clothing/suit/armor/riot(src)
 	new /obj/item/clothing/suit/armor/riot(src)
 	new /obj/item/storage/box/flashbangs(src)
+
+/obj/structure/closet/secure_closet/guncabinet/emergency_combat_gear
+	name = "\improper emergency combat gear"
+	desc = "Kept in cases of extreme emergency. Tends to feature surplus, second rate gear. Not for regular TGMC squad marines."
+	req_access = null
+
+/obj/structure/closet/secure_closet/guncabinet/emergency_combat_gear/PopulateContents()
+	new /obj/item/clothing/head/helmet/marine
+	new /obj/item/clothing/head/helmet/marine
+	new /obj/item/clothing/shoes/marine/brown
+	new /obj/item/clothing/shoes/marine/brown
+	new /obj/item/clothing/under/marine/camo
+	new /obj/item/clothing/under/marine/camo
+	new /obj/item/storage/backpack/marine/satchel/green
+	new /obj/item/storage/backpack/marine/satchel/green
+	new /obj/item/storage/belt/marine/standard_skirmishrifle
+	new /obj/item/storage/belt/marine/standard_skirmishrifle
+	new /obj/item/weapon/gun/rifle/standard_skirmishrifle/standard
+	new /obj/item/weapon/gun/rifle/standard_skirmishrifle/standard
+	new /obj/item/storage/box/visual/magazine/compact/standard_skirmishrifle
+	new /obj/item/clothing/suit/modular/xenonauten
+	new /obj/item/clothing/suit/modular/xenonauten
+
+

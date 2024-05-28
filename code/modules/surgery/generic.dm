@@ -4,7 +4,7 @@
 //////////////////////////////////////////////////////////////////
 
 /datum/surgery_step/generic
-	can_infect = 1
+	can_infect = TRUE
 	var/open_step
 
 /datum/surgery_step/generic/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected, checks_only)
@@ -40,7 +40,7 @@
 
 /datum/surgery_step/generic/incision_manager/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected)
 	user.visible_message(span_notice("[user] has constructed a prepared incision on and within [target]'s [affected.display_name] with \the [tool]."), \
-	span_notice("You have constructed a prepared incision on and within [target]'s [affected.display_name] with \the [tool]."),)
+	span_notice("You have constructed a prepared incision on and within [target]'s [affected.display_name] with \the [tool]."))
 	target.balloon_alert_to_viewers("Success")
 	affected.surgery_open_stage = 1
 
@@ -51,6 +51,7 @@
 	affected.clamp_bleeder() //Hemostat function, clamp bleeders
 	affected.surgery_open_stage = 2 //Can immediately proceed to other surgery steps
 	target.updatehealth()
+	return ..()
 
 /datum/surgery_step/generic/incision_manager/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected)
 	user.visible_message(span_warning("[user]'s hand jolts as the system sparks, ripping a gruesome hole in [target]'s [affected.display_name] with \the [tool]!"), \
@@ -66,14 +67,13 @@
 	priority = 0.1 //Attempt before generic scalpel step
 	allowed_tools = list(
 		/obj/item/tool/surgery/scalpel/laser3 = 95,
-		/obj/item/tool/surgery/scalpel/laser2 = 85,
-		/obj/item/tool/surgery/scalpel/laser1 = 75,
 		/obj/item/weapon/energy/sword = 5,
 	)
 
 	min_duration = 60
 	max_duration = 80
 	open_step = 0
+	can_infect = FALSE
 
 /datum/surgery_step/generic/cut_with_laser/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected)
 	user.visible_message(span_notice("[user] starts the bloodless incision on [target]'s [affected.display_name] with \the [tool]."), \
@@ -96,6 +96,7 @@
 	affected.clamp_bleeder() //Hemostat function, clamp bleeders
 	//spread_germs_to_organ(affected, user) //I don't see the reason for infection with a clean laser incision, when scalpel or ICS is fine
 	affected.update_wounds()
+	return ..()
 
 /datum/surgery_step/generic/cut_with_laser/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected)
 	user.visible_message(span_warning("[user]'s hand slips as the blade sputters, searing a long gash in [target]'s [affected.display_name] with \the [tool]!"), \
@@ -114,7 +115,7 @@
 		/obj/item/shard = 50,
 		/obj/item/weapon/combat_knife = 25,
 		/obj/item/stack/throwing_knife = 15,
-		/obj/item/weapon/claymore/mercsword = 1,
+		/obj/item/weapon/sword/mercsword = 1,
 	)
 
 	min_duration = 60
@@ -130,7 +131,7 @@
 
 /datum/surgery_step/generic/cut_open/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected)
 	user.visible_message(span_notice("[user] has made an incision on [target]'s [affected.display_name] with \the [tool]."), \
-	span_notice("You have made an incision on [target]'s [affected.display_name] with \the [tool]."),)
+	span_notice("You have made an incision on [target]'s [affected.display_name] with \the [tool]."))
 	target.balloon_alert_to_viewers("Success")
 	affected.surgery_open_stage = 1
 
@@ -139,6 +140,7 @@
 
 	affected.createwound(CUT, 1)
 	target.updatehealth()
+	return ..()
 
 /datum/surgery_step/generic/cut_open/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected)
 	user.visible_message(span_warning("[user]'s hand slips, slicing open [target]'s [affected.display_name] in the wrong place with \the [tool]!"), \
@@ -161,7 +163,7 @@
 
 /datum/surgery_step/generic/clamp_bleeders/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected, checks_only)
 	if(..())
-		if(affected.surgery_open_stage && !(affected.limb_status & LIMB_WOUND_CLAMPED))
+		if(affected.surgery_open_stage && !(affected.limb_wound_status & LIMB_WOUND_CLAMPED))
 			return SURGERY_CAN_USE
 	return SURGERY_CANNOT_USE
 
@@ -178,10 +180,11 @@
 	target.balloon_alert_to_viewers("Success")
 	affected.clamp_bleeder()
 	spread_germs_to_organ(affected, user)
+	return ..()
 
 /datum/surgery_step/generic/clamp_bleeders/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected)
 	user.visible_message(span_warning("[user]'s hand slips, tearing blood vessals and causing massive bleeding in [target]'s [affected.display_name] with \the [tool]!"),	\
-	span_warning("Your hand slips, tearing blood vessels and causing massive bleeding in [target]'s [affected.display_name] with \the [tool]!"),)
+	span_warning("Your hand slips, tearing blood vessels and causing massive bleeding in [target]'s [affected.display_name] with \the [tool]!"))
 	target.balloon_alert_to_viewers("Slipped!")
 	affected.createwound(CUT, 10)
 	affected.update_wounds()
@@ -222,6 +225,7 @@
 		span_notice("You keep the incision open on [target]'s [affected.display_name] with \the [tool]."))
 	target.balloon_alert_to_viewers("Success")
 	affected.surgery_open_stage = 2
+	return ..()
 
 /datum/surgery_step/generic/retract_skin/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected)
 	if(target_zone == "chest")
@@ -248,6 +252,7 @@
 
 	min_duration = CAUTERY_MIN_DURATION
 	max_duration = CAUTERY_MAX_DURATION
+	can_infect = FALSE
 
 /datum/surgery_step/generic/cauterize/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected, checks_only)
 	if(..())
@@ -267,9 +272,9 @@
 	span_notice("You cauterize the incision on [target]'s [affected.display_name] with \the [tool]."))
 	target.balloon_alert_to_viewers("Success")
 	affected.surgery_open_stage = 0
-	affected.germ_level = 0
 	affected.remove_limb_flags(LIMB_BLEEDING)
 	DISABLE_BITFIELD(affected.limb_wound_status, LIMB_WOUND_CLAMPED) //Once the incision is closed, any clamping we did doesn't matter
+	return ..()
 
 /datum/surgery_step/generic/cauterize/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected)
 	user.visible_message(span_warning("[user]'s hand slips, leaving a small burn on [target]'s [affected.display_name] with \the [tool]!"), \
@@ -281,13 +286,14 @@
 /datum/surgery_step/generic/repair
 	allowed_tools = list(
 		/obj/item/tool/surgery/suture = 100,
+		/obj/item/stack/cable_coil = 75,
 		/obj/item/shard = 20,
 	)
 	open_step = 0
 	min_duration = SUTURE_MIN_DURATION
 	max_duration = SUTURE_MAX_DURATION
 	///Healing applied on step success, split between burn and brute
-	var/base_healing = 30
+	var/base_healing = 37.5
 
 /datum/surgery_step/generic/repair/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected, checks_only)
 	if(!..())
@@ -308,10 +314,11 @@
 	user.visible_message(span_notice("[user] sews some of the wounds on [target]'s [affected.display_name] shut.") , \
 	span_notice("You finish suturing some of the wounds on [target]'s [affected.display_name].") )
 	target.balloon_alert_to_viewers("Success")
-	var/skilled_healing = base_healing * max(user.skills.getPercent("surgery", SKILL_SURGERY_EXPERT), 0.1)
+	var/skilled_healing = base_healing * max(user.skills.getPercent(SKILL_SURGERY, SKILL_SURGERY_MASTER), 0.1)
 	var/burn_heal = min(skilled_healing, affected.burn_dam)
 	var/brute_heal = max(skilled_healing - burn_heal, 0)
 	affected.heal_limb_damage(brute_heal, burn_heal, updating_health = TRUE) //Corpses need their health updated manually since they don't do it themselves
+	return ..()
 
 /datum/surgery_step/generic/repair/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected)
 	user.visible_message(span_warning("[user]'s hand slips, tearing through [target]'s skin with \the [tool]!") , \

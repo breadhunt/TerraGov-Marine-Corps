@@ -28,7 +28,7 @@ GLOBAL_LIST_INIT(pod_styles, list(\
 	closet_flags = CLOSET_ALLOW_OBJS|CLOSET_ALLOW_DENSE_OBJ
 	soft_armor = list(MELEE = 30, BULLET = 50, LASER = 50, ENERGY = 100, BOMB = 100, BIO = 0, FIRE = 100, ACID = 80)
 	anchored = TRUE
-	flags_atom = PREVENT_CONTENTS_EXPLOSION
+	atom_flags = PREVENT_CONTENTS_EXPLOSION
 	var/adminNamed = FALSE
 	var/bluespace = FALSE
 	var/landingDelay = 30
@@ -71,20 +71,24 @@ GLOBAL_LIST_INIT(pod_styles, list(\
 	resistance_flags = RESIST_ALL
 
 
-/obj/structure/closet/supplypod/Initialize()
+/obj/structure/closet/supplypod/Initialize(mapload)
 	. = ..()
 	setStyle(style, TRUE)
 
+/obj/structure/closet/supplypod/update_icon_state()
+	. = ..()
+	icon_state = GLOB.pod_styles[style][POD_ICON_STATE]
 
-/obj/structure/closet/supplypod/update_icon()
-	cut_overlays()
+/obj/structure/closet/supplypod/update_overlays()
+	. = ..()
+
 	if(style == STYLE_SEETHROUGH || style == STYLE_INVISIBLE)
 		return
 
 	if(opened)
-		add_overlay("[icon_state]_open")
+		. += "[icon_state]_open"
 	else
-		add_overlay("[icon_state]_door")
+		. += "[icon_state]_door"
 
 
 /obj/structure/closet/supplypod/proc/setStyle(chosenStyle, duringInit = FALSE)
@@ -92,7 +96,6 @@ GLOBAL_LIST_INIT(pod_styles, list(\
 		setStyle(STYLE_CENTCOM)
 		return
 	style = chosenStyle
-	icon_state = GLOB.pod_styles[chosenStyle][POD_ICON_STATE]
 	if(!adminNamed)
 		name = GLOB.pod_styles[chosenStyle][POD_NAME]
 		desc = GLOB.pod_styles[chosenStyle][POD_DESC]
@@ -141,7 +144,7 @@ GLOBAL_LIST_INIT(pod_styles, list(\
 
 	var/explosion_sum = B[1] + B[2] + B[3] + B[4]
 	if(explosion_sum != 0)
-		explosion(get_turf(src), B[1], B[2], B[3], B[4])
+		explosion(get_turf(src), B[1], B[2], B[3], 0, B[4])
 	else if(!effectQuiet)
 		playsound(src, "explosion", landingSound ? 15 : 80, 1)
 
@@ -152,7 +155,7 @@ GLOBAL_LIST_INIT(pod_styles, list(\
 	if(style == STYLE_SEETHROUGH)
 		open(src)
 	else
-		addtimer(CALLBACK(src, .proc/open, src), openingDelay)
+		addtimer(CALLBACK(src, PROC_REF(open), src), openingDelay)
 
 
 
@@ -174,7 +177,7 @@ GLOBAL_LIST_INIT(pod_styles, list(\
 			return
 	if(openingSound)
 		playsound(get_turf(holder), openingSound, soundVolume, 0, 0)
-	INVOKE_ASYNC(holder, .proc/setOpened)
+	INVOKE_ASYNC(holder, PROC_REF(setOpened))
 	if(style == STYLE_SEETHROUGH)
 		update_icon()
 	for(var/i in holder.contents)
@@ -187,7 +190,7 @@ GLOBAL_LIST_INIT(pod_styles, list(\
 	if(style == STYLE_SEETHROUGH)
 		depart(src)
 	else
-		addtimer(CALLBACK(src, .proc/depart, holder), departureDelay)
+		addtimer(CALLBACK(src, PROC_REF(depart), holder), departureDelay)
 
 
 /obj/structure/closet/supplypod/proc/depart(atom/movable/holder)
@@ -207,7 +210,7 @@ GLOBAL_LIST_INIT(pod_styles, list(\
 
 /obj/structure/closet/supplypod/centcompod/close(atom/movable/holder)
 	opened = FALSE
-	INVOKE_ASYNC(holder, .proc/setClosed)
+	INVOKE_ASYNC(holder, PROC_REF(setClosed))
 	for(var/i in get_turf(holder))
 		var/atom/movable/AM = i
 		if(ismob(AM) && !isliving(AM))
@@ -246,7 +249,9 @@ GLOBAL_LIST_INIT(pod_styles, list(\
 	icon_state = ""
 
 
-/obj/effect/DPfall/Initialize(dropLocation, obj/structure/closet/supplypod/pod)
+/obj/effect/DPfall/Initialize(mapload, obj/structure/closet/supplypod/pod)
+	if(!pod)
+		return INITIALIZE_HINT_QDEL
 	if(pod.style == STYLE_SEETHROUGH)
 		pixel_x = -16
 		pixel_y = 0
@@ -278,6 +283,8 @@ GLOBAL_LIST_INIT(pod_styles, list(\
 
 /obj/effect/DPtarget/Initialize(mapload, podParam, single_order)
 	. = ..()
+	if(!podParam)
+		return INITIALIZE_HINT_QDEL
 	if(ispath(podParam))
 		podParam = new podParam()
 	pod = podParam
@@ -297,13 +304,13 @@ GLOBAL_LIST_INIT(pod_styles, list(\
 		icon_state = ""
 	if(pod.fallDuration == initial(pod.fallDuration) && pod.landingDelay + pod.fallDuration < pod.fallingSoundLength)
 		pod.fallingSoundLength = 3
-		pod.fallingSound =  'sound/weapons/guns/misc/mortar_whistle.ogg'
+		pod.fallingSound = 'sound/weapons/guns/misc/mortar_whistle.ogg'
 	var/soundStartTime = pod.landingDelay - pod.fallingSoundLength + pod.fallDuration
 	if(soundStartTime < 0)
 		soundStartTime = 1
 	if(!pod.effectQuiet)
-		addtimer(CALLBACK(src, .proc/playFallingSound), soundStartTime)
-	addtimer(CALLBACK(src, .proc/beginLaunch, pod.effectCircle), pod.landingDelay)
+		addtimer(CALLBACK(src, PROC_REF(playFallingSound)), soundStartTime)
+	addtimer(CALLBACK(src, PROC_REF(beginLaunch), pod.effectCircle), pod.landingDelay)
 
 
 /obj/effect/DPtarget/proc/playFallingSound()
@@ -323,7 +330,7 @@ GLOBAL_LIST_INIT(pod_styles, list(\
 	M.Turn(rotation)
 	pod.transform = M
 	animate(fallingPod, pixel_z = 0, pixel_x = -16, time = pod.fallDuration, , easing = LINEAR_EASING)
-	addtimer(CALLBACK(src, .proc/endLaunch), pod.fallDuration, TIMER_CLIENT_TIME)
+	addtimer(CALLBACK(src, PROC_REF(endLaunch)), pod.fallDuration, TIMER_CLIENT_TIME)
 
 
 /obj/effect/DPtarget/proc/endLaunch()

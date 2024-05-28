@@ -77,10 +77,10 @@
 
 /obj/item/camera_film
 	name = "film cartridge"
-	icon = 'icons/obj/items/items.dmi'
+	icon = 'icons/obj/device.dmi'
 	desc = "A camera film cartridge. Insert it into a camera to reload it."
 	icon_state = "film"
-	item_state = "electropack"
+	worn_icon_state = "electropack"
 	w_class = WEIGHT_CLASS_TINY
 
 
@@ -88,7 +88,11 @@
 	name = "photo"
 	icon = 'icons/obj/items/items.dmi'
 	icon_state = "photo"
-	item_state = "paper"
+	worn_icon_list = list(
+		slot_l_hand_str = 'icons/mob/inhands/items/civilian_left.dmi',
+		slot_r_hand_str = 'icons/mob/inhands/items/civilian_right.dmi',
+	)
+	worn_icon_state = "paper"
 	w_class = WEIGHT_CLASS_TINY
 	var/datum/picture/picture
 	var/scribble		//Scribble on the back.
@@ -99,7 +103,8 @@
 	return ..()
 
 
-/obj/item/photo/update_icon()
+/obj/item/photo/update_icon_state()
+	. = ..()
 	if(!istype(picture) || !picture.picture_image)
 		return
 	var/icon/I = picture.get_small_icon()
@@ -155,19 +160,19 @@
 
 	var/n_name = stripped_input(usr, "What would you like to label the photo?", "Photo Labelling")
 	if((loc == usr || loc.loc && loc.loc == usr) && usr.stat == CONSCIOUS && !usr.incapacitated())
-		name = "photo[(n_name ? text("- '[n_name]'") : null)]"
+		name = "photo[(n_name ? "- '[n_name]'" : null)]"
 
 
 /obj/item/camera
 	name = "camera"
-	icon = 'icons/obj/items/items.dmi'
+	icon = 'icons/obj/device.dmi'
 	desc = "A polaroid camera."
 	icon_state = "camera"
-	item_state = "camera"
+	worn_icon_state = "camera"
 	light_color = COLOR_WHITE
 	light_power = FLASH_LIGHT_POWER
 	w_class = WEIGHT_CLASS_SMALL
-	flags_atom = CONDUCT
+	atom_flags = CONDUCT
 	interaction_flags = INTERACT_REQUIRES_DEXTERITY
 	var/flash_enabled = TRUE
 	var/state_on = "camera"
@@ -209,6 +214,8 @@
 
 /obj/item/camera/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(istype(I, /obj/item/camera_film))
 		if(pictures_left)
@@ -250,10 +257,10 @@
 		return
 
 	on = FALSE
-	addtimer(CALLBACK(src, .proc/cooldown), cooldown)
+	addtimer(CALLBACK(src, PROC_REF(cooldown)), cooldown)
 	icon_state = state_off
 
-	INVOKE_ASYNC(src, .proc/captureimage, target, user, flag, picture_size_x - 1, picture_size_y - 1)
+	INVOKE_ASYNC(src, PROC_REF(captureimage), target, user, flag, picture_size_x - 1, picture_size_y - 1)
 
 
 /obj/item/camera/proc/cooldown()
@@ -284,7 +291,7 @@
 	var/list/dead_spotted = list()
 	var/ai_user = isAI(user)
 	var/list/seen
-	var/list/viewlist = (user && user.client)? getviewsize(user.client.view) : getviewsize(WORLD_VIEW)
+	var/list/viewlist = (user?.client)? getviewsize(user.client.view) : getviewsize(WORLD_VIEW)
 	var/viewr = max(viewlist[1], viewlist[2]) + max(size_x, size_y)
 	var/viewc = user.client? user.client.eye : target
 	seen = get_hear(viewr, viewc)
@@ -401,9 +408,9 @@
 
 	var/list/sorted = list()
 	var/j
-	for(var/i in 1 to atoms.len)
+	for(var/i in 1 to length(atoms))
 		var/atom/c = atoms[i]
-		for(j = sorted.len, j > 0, --j)
+		for(j = length(sorted), j > 0, --j)
 			var/atom/c2 = sorted[j]
 			if(c2.layer <= c.layer)
 				break

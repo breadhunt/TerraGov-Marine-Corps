@@ -6,21 +6,20 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 // ***************************************
 // *********** Blink
 // ***************************************
-/datum/action/xeno_action/activable/blink
+/datum/action/ability/activable/xeno/blink
 	name = "Blink"
 	action_icon_state = "blink"
-	ability_name = "Blink"
-	mechanics_text = "We teleport ourselves a short distance to a location within line of sight."
-	use_state_flags = XABB_TURF_TARGET
-	plasma_cost = 30
-	cooldown_timer = 0.5 SECONDS
+	desc = "We teleport ourselves a short distance to a location within line of sight."
+	use_state_flags = ABILITY_TURF_TARGET
+	ability_cost = 30
+	cooldown_duration = 0.5 SECONDS
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_BLINK,
 	)
 
 ///Check target Blink turf to see if it can be blinked to
-/datum/action/xeno_action/activable/blink/proc/check_blink_tile(turf/T, ignore_blocker = FALSE, silent = FALSE)
-	if(isclosedturf(T) || isspaceturf(T))
+/datum/action/ability/activable/xeno/blink/proc/check_blink_tile(turf/T, ignore_blocker = FALSE, silent = FALSE)
+	if(isclosedturf(T) || isspaceturf(T) || isspacearea(T))
 		if(!silent)
 			to_chat(owner, span_xenowarning("We cannot blink here!"))
 		return FALSE
@@ -43,10 +42,17 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 			to_chat(owner, span_xenowarning("We can't blink here!"))
 		return FALSE
 
+	var/area/A = get_area(src)
+	if(isspacearea(A))
+		if(!silent)
+			to_chat(owner, span_xenowarning("We cannot blink here!"))
+		return FALSE
+
+
 	return TRUE
 
 ///Check for whether the target turf has dense objects inside
-/datum/action/xeno_action/activable/blink/proc/check_blink_target_turf_density(turf/T, silent = FALSE)
+/datum/action/ability/activable/xeno/blink/proc/check_blink_target_turf_density(turf/T, silent = FALSE)
 	for(var/atom/blocker AS in T)
 		if(!blocker.CanPass(owner, T))
 			if(!silent)
@@ -55,7 +61,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 
 	return TRUE
 
-/datum/action/xeno_action/activable/blink/use_ability(atom/A)
+/datum/action/ability/activable/xeno/blink/use_ability(atom/A)
 	. = ..()
 	var/mob/living/carbon/xenomorph/wraith/X = owner
 	var/turf/T = X.loc
@@ -73,7 +79,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 			fully_legal_turfs += temp_turf
 		T = temp_turf
 
-	check_distance = min(fully_legal_turfs.len, check_distance) //Cap the check distance to the number of fully legal turfs
+	check_distance = min(length(fully_legal_turfs), check_distance) //Cap the check distance to the number of fully legal turfs
 	T = X.loc //Reset T to be our initial position
 	if(check_distance)
 		T = fully_legal_turfs[check_distance]
@@ -87,7 +93,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 		if(pulled_target.issamexenohive(X))
 			cooldown_mod = X.xeno_caste.wraith_blink_drag_friendly_multiplier
 		else
-			if(!do_after(owner, 0.5 SECONDS, TRUE, owner, BUSY_ICON_HOSTILE)) //Grap-porting hostiles has a slight wind up
+			if(!do_after(owner, 0.5 SECONDS, NONE, owner, BUSY_ICON_HOSTILE)) //Grap-porting hostiles has a slight wind up
 				return fail_activate()
 			cooldown_mod = X.xeno_caste.wraith_blink_drag_nonfriendly_living_multiplier
 			if(ishuman(pulled_target))
@@ -97,7 +103,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 					if(!H.adjustOxyLoss(critdamage))
 						H.adjustBruteLoss(critdamage)
 
-		to_chat(X, span_xenodanger("We bring [pulled_target] with us. We won't be ready to blink again for [cooldown_timer * cooldown_mod * 0.1] seconds due to the strain of doing so."))
+		to_chat(X, span_xenodanger("We bring [pulled_target] with us. We won't be ready to blink again for [cooldown_duration * cooldown_mod * 0.1] seconds due to the strain of doing so."))
 
 	teleport_debuff_aoe(X) //Debuff when we vanish
 
@@ -108,13 +114,13 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	teleport_debuff_aoe(X) //Debuff when we reappear
 
 	succeed_activate()
-	add_cooldown(cooldown_timer * cooldown_mod)
+	add_cooldown(cooldown_duration * cooldown_mod)
 
 	GLOB.round_statistics.wraith_blinks++
 	SSblackbox.record_feedback("tally", "round_statistics", 1, "wraith_blinks") //Statistics
 
 ///Called by many of the Wraith's teleportation effects
-/datum/action/xeno_action/proc/teleport_debuff_aoe(atom/movable/teleporter, silent = FALSE)
+/datum/action/ability/activable/xeno/proc/teleport_debuff_aoe(atom/movable/teleporter, silent = FALSE)
 	var/mob/living/carbon/xenomorph/ghost = owner
 
 	if(!silent) //Sound effects
@@ -138,7 +144,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 		living_target.add_slowdown(WRAITH_TELEPORT_DEBUFF_SLOWDOWN_STACKS)
 		to_chat(living_target, span_warning("You feel nauseous as reality warps around you!"))
 
-/datum/action/xeno_action/activable/blink/on_cooldown_finish()
+/datum/action/ability/activable/xeno/blink/on_cooldown_finish()
 	to_chat(owner, span_xenodanger("We are able to blink again."))
 	owner.playsound_local(owner, 'sound/effects/xeno_newlarva.ogg', 25, 0, 1)
 	return ..()
@@ -146,14 +152,13 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 // ***************************************
 // *********** Banish
 // ***************************************
-/datum/action/xeno_action/activable/banish
+/datum/action/ability/activable/xeno/banish
 	name = "Banish"
 	action_icon_state = "Banish"
-	ability_name = "Banish"
-	mechanics_text = "We banish a target object or creature within line of sight to nullspace for a short duration. Can target onself and allies. Non-friendlies are banished for half as long."
-	use_state_flags = XACT_TARGET_SELF
-	plasma_cost = 50
-	cooldown_timer = 20 SECONDS
+	desc = "We banish a target object or creature within line of sight to nullspace for a short duration. Can target onself and allies. Non-friendlies are banished for half as long."
+	use_state_flags = ABILITY_TARGET_SELF
+	ability_cost = 50
+	cooldown_duration = 20 SECONDS
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_BANISH,
 	)
@@ -172,11 +177,11 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	/// How far can you banish
 	var/range = 3
 
-/datum/action/xeno_action/activable/banish/Destroy()
+/datum/action/ability/activable/xeno/banish/Destroy()
 	QDEL_NULL(reserved_area) //clean up
 	return ..()
 
-/datum/action/xeno_action/activable/banish/can_use_ability(atom/A, silent = FALSE, override_flags)
+/datum/action/ability/activable/xeno/banish/can_use_ability(atom/A, silent = FALSE, override_flags)
 	. = ..()
 
 	if(!ismovableatom(A) || iseffect(A) || istype(A, /obj/alien) || CHECK_BITFIELD(A.resistance_flags, INDESTRUCTIBLE) || CHECK_BITFIELD(A.resistance_flags, BANISH_IMMUNE)) //Cannot banish non-movables/things that are supposed to be invul; also we ignore effects
@@ -200,7 +205,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 		return FALSE
 
 
-/datum/action/xeno_action/activable/banish/use_ability(atom/movable/A)
+/datum/action/ability/activable/xeno/banish/use_ability(atom/movable/A)
 	. = ..()
 	var/mob/living/carbon/xenomorph/wraith/ghost = owner
 	var/banished_turf = get_turf(A) //Set the banishment turf.
@@ -265,17 +270,17 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	to_chat(ghost,span_xenodanger("We have banished [banishment_target] to nullspace for [duration * 0.1] seconds."))
 	log_attack("[key_name(ghost)] has banished [key_name(banishment_target)] for [duration * 0.1] seconds at [AREACOORD(banishment_target)]")
 
-	addtimer(CALLBACK(src, .proc/banish_warning), duration * 0.7) //Warn when Banish is about to end
-	banish_duration_timer_id = addtimer(CALLBACK(src, .proc/banish_deactivate), duration, TIMER_STOPPABLE) //store the timer ID
+	addtimer(CALLBACK(src, PROC_REF(banish_warning)), duration * 0.7) //Warn when Banish is about to end
+	banish_duration_timer_id = addtimer(CALLBACK(src, PROC_REF(banish_deactivate)), duration, TIMER_STOPPABLE) //store the timer ID
 
-	succeed_activate(plasma_cost * plasma_mod)
-	add_cooldown(cooldown_timer * cooldown_mod)
+	succeed_activate(ability_cost * plasma_mod)
+	add_cooldown(cooldown_duration * cooldown_mod)
 
 	GLOB.round_statistics.wraith_banishes++
 	SSblackbox.record_feedback("tally", "round_statistics", 1, "wraith_banishes") //Statistics
 
 ///Warns the user when Banish's duration is about to lapse.
-/datum/action/xeno_action/activable/banish/proc/banish_warning()
+/datum/action/ability/activable/xeno/banish/proc/banish_warning()
 
 	if(!banishment_target)
 		return
@@ -284,13 +289,23 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	owner.playsound_local(owner, 'sound/voice/hiss4.ogg', 50, 0, 1)
 
 ///Ends the effect of the Banish ability
-/datum/action/xeno_action/activable/banish/proc/banish_deactivate()
+/datum/action/ability/activable/xeno/banish/proc/banish_deactivate()
 	SIGNAL_HANDLER
 	if(QDELETED(banishment_target))
 		return
 	var/turf/return_turf = get_turf(portal)
 	if(!return_turf)
 		return_turf = locate(backup_coordinates[1], backup_coordinates[2], backup_coordinates[3])
+	if(banishment_target.density)
+		var/list/cards = GLOB.cardinals.Copy()
+		for(var/mob/living/displacing in return_turf)
+			if(displacing.stat == DEAD) //no.
+				continue
+			shuffle(cards) //direction should vary.
+			for(var/card AS in cards)
+				if(step(displacing, card))
+					to_chat(displacing, span_warning("A sudden force pushes you away from [return_turf]!"))
+					break
 	banishment_target.resistance_flags = initial(banishment_target.resistance_flags)
 	banishment_target.status_flags = initial(banishment_target.status_flags) //Remove stasis and temp invulerability
 	banishment_target.forceMove(return_turf)
@@ -309,7 +324,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 
 	teleport_debuff_aoe(banishment_target)
 	banishment_target.add_filter("wraith_banishment_filter", 3, list("type" = "blur", 5))
-	addtimer(CALLBACK(banishment_target, /atom.proc/remove_filter, "wraith_banishment_filter"), 1 SECONDS)
+	addtimer(CALLBACK(banishment_target, TYPE_PROC_REF(/atom, remove_filter), "wraith_banishment_filter"), 1 SECONDS)
 
 	if(isliving(banishment_target))
 		var/mob/living/living_target = banishment_target
@@ -330,7 +345,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 
 	return TRUE //For the recall sub-ability
 
-/datum/action/xeno_action/activable/banish/on_cooldown_finish()
+/datum/action/ability/activable/xeno/banish/on_cooldown_finish()
 	to_chat(owner, span_xenodanger("We are able to banish again."))
 	owner.playsound_local(owner, 'sound/effects/xeno_newlarva.ogg', 25, 0, 1)
 	return ..()
@@ -338,21 +353,20 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 // ***************************************
 // *********** Recall
 // ***************************************
-/datum/action/xeno_action/recall
+/datum/action/ability/xeno_action/recall
 	name = "Recall"
-	ability_name = "Recall"
 	action_icon_state = "Recall"
-	mechanics_text = "We recall a target we've banished back from the depths of nullspace."
-	use_state_flags = XACT_USE_NOTTURF|XACT_USE_CLOSEDTURF|XACT_USE_STAGGERED|XACT_USE_INCAP|XACT_USE_LYING //So we can recall ourselves from nether Brazil
-	cooldown_timer = 1 SECONDS //Token for anti-spam
+	desc = "We recall a target we've banished back from the depths of nullspace."
+	use_state_flags = ABILITY_USE_NOTTURF|ABILITY_USE_SOLIDOBJECT|ABILITY_USE_STAGGERED|ABILITY_USE_INCAP|ABILITY_USE_LYING //So we can recall ourselves from nether Brazil
+	cooldown_duration = 1 SECONDS //Token for anti-spam
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_RECALL,
 	)
 
-/datum/action/xeno_action/recall/can_use_action(silent = FALSE, override_flags)
+/datum/action/ability/xeno_action/recall/can_use_action(silent = FALSE, override_flags)
 	. = ..()
 
-	var/datum/action/xeno_action/activable/banish/banish_check = owner.actions_by_path[/datum/action/xeno_action/activable/banish]
+	var/datum/action/ability/activable/xeno/banish/banish_check = owner.actions_by_path[/datum/action/ability/activable/xeno/banish]
 	if(!banish_check) //Mainly for when we transition on upgrading
 		return FALSE
 
@@ -362,9 +376,9 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 		return FALSE
 
 
-/datum/action/xeno_action/recall/action_activate()
+/datum/action/ability/xeno_action/recall/action_activate()
 	. = ..()
-	var/datum/action/xeno_action/activable/banish/banish_check = owner.actions_by_path[/datum/action/xeno_action/activable/banish]
+	var/datum/action/ability/activable/xeno/banish/banish_check = owner.actions_by_path[/datum/action/ability/activable/xeno/banish]
 	banish_check.banish_deactivate()
 	succeed_activate()
 	add_cooldown()
@@ -377,7 +391,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	if(isclosedturf(T) && !ignore_closed_turf) //If we care about closed turfs
 		return TRUE
 	for(var/atom/blocker AS in T)
-		if((blocker.flags_atom & ON_BORDER) || blocker == subject) //If they're a border entity or our subject, we don't care
+		if((blocker.atom_flags & ON_BORDER) || blocker == subject) //If they're a border entity or our subject, we don't care
 			continue
 		if(!blocker.CanPass(subject, T) && !ignore_can_pass) //If the subject atom can't pass and we care about that, we have a block
 			return TRUE
@@ -399,13 +413,12 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 
 	return FALSE
 
-/datum/action/xeno_action/timestop
+/datum/action/ability/xeno_action/timestop
 	name = "Time stop"
-	ability_name = "Time stop"
 	action_icon_state = "time_stop"
-	mechanics_text = "Freezes bullets in their course, and they will start to move again only after a certain time"
-	plasma_cost = 100
-	cooldown_timer = 1 MINUTES
+	desc = "Freezes bullets in their course, and they will start to move again only after a certain time"
+	ability_cost = 100
+	cooldown_duration = 1 MINUTES
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_TIMESTOP,
 	)
@@ -414,7 +427,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	///How long is the bullet freeze staying
 	var/duration = 7 SECONDS
 
-/datum/action/xeno_action/timestop/action_activate()
+/datum/action/ability/xeno_action/timestop/action_activate()
 	. = ..()
 	var/list/turf/turfs_affected = list()
 	var/turf/central_turf = get_turf(owner)
@@ -426,11 +439,11 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	succeed_activate()
 	add_cooldown()
 	new /obj/effect/overlay/temp/timestop_effect(central_turf, duration)
-	addtimer(CALLBACK(src, .proc/remove_bullet_freeze, turfs_affected, central_turf), duration)
-	addtimer(CALLBACK(src, .proc/play_sound_stop), duration - 3 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(remove_bullet_freeze), turfs_affected, central_turf), duration)
+	addtimer(CALLBACK(src, PROC_REF(play_sound_stop)), duration - 3 SECONDS)
 
 ///Remove the bullet freeze effect on affected turfs
-/datum/action/xeno_action/timestop/proc/remove_bullet_freeze(list/turf/turfs_affected, turf/central_turfA)
+/datum/action/ability/xeno_action/timestop/proc/remove_bullet_freeze(list/turf/turfs_affected, turf/central_turfA)
 	for(var/turf/affected_turf AS in turfs_affected)
 		REMOVE_TRAIT(affected_turf, TRAIT_TURF_BULLET_MANIPULATION, REF(src))
 		if(HAS_TRAIT(affected_turf, TRAIT_TURF_BULLET_MANIPULATION))
@@ -439,16 +452,15 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 		affected_turf.remove_filter("wraith_magic")
 
 ///Play the end ability sound
-/datum/action/xeno_action/timestop/proc/play_sound_stop()
+/datum/action/ability/xeno_action/timestop/proc/play_sound_stop()
 	playsound(owner, 'sound/magic/timeparadox2.ogg', 50, TRUE, frequency = -1)
 
-/datum/action/xeno_action/portal
+/datum/action/ability/xeno_action/portal
 	name = "Portal"
-	ability_name = "Portal"
 	action_icon_state = "portal"
-	mechanics_text = "Place a portal on your location. You can travel from portal to portal. Left click to create portal one, right click to create portal two"
-	plasma_cost = 50
-	cooldown_timer = 5 SECONDS
+	desc = "Place a portal on your location. You can travel from portal to portal. Left click to create portal one, right click to create portal two"
+	ability_cost = 50
+	cooldown_duration = 5 SECONDS
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_PORTAL,
 		KEYBINDING_ALTERNATE = COMSIG_XENOABILITY_PORTAL_ALTERNATE,
@@ -460,31 +472,34 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	/// The second portal
 	var/obj/effect/wraith_portal/portal_two
 
-/datum/action/xeno_action/portal/remove_action(mob/M)
+/datum/action/ability/xeno_action/portal/remove_action(mob/M)
 	clean_portals()
+	return ..()
 
 /// Destroy the portals when the wraith is no longer supporting them
-/datum/action/xeno_action/portal/proc/clean_portals()
+/datum/action/ability/xeno_action/portal/proc/clean_portals()
+	SIGNAL_HANDLER
+
 	QDEL_NULL(portal_one)
 	QDEL_NULL(portal_two)
 
-/datum/action/xeno_action/portal/give_action(mob/M)
+/datum/action/ability/xeno_action/portal/give_action(mob/M)
 	. = ..()
-	RegisterSignal(M, COMSIG_MOB_DEATH, .proc/clean_portals)
+	RegisterSignal(M, COMSIG_MOB_DEATH, PROC_REF(clean_portals))
 
-/datum/action/xeno_action/portal/can_use_action(silent, override_flags)
+/datum/action/ability/xeno_action/portal/can_use_action(silent, override_flags)
 	if(locate(/obj/effect/wraith_portal) in get_turf(owner))
 		if(!silent)
 			to_chat(owner, span_xenowarning("There is already a portal here!"))
 		return FALSE
 	var/area/area = get_area(owner)
-	if(area.flags_area & MARINE_BASE)
+	if(area.area_flags & MARINE_BASE)
 		if(!silent)
 			to_chat(owner, span_xenowarning("You cannot portal here!"))
 		return FALSE
 	return ..()
 
-/datum/action/xeno_action/portal/action_activate()
+/datum/action/ability/xeno_action/portal/action_activate()
 	. = ..()
 	qdel(portal_one)
 	portal_one = new(get_turf(owner))
@@ -494,7 +509,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	if(portal_two)
 		link_portals()
 
-/datum/action/xeno_action/portal/alternate_action_activate()
+/datum/action/ability/xeno_action/portal/alternate_action_activate()
 	if(!can_use_action())
 		return
 	qdel(portal_two)
@@ -506,7 +521,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 		link_portals()
 
 /// Link the two portals if possible
-/datum/action/xeno_action/portal/proc/link_portals()
+/datum/action/ability/xeno_action/portal/proc/link_portals()
 	if(get_dist(portal_one, portal_two) > range || portal_one.z != portal_two.z)
 		to_chat(owner, span_xenowarning("The other portal is too far away, they cannot link!"))
 		return
@@ -528,7 +543,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 /obj/effect/wraith_portal/Initialize(mapload, portal_is_yellow = FALSE)
 	. = ..()
 	var/static/list/connections = list(
-		COMSIG_ATOM_ENTERED = .proc/teleport_atom
+		COMSIG_ATOM_ENTERED = PROC_REF(teleport_atom)
 	)
 	if(portal_is_yellow)
 		icon_state = "portal1"
@@ -546,11 +561,22 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	QDEL_NULL(portal_visuals)
 	return ..()
 
+/obj/effect/wraith_portal/ex_act()
+	if(linked_portal)
+		qdel(linked_portal)
+	qdel(src)
+
+/obj/effect/wraith_portal/attack_ghost(mob/dead/observer/user)
+	. = ..()
+	if(!linked_portal)
+		return
+	user.forceMove(get_turf(linked_portal))
+
 /// Link two portals
 /obj/effect/wraith_portal/proc/link_portal(obj/effect/wraith_portal/portal_to_link)
 	linked_portal = portal_to_link
 	ADD_TRAIT(loc, TRAIT_TURF_BULLET_MANIPULATION, PORTAL_TRAIT)
-	RegisterSignal(loc, COMSIG_TURF_PROJECTILE_MANIPULATED, .proc/teleport_bullet)
+	RegisterSignal(loc, COMSIG_TURF_PROJECTILE_MANIPULATED, PROC_REF(teleport_bullet))
 	portal_visuals.setup_visuals(portal_to_link)
 
 /// Unlink the portal
@@ -566,8 +592,8 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	if(!linked_portal || !COOLDOWN_CHECK(src, portal_cooldown) || crosser.anchored || (crosser.resistance_flags & PORTAL_IMMUNE))
 		return
 	COOLDOWN_START(linked_portal, portal_cooldown, 1)
-	crosser.flags_pass &= ~PASSMOB
-	RegisterSignal(crosser, COMSIG_MOVABLE_MOVED, .proc/do_teleport_atom)
+	crosser.pass_flags &= ~PASS_MOB
+	RegisterSignal(crosser, COMSIG_MOVABLE_MOVED, PROC_REF(do_teleport_atom))
 	playsound(loc, 'sound/effects/portal.ogg', 20)
 
 /// Signal handler to teleport the crossing atom when its move is done
@@ -576,6 +602,8 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	for(var/mob/rider AS in crosser.buckled_mobs)
 		if(ishuman(rider))
 			crosser.unbuckle_mob(rider)
+	if(crosser.throwing)
+		crosser.throw_source = get_turf(linked_portal)
 	crosser.Move(get_turf(linked_portal), crosser.dir)
 	UnregisterSignal(crosser, COMSIG_MOVABLE_MOVED)
 
@@ -623,20 +651,17 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	animate(get_filter("portal_ripple"), time = 1.3 SECONDS, loop = -1, easing = LINEAR_EASING, radius = 32)
 
 	vis_contents += our_destination
-/obj/effect/wraith_portal/ex_act()
-	qdel(src)
 
-/datum/action/xeno_action/activable/rewind
+/datum/action/ability/activable/xeno/rewind
 	name = "Time Shift"
-	ability_name = "Time Shift"
 	action_icon_state = "rewind"
-	mechanics_text = "Save the location and status of the target. When the time is up, the target location and status are restored"
-	plasma_cost = 100
-	cooldown_timer = 30 SECONDS
+	desc = "Save the location and status of the target. When the time is up, the target location and status are restored, unless the target is dead or unconscious."
+	ability_cost = 100
+	cooldown_duration = 30 SECONDS
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_REWIND,
 	)
-	use_state_flags = XACT_TARGET_SELF
+	use_state_flags = ABILITY_TARGET_SELF
 	/// How long till the time rewinds
 	var/start_rewinding = 5 SECONDS
 	/// The targeted atom
@@ -649,11 +674,15 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	var/target_initial_brute_damage = 0
 	/// Initial sunder of the target
 	var/target_initial_sunder = 0
+	/// Initial fire stacks of the target
+	var/target_initial_fire_stacks = 0
+	/// Initial on_fire value
+	var/target_initial_on_fire = FALSE
 	/// How far can you rewind someone
 	var/range = 5
 
 
-/datum/action/xeno_action/activable/rewind/can_use_ability(atom/A, silent, override_flags)
+/datum/action/ability/activable/xeno/rewind/can_use_ability(atom/A, silent, override_flags)
 	. = ..()
 
 	var/distance = get_dist(owner, A)
@@ -675,16 +704,18 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	if(living_target.stat != CONSCIOUS)
 		to_chat(owner, span_xenowarning("The target is not in good enough shape!"))
 
-/datum/action/xeno_action/activable/rewind/use_ability(atom/A)
+/datum/action/ability/activable/xeno/rewind/use_ability(atom/A)
 	targeted = A
 	last_target_locs_list = list(get_turf(A))
 	target_initial_brute_damage = targeted.getBruteLoss()
 	target_initial_burn_damage = targeted.getFireLoss()
+	target_initial_fire_stacks = targeted.fire_stacks
+	target_initial_on_fire = targeted.on_fire
 	if(isxeno(A))
 		var/mob/living/carbon/xenomorph/xeno_target = targeted
 		target_initial_sunder = xeno_target.sunder
-	addtimer(CALLBACK(src, .proc/start_rewinding), start_rewinding)
-	RegisterSignal(targeted, COMSIG_MOVABLE_MOVED, .proc/save_move)
+	addtimer(CALLBACK(src, PROC_REF(start_rewinding)), start_rewinding)
+	RegisterSignal(targeted, COMSIG_MOVABLE_MOVED, PROC_REF(save_move))
 	targeted.add_filter("prerewind_blur", 1, radial_blur_filter(0.04))
 	targeted.balloon_alert(targeted, "You feel anchored to the past!")
 	ADD_TRAIT(targeted, TRAIT_TIME_SHIFTED, XENO_TRAIT)
@@ -693,12 +724,12 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	return
 
 /// Signal handler
-/datum/action/xeno_action/activable/rewind/proc/save_move(atom/movable/source, oldloc)
+/datum/action/ability/activable/xeno/rewind/proc/save_move(atom/movable/source, oldloc)
 	SIGNAL_HANDLER
 	last_target_locs_list += get_turf(oldloc)
 
 /// Start the reset process
-/datum/action/xeno_action/activable/rewind/proc/start_rewinding()
+/datum/action/ability/activable/xeno/rewind/proc/start_rewinding()
 	targeted.remove_filter("prerewind_blur")
 	UnregisterSignal(targeted, COMSIG_MOVABLE_MOVED)
 	if(QDELETED(targeted) || targeted.stat != CONSCIOUS)
@@ -707,22 +738,27 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 		return
 	targeted.add_filter("rewind_blur", 1, radial_blur_filter(0.3))
 	targeted.status_flags |= (INCORPOREAL|GODMODE)
-	INVOKE_NEXT_TICK(src, .proc/rewind)
+	INVOKE_NEXT_TICK(src, PROC_REF(rewind))
 	ADD_TRAIT(owner, TRAIT_IMMOBILE, TIMESHIFT_TRAIT)
 	playsound(targeted, 'sound/effects/woosh_swoosh.ogg', 50)
 
 /// Move the target two tiles per tick
-/datum/action/xeno_action/activable/rewind/proc/rewind()
+/datum/action/ability/activable/xeno/rewind/proc/rewind()
 	var/turf/loc_a = pop(last_target_locs_list)
 	if(loc_a)
-		new /obj/effect/temp_visual/xenomorph/afterimage(targeted.loc, targeted)
+		new /obj/effect/temp_visual/after_image(targeted.loc, targeted)
 
 	var/turf/loc_b = pop(last_target_locs_list)
 	if(!loc_b)
 		targeted.status_flags &= ~(INCORPOREAL|GODMODE)
 		REMOVE_TRAIT(owner, TRAIT_IMMOBILE, TIMESHIFT_TRAIT)
-		targeted.take_overall_damage(target_initial_brute_damage - targeted.getBruteLoss(), target_initial_burn_damage - targeted.getFireLoss(), updating_health = TRUE)
-		if(isxeno(target))
+		targeted.heal_overall_damage(targeted.getBruteLoss() - target_initial_brute_damage, targeted.getFireLoss() - target_initial_burn_damage, updating_health = TRUE)
+		if(target_initial_on_fire && target_initial_fire_stacks >= 0)
+			targeted.fire_stacks = target_initial_fire_stacks
+			targeted.IgniteMob()
+		else
+			targeted.ExtinguishMob()
+		if(isxeno(targeted))
 			var/mob/living/carbon/xenomorph/xeno_target = targeted
 			xeno_target.sunder = target_initial_sunder
 		targeted.remove_filter("rewind_blur")
@@ -731,5 +767,5 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 		return
 
 	targeted.Move(loc_b, get_dir(loc_b, loc_a))
-	new /obj/effect/temp_visual/xenomorph/afterimage(loc_a, targeted)
-	INVOKE_NEXT_TICK(src, .proc/rewind)
+	new /obj/effect/temp_visual/after_image(loc_a, targeted)
+	INVOKE_NEXT_TICK(src, PROC_REF(rewind))

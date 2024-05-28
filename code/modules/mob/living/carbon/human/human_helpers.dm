@@ -17,31 +17,65 @@
 				return "[ethnicity]_groin_[get_gender_name(gender)]"
 
 			if ("r_arm", "right arm")
-				return "[ethnicity]_right_arm"
+				return "[ethnicity]_right_arm_[get_gender_name(gender)]"
 
 			if ("l_arm", "left arm")
-				return "[ethnicity]_left_arm"
+				return "[ethnicity]_left_arm_[get_gender_name(gender)]"
 
 			if ("r_leg", "right leg")
-				return "[ethnicity]_right_leg"
+				return "[ethnicity]_right_leg_[get_gender_name(gender)]"
 
 			if ("l_leg", "left leg")
-				return "[ethnicity]_left_leg"
+				return "[ethnicity]_left_leg_[get_gender_name(gender)]"
 
 			if ("r_hand", "right hand")
-				return "[ethnicity]_right_hand"
+				return "[ethnicity]_right_hand_[get_gender_name(gender)]"
 
 			if ("l_hand", "left hand")
-				return "[ethnicity]_left_hand"
+				return "[ethnicity]_left_hand_[get_gender_name(gender)]"
 
 			if ("r_foot", "right foot")
-				return "[ethnicity]_right_foot"
+				return "[ethnicity]_right_foot_[get_gender_name(gender)]"
 
 			if ("l_foot", "left foot")
-				return "[ethnicity]_left_foot"
+				return "[ethnicity]_left_foot_[get_gender_name(gender)]"
 
 			else
 				return null
+	else if(S.name == "Vatborn" || S.name == "Early Vat-Grown Human" || S.name == "Vat-Grown Human")
+		switch(limb_name)
+			if ("torso", "chest")
+				return "torso_[get_gender_name(gender)]"
+
+			if ("head")
+				return "head_[get_gender_name(gender)]"
+
+			if ("groin")
+				return "groin_[get_gender_name(gender)]"
+
+			if ("r_arm", "right arm")
+				return "right_arm_[get_gender_name(gender)]"
+
+			if ("l_arm", "left arm")
+				return "left_arm_[get_gender_name(gender)]"
+
+			if ("r_leg", "right leg")
+				return "right_leg_[get_gender_name(gender)]"
+
+			if ("l_leg", "left leg")
+				return "left_leg_[get_gender_name(gender)]"
+
+			if ("r_hand", "right hand")
+				return "right_hand_[get_gender_name(gender)]"
+
+			if ("l_hand", "left hand")
+				return "left_hand_[get_gender_name(gender)]"
+
+			if ("r_foot", "right foot")
+				return "right_foot_[get_gender_name(gender)]"
+
+			if ("l_foot", "left foot")
+				return "left_foot_[get_gender_name(gender)]"
 	else
 		switch(limb_name)
 			if ("torso")
@@ -137,10 +171,10 @@
 	if(!penetrate_thick)
 		switch(target_zone)
 			if("head")
-				if(head?.flags_inventory & BLOCKSHARPOBJ)
+				if(head?.inventory_flags & BLOCKSHARPOBJ)
 					. = FALSE
 			else
-				if(wear_suit?.flags_inventory & BLOCKSHARPOBJ)
+				if(wear_suit?.inventory_flags & BLOCKSHARPOBJ)
 					. = FALSE
 	if(!. && error_msg && user)
 		// Might need re-wording.
@@ -181,24 +215,39 @@
 		.++
 
 /mob/living/carbon/human/get_permeability_protection()
-	var/list/prot = list("hands"=0, "chest"=0, "groin"=0, "legs"=0, "feet"=0, "arms"=0, "head"=0)
+	// hands = 1 | chest = 2 | groin = 3 | legs = 4 | feet = 5 | arms = 6 | head = 7
+	var/list/prot = list(0,0,0,0,0,0,0)
 	for(var/obj/item/I in get_equipped_items())
-		if(I.flags_armor_protection & HANDS)
-			prot["hands"] = max(1 - I.permeability_coefficient, prot["hands"])
-		if(I.flags_armor_protection & CHEST)
-			prot["chest"] = max(1 - I.permeability_coefficient, prot["chest"])
-		if(I.flags_armor_protection & GROIN)
-			prot["groin"] = max(1 - I.permeability_coefficient, prot["groin"])
-		if(I.flags_armor_protection & LEGS)
-			prot["legs"] = max(1 - I.permeability_coefficient, prot["legs"])
-		if(I.flags_armor_protection & FEET)
-			prot["feet"] = max(1 - I.permeability_coefficient, prot["feet"])
-		if(I.flags_armor_protection & ARMS)
-			prot["arms"] = max(1 - I.permeability_coefficient, prot["arms"])
-		if(I.flags_armor_protection & HEAD)
-			prot["head"] = max(1 - I.permeability_coefficient, prot["head"])
-	var/protection = (prot["head"] + prot["arms"] + prot["feet"] + prot["legs"] + prot["groin"] + prot["chest"] + prot["hands"])/7
+		if(I.armor_protection_flags & HANDS)
+			prot[1] = max(1 - I.permeability_coefficient, prot[1])
+		if(I.armor_protection_flags & CHEST)
+			prot[2] = max(1 - I.permeability_coefficient, prot[2])
+		if(I.armor_protection_flags & GROIN)
+			prot[3] = max(1 - I.permeability_coefficient, prot[3])
+		if(I.armor_protection_flags & LEGS)
+			prot[4] = max(1 - I.permeability_coefficient, prot[4])
+		if(I.armor_protection_flags & FEET)
+			prot[5] = max(1 - I.permeability_coefficient, prot[5])
+		if(I.armor_protection_flags & ARMS)
+			prot[6] = max(1 - I.permeability_coefficient, prot[6])
+		if(I.armor_protection_flags & HEAD)
+			prot[7] = max(1 - I.permeability_coefficient, prot[7])
+	var/protection = (prot[7] + prot[6] + prot[5] + prot[4] + prot[3] + prot[2] + prot[1])/7
 	return protection
+
+/mob/living/carbon/human/get_soft_acid_protection()
+	var/protection = 0
+	for(var/def_zone in GLOB.human_body_parts)
+		protection += get_soft_armor(ACID, def_zone)
+	// adds arms and feet twice since precise.(acid armor goes from 0 to 100)
+	return protection/1100
+
+/mob/living/carbon/human/get_hard_acid_protection()
+	var/protection = 0
+	for(var/def_zone in GLOB.human_body_parts)
+		protection += get_hard_armor(ACID, def_zone)
+	// adds arms and feet twice since precise.
+	return protection/11
 
 /mob/living/carbon/human/get_standard_bodytemperature()
 	return species.body_temperature
@@ -207,3 +256,9 @@
 	. = ..()
 	if(species.name)
 		. += species.name
+
+///wrapper for a signal to handle opening the squad selector ui just before drop
+/mob/living/carbon/human/proc/suggest_squad_assign()
+	SIGNAL_HANDLER
+	UnregisterSignal(SSdcs, COMSIG_GLOB_DEPLOY_TIMELOCK_ENDED)
+	GLOB.squad_selector.interact(src)

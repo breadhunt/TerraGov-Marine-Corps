@@ -252,6 +252,7 @@ ColorTone(rgb, tone)
 		if(4, 8)
 			usealpha = TRUE
 		if(3, 6) //proceed as normal
+			EMPTY_BLOCK_GUARD // why isnt this a normal if hhhh
 		else
 			return
 
@@ -420,7 +421,7 @@ ColorTone(rgb, tone)
 			g = mid
 			b = lo
 
-	return (HSV.len > 3) ? rgb(r,g,b,HSV[4]) : rgb(r,g,b)
+	return (length(HSV) > 3) ? rgb(r,g,b,HSV[4]) : rgb(r,g,b)
 
 
 /proc/RGBtoHSV(rgb)
@@ -797,14 +798,14 @@ ColorTone(rgb, tone)
 						return flat
 					current_layer = process_set + A.layer + current_layer / 1000
 
-				for(var/p in 1 to layers.len)
+				for(var/p in 1 to length(layers))
 					var/image/cmp = layers[p]
 					if(current_layer < layers[cmp])
 						layers.Insert(p, current)
 						break
 				layers[current] = current_layer
 
-		//sortTim(layers, /proc/cmp_image_layer_asc)
+		//sortTim(layers, GLOBAL_PROC_REF(cmp_image_layer_asc))
 
 		var/icon/add // Icon of overlay being added
 
@@ -935,35 +936,122 @@ ColorTone(rgb, tone)
 	dir = newdir
 
 
+/// generates a filename for a given asset.
+/// like generate_asset_name(), except returns the rsc reference and the rsc file hash as well as the asset name (sans extension)
+/// used so that certain asset files dont have to be hashed twice
+/proc/generate_and_hash_rsc_file(file, dmi_file_path)
+	var/rsc_ref = fcopy_rsc(file)
+	var/hash
+	//if we have a valid dmi file path we can trust md5'ing the rsc file because we know it doesnt have the bug described in http://www.byond.com/forum/post/2611357
+	if(dmi_file_path)
+		hash = md5(rsc_ref)
+	else //otherwise, we need to do the expensive fcopy() workaround
+		hash = md5asfile(rsc_ref)
+
+	return list(rsc_ref, hash, "asset.[hash]")
+
 /// Generate a filename for this asset
 /// The same asset will always lead to the same asset name
 /// (Generated names do not include file extention.)
 /proc/generate_asset_name(file)
 	return "asset.[md5(fcopy_rsc(file))]"
 
-//Converts an icon to base64. Operates by putting the icon in the iconCache savefile,
-// exporting it as text, and then parsing the base64 from that.
-// (This relies on byond automatically storing icons in savefiles as base64)
+/**
+ * Converts an icon to base64. Operates by putting the icon in the iconCache savefile,
+ * exporting it as text, and then parsing the base64 from that.
+ * (This relies on byond automatically storing icons in savefiles as base64)
+ */
 /proc/icon2base64(icon/icon)
 	if(!isicon(icon))
 		return FALSE
-	var/savefile/dummySave = new("tmp/dummySave.sav")
+	var/savefile/dummySave = new
 	WRITE_FILE(dummySave["dummy"], icon)
 	var/iconData = dummySave.ExportText("dummy")
 	var/list/partial = splittext(iconData, "{")
-	. = replacetext(copytext_char(partial[2], 3, -5), "\n", "")  //if cleanup fails we want to still return the correct base64
-	dummySave.Unlock()
-	dummySave = null
-	fdel("tmp/dummySave.sav")  //if you get the idea to try and make this more optimized, make sure to still call unlock on the savefile after every write to unlock it.
+	return replacetext(copytext_char(partial[2], 3, -5), "\n", "") //if cleanup fails we want to still return the correct base64
 
+///given a text string, returns whether it is a valid dmi icons folder path
+/proc/is_valid_dmi_file(icon_path)
+	if(!istext(icon_path) || !length(icon_path))
+		return FALSE
 
-/proc/icon2html(thing, target, icon_state, dir = SOUTH, frame = 1, moving = FALSE, sourceonly = FALSE, extra_classes = null)
-	if(!thing)
+	var/is_in_icon_folder = findtextEx(icon_path, "icons/")
+	var/is_dmi_file = findtextEx(icon_path, ".dmi")
+
+	if(is_in_icon_folder && is_dmi_file)
+		return TRUE
+	return FALSE
+
+/// given an icon object, dmi file path, or atom/image/mutable_appearance, attempts to find and return an associated dmi file path.
+/// a weird quirk about dm is that /icon objects represent both compile-time or dynamic icons in the rsc,
+/// but stringifying rsc references returns a dmi file path
+/// ONLY if that icon represents a completely unchanged dmi file from when the game was compiled.
+/// so if the given object is associated with an icon that was in the rsc when the game was compiled, this returns a path. otherwise it returns ""
+/proc/get_icon_dmi_path(icon/icon)
+	/// the dmi file path we attempt to return if the given object argument is associated with a stringifiable icon
+	/// if successful, this looks like "icons/path/to/dmi_file.dmi"
+	var/icon_path = ""
+
+	if(isatom(icon) || istype(icon, /image) || istype(icon, /mutable_appearance))
+		var/atom/atom_icon = icon
+		icon = atom_icon.icon
+		//atom icons compiled in from 'icons/path/to/dmi_file.dmi' are weird and not really icon objects that you generate with icon().
+		//if theyre unchanged dmi's then they're stringifiable to "icons/path/to/dmi_file.dmi"
+
+	if(isicon(icon) && isfile(icon))
+		//icons compiled in from 'icons/path/to/dmi_file.dmi' at compile time are weird and arent really /icon objects,
+		///but they pass both isicon() and isfile() checks. theyre the easiest case since stringifying them gives us the path we want
+		var/icon_ref = "\ref[icon]"
+		var/locate_icon_string = "[locate(icon_ref)]"
+
+		icon_path = locate_icon_string
+
+	else if(isicon(icon) && "[icon]" == "/icon")
+		// icon objects generated from icon() at runtime are icons, but they ARENT files themselves, they represent icon files.
+		// if the files they represent are compile time dmi files in the rsc, then
+		// the rsc reference returned by fcopy_rsc() will be stringifiable to "icons/path/to/dmi_file.dmi"
+		var/rsc_ref = fcopy_rsc(icon)
+
+		var/icon_ref = "\ref[rsc_ref]"
+
+		var/icon_path_string = "[locate(icon_ref)]"
+
+		icon_path = icon_path_string
+
+	else if(istext(icon))
+		var/rsc_ref = fcopy_rsc(icon)
+		//if its the text path of an existing dmi file, the rsc reference returned by fcopy_rsc() will be stringifiable to a dmi path
+
+		var/rsc_ref_ref = "\ref[rsc_ref]"
+		var/rsc_ref_string = "[locate(rsc_ref_ref)]"
+
+		icon_path = rsc_ref_string
+
+	if(is_valid_dmi_file(icon_path))
+		return icon_path
+
+	return FALSE
+
+/**
+ * generate an asset for the given icon or the icon of the given appearance for [thing], and send it to any clients in target.
+ * Arguments:
+ * * thing - either a /icon object, or an object that has an appearance (atom, image, mutable_appearance).
+ * * target - either a reference to or a list of references to /client's or mobs with clients
+ * * icon_state - string to force a particular icon_state for the icon to be used
+ * * dir - dir number to force a particular direction for the icon to be used
+ * * frame - what frame of the icon_state's animation for the icon being used
+ * * moving - whether or not to use a moving state for the given icon
+ * * sourceonly - if TRUE, only generate the asset and send back the asset url, instead of tags that display the icon to players
+ * * extra_clases - string of extra css classes to use when returning the icon string
+ */
+/proc/icon2html(atom/thing, client/target, icon_state, dir = SOUTH, frame = 1, moving = FALSE, sourceonly = FALSE, extra_classes = null)
+	if (!thing)
 		return
 
 	var/key
-	var/icon/I = thing
-	if(!target)
+	var/icon/icon2collapse = thing
+
+	if (!target)
 		return
 	if(target == world)
 		target = GLOB.clients
@@ -973,34 +1061,42 @@ ColorTone(rgb, tone)
 		targets = list(target)
 	else
 		targets = target
-		if(!length(targets))
-			return
-	if(!isicon(I))
-		if(isfile(thing)) //special snowflake
+	if(!length(targets))
+		return
+
+	//check if the given object is associated with a dmi file in the icons folder. if it is then we dont need to do a lot of work
+	//for asset generation to get around byond limitations
+	var/icon_path = get_icon_dmi_path(thing)
+
+	if (!isicon(icon2collapse))
+		if (isfile(thing)) //special snowflake
 			var/name = SANITIZE_FILENAME("[generate_asset_name(thing)].png")
-			SSassets.transport.register_asset(name, thing)
+			if (!SSassets.cache[name])
+				SSassets.transport.register_asset(name, thing)
 			for(var/thing2 in targets)
 				SSassets.transport.send_assets(thing2, name)
 			if(sourceonly)
 				return SSassets.transport.get_asset_url(name)
 			return "<img class='[extra_classes] icon icon-misc' src='[SSassets.transport.get_asset_url(name)]'>"
-		var/atom/A = thing
 
-		I = A.icon
-		if(isnull(icon_state))
-			icon_state = A.icon_state
-			if(isnull(icon_state) || (isatom(thing) && A.flags_atom & HTML_USE_INITAL_ICON_1))
-				icon_state = initial(A.icon_state)
+		//its either an atom, image, or mutable_appearance, we want its icon var
+		icon2collapse = thing.icon
+
+		if (isnull(icon_state))
+			icon_state = thing.icon_state
+			//Despite casting to atom, this code path supports mutable appearances, so let's be nice to them
+			if(isnull(icon_state) || (isatom(thing) && thing.atom_flags & HTML_USE_INITAL_ICON_1))
+				icon_state = initial(thing.icon_state)
 				if (isnull(dir))
-					dir = initial(A.dir)
+					dir = initial(thing.dir)
 
 		if (isnull(dir))
-			dir = A.dir
+			dir = thing.dir
 
-		if(ishuman(thing)) // Shitty workaround for a BYOND issue.
-			var/icon/temp = I
-			I = icon()
-			I.Insert(temp, dir = SOUTH)
+		if (ishuman(thing)) // Shitty workaround for a BYOND issue.
+			var/icon/temp = icon2collapse
+			icon2collapse = icon()
+			icon2collapse.Insert(temp, dir = SOUTH)
 			dir = SOUTH
 	else
 		if(isnull(dir))
@@ -1008,13 +1104,18 @@ ColorTone(rgb, tone)
 		if(isnull(icon_state))
 			icon_state = ""
 
-	I = icon(I, icon_state, dir, frame, moving)
+	icon2collapse = icon(icon2collapse, icon_state, dir, frame, moving)
 
-	key = "[generate_asset_name(I)].png"
+	var/list/name_and_ref = generate_and_hash_rsc_file(icon2collapse, icon_path)//pretend that tuples exist
+
+	var/rsc_ref = name_and_ref[1] //weird object thats not even readable to the debugger, represents a reference to the icons rsc entry
+	var/file_hash = name_and_ref[2]
+	key = "[name_and_ref[3]].png"
+
 	if(!SSassets.cache[key])
-		SSassets.transport.register_asset(key, I)
-	for(var/thing2 in targets)
-		SSassets.transport.send_assets(thing2, key)
+		SSassets.transport.register_asset(key, rsc_ref, file_hash, icon_path)
+	for (var/client_target in targets)
+		SSassets.transport.send_assets(client_target, key)
 	if(sourceonly)
 		return SSassets.transport.get_asset_url(key)
 	return "<img class='[extra_classes] icon icon-[icon_state]' src='[SSassets.transport.get_asset_url(key)]'>"
@@ -1055,7 +1156,7 @@ ColorTone(rgb, tone)
 
 
 //Costlier version of icon2html() that uses getFlatIcon() to account for overlays, underlays, etc. Use with extreme moderation, ESPECIALLY on mobs.
-/proc/costly_icon2html(thing, target)
+/proc/costly_icon2html(thing, target, sourceonly = FALSE)
 	if(!thing)
 		return
 
@@ -1063,7 +1164,7 @@ ColorTone(rgb, tone)
 		return icon2html(thing, target)
 
 	var/icon/I = getFlatIcon(thing)
-	return icon2html(I, target)
+	return icon2html(I, target, sourceonly = sourceonly)
 
 
 //For creating consistent icons for human looking simple animals
@@ -1082,7 +1183,6 @@ ColorTone(rgb, tone)
 		var/icon/out_icon = icon('icons/effects/effects.dmi', "nothing")
 		for(var/D in showDirs)
 			body.setDir(D)
-			COMPILE_OVERLAYS(body)
 			var/icon/partial = getFlatIcon(body)
 			out_icon.Insert(partial, dir = D)
 
@@ -1099,10 +1199,9 @@ GLOBAL_LIST_EMPTY(transformation_animation_objects)
  *
  * result_appearance - End result appearance/atom/image
  * time - Animation duration
- * transform_overlay - Appearance/atom/image of effect that moves along the animation - should be horizonatally centered
- * reset_after - If FALSE, filters won't be reset and helper vis_objects will not be removed after animation duration expires. Cleanup must be handled by the caller!
+ * transform_appearance - Appearance/atom/image of effect that moves along the animation - should be horizonatally centered
  */
-/atom/movable/proc/transformation_animation(result_appearance, time = 3 SECONDS, transform_overlay, reset_after=TRUE)
+/atom/movable/proc/transformation_animation(result_appearance, time = 3 SECONDS, transform_appearance)
 	var/list/transformation_objects = GLOB.transformation_animation_objects[src] || list()
 	//Disappearing part
 	var/top_part_filter = filter(type="alpha",icon=icon('icons/effects/alphacolors.dmi',"white"),y=0)
@@ -1117,10 +1216,10 @@ GLOBAL_LIST_EMPTY(transformation_animation_objects)
 	appearing_part.filters = filter(type="alpha",icon=icon('icons/effects/alphacolors.dmi',"white"),y=0,flags=MASK_INVERSE)
 	animate(appearing_part.filters[1],y=-32,time=time)
 	transformation_objects += appearing_part
-	//Transform effect thing - todo make appearance passed in
-	if(transform_overlay)
+	//Transform effect thing
+	if(transform_appearance)
 		var/obj/transform_effect = new
-		transform_effect.appearance = transform_overlay
+		transform_effect.appearance = transform_appearance
 		transform_effect.vis_flags = VIS_INHERIT_ID
 		transform_effect.pixel_y = 16
 		transform_effect.alpha = 255
@@ -1131,8 +1230,6 @@ GLOBAL_LIST_EMPTY(transformation_animation_objects)
 	GLOB.transformation_animation_objects[src] = transformation_objects
 	for(var/A in transformation_objects)
 		vis_contents += A
-	if(reset_after)
-		addtimer(CALLBACK(src,.proc/_reset_transformation_animation,filter_index),time)
 
 /**
  * Resets filters and removes transformation animations helper objects from vis contents.
@@ -1182,3 +1279,26 @@ GLOBAL_LIST_EMPTY(transformation_animation_objects)
 	image_to_center.pixel_y = y_offset
 
 	return image_to_center
+
+///Checks if the given iconstate exists in the given file, caching the result. Setting scream to TRUE will print a stack trace ONCE.
+/proc/icon_exists(file, state, scream)
+	var/static/list/icon_states_cache = list()
+	if(icon_states_cache[file]?[state])
+		return TRUE
+
+	if(icon_states_cache[file]?[state] == FALSE)
+		return FALSE
+
+	var/list/states = icon_states(file)
+
+	if(!icon_states_cache[file])
+		icon_states_cache[file] = list()
+
+	if(state in states)
+		icon_states_cache[file][state] = TRUE
+		return TRUE
+	else
+		icon_states_cache[file][state] = FALSE
+		if(scream)
+			stack_trace("Icon Lookup for state: [state] in file [file] failed.")
+		return FALSE

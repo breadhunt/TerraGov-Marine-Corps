@@ -2,13 +2,13 @@
 	name = "7E Chameleon Badge"
 	desc = "The 7E Chameloen Badge uses brand new and revolutionary technology to make your gear look even cooler. It is capable of changing into a variety of different shapes (Alt-Click), changing colors (Attack with Green Facepaint), and attaching to nearly all clothing, helmets, berets, and or armor!"
 	greyscale_config = /datum/greyscale_config/badge/shield
-	greyscale_colors = "#afafad"
 	icon_state = "in_hand"
 	slot = ATTACHMENT_SLOT_BADGE
-	flags_attach_features = ATTACH_REMOVABLE|ATTACH_APPLY_ON_MOB|ATTACH_NO_HANDS|ATTACH_SAME_ICON
-	colorable_allowed = COLOR_WHEEL_ONLY
-	flags_item_map_variant = NONE
-	colorable_colors = list()
+	attach_features_flags = ATTACH_REMOVABLE|ATTACH_APPLY_ON_MOB|ATTACH_NO_HANDS|ATTACH_SAME_ICON
+	colorable_allowed = COLOR_WHEEL_ALLOWED
+	greyscale_colors = COLOR_RED
+	secondary_color = TRUE
+	item_map_variant_flags = NONE
 
 	///List of selectable styles for where the badge is worn.
 	var/list/style_list = list(
@@ -34,16 +34,13 @@
 		"Alternate Circle" = /datum/greyscale_config/badge/circle2,
 	)
 
-/obj/item/armor_module/armor/badge/Initialize()
+/obj/item/armor_module/armor/badge/Initialize(mapload)
 	. = ..()
 	update_icon()
 
 /obj/item/armor_module/armor/badge/examine(mob/user)
 	. = ..()
 	. += span_notice("Its current style is set to [current_style]")
-
-/obj/item/armor_module/armor/badge/limit_colorable_colors(faction)
-	return
 
 /obj/item/armor_module/armor/badge/can_attach(obj/item/attaching_to, mob/user)
 	. = ..()
@@ -77,10 +74,45 @@
 	var/new_shape = tgui_input_list(living_user, "Pick a shape", "Pick shape", shape_list)
 	if(!new_style && !new_shape)
 		return
-	if(!do_after(living_user, 1 SECONDS, TRUE, src, BUSY_ICON_GENERIC))
+	if(!do_after(living_user, 1 SECONDS, NONE, src, BUSY_ICON_GENERIC))
 		return
 	if(new_style)
 		current_style = new_style
 	if(new_shape)
 		set_greyscale_config(shape_list[new_shape])
 	update_icon()
+
+
+
+/obj/item/armor_module/armor/stylehat_badge
+	name = "Beret Badge"
+	icon_state = "beret_badge"
+	greyscale_config = /datum/greyscale_config/style_hat/badge
+	slot = ATTACHMENT_SLOT_CAPE_HIGHLIGHT
+	attach_features_flags = ATTACH_APPLY_ON_MOB|ATTACH_DIFFERENT_MOB_ICON_STATE
+	secondary_color = TRUE
+	greyscale_colors = COLOR_RED
+	item_map_variant_flags = NONE
+	colorable_allowed = COLOR_WHEEL_ALLOWED
+
+/obj/item/armor_module/armor/stylehat_badge/classic
+	name = "Classic Beret Badge"
+	icon_state = "classic_beret_badge"
+
+/obj/item/armor_module/armor/stylehat_badge/ushanka
+	name = "Ushanka Badge"
+	icon_state = "ushanka_badge"
+
+/obj/item/armor_module/armor/visor_glyph
+	name = "Visor Glyph"
+	icon_state = "skull"
+	greyscale_config = /datum/greyscale_config/visors/glyphs
+	slot = ATTACHMENT_SLOT_CAPE_HIGHLIGHT
+	attach_features_flags = ATTACH_APPLY_ON_MOB|ATTACH_SAME_ICON
+	secondary_color = TRUE
+	greyscale_colors = COLOR_WHITE
+	item_map_variant_flags = NONE
+	colorable_allowed = COLOR_WHEEL_ALLOWED
+
+/obj/item/armor_module/armor/visor_glyph/old
+	icon_state = "skull_old"

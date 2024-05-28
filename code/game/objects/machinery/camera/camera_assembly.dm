@@ -9,16 +9,6 @@
 	desc = "The basic construction for cameras."
 	icon = 'icons/obj/machines/monitors.dmi'
 	icon_state = "cameracase"
-	materials = list(/datum/material/metal = 400, /datum/material/glass = 250)
-
-
-/obj/item/frame/camera/attackby(obj/item/I, mob/user, params)
-	. = ..()
-
-	if(iswrench(I))
-		new /obj/item/stack/sheet/metal(loc, 2)
-		qdel(src)
-
 
 /obj/item/frame/camera/proc/try_build(turf/wall, mob/user)
 	if(get_dist(wall, user) > 1)
@@ -30,15 +20,15 @@
 
 	var/turf/loc = get_turf(user)
 	if(!isfloorturf(loc))
-		to_chat(user, span_warning("[src] cannot be placed on this spot."))
+		loc.balloon_alert(user, "bad spot")
 		return
 
-	user.visible_message("[user] begins attaching [src] to the wall.", "You being attaching [src] to the wall.")
+	user.balloon_alert_to_viewers("attaching")
 	playsound(loc, 'sound/machines/click.ogg', 15, 1)
 	var/constrdir = REVERSE_DIR(user.dir)
 	var/constrloc = user.loc
 
-	if(!do_after(user, 30, TRUE, wall, BUSY_ICON_BUILD))
+	if(!do_after(user, 30, NONE, wall, BUSY_ICON_BUILD))
 		return
 
 	new /obj/structure/camera_assembly(constrloc, constrdir)
@@ -91,6 +81,8 @@
 
 /obj/structure/camera_assembly/attackby(obj/item/I, mob/living/user, params)
 	. = ..()
+	if(.)
+		return
 
 	switch(state)
 		if(STATE_WRENCHED)
@@ -183,7 +175,7 @@
 
 
 /obj/structure/camera_assembly/deconstruct(disassembled = TRUE)
-	if(!(flags_atom & NODECONSTRUCT))
+	if(!(atom_flags & NODECONSTRUCT))
 		new /obj/item/stack/sheet/metal(loc)
 	return ..()
 

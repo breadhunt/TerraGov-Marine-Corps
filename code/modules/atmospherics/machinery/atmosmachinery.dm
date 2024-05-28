@@ -44,7 +44,7 @@
 	. = ..()
 	if(is_type_in_list(src, GLOB.ventcrawl_machinery) && isliving(user))
 		var/mob/living/L = user
-		if(L.can_ventcrawl())
+		if(HAS_TRAIT(L, TRAIT_CAN_VENTCRAWL))
 			. += span_notice("Alt-click to crawl through it.")
 
 /obj/machinery/atmospherics/New(loc, process = TRUE, setdir)
@@ -190,7 +190,7 @@
 		return TRUE
 	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
 
-	if(!do_after(user, 2 SECONDS, TRUE, src, BUSY_ICON_BUILD))
+	if(!do_after(user, 2 SECONDS, NONE, src, BUSY_ICON_BUILD))
 		return TRUE
 
 	user.visible_message( \
@@ -204,7 +204,7 @@
 	return can_unwrench
 
 /obj/machinery/atmospherics/deconstruct(disassembled = TRUE)
-	if(!(flags_atom & NODECONSTRUCT))
+	if(!(atom_flags & NODECONSTRUCT))
 		if(can_unwrench)
 			var/obj/item/pipe/stored = new construction_type(loc, null, dir, src)
 			stored.setPipingLayer(piping_layer)
@@ -216,7 +216,7 @@
 
 	//Add identifiers for the iconset
 	if(iconsetids[iconset] == null)
-		iconsetids[iconset] = num2text(iconsetids.len + 1)
+		iconsetids[iconset] = num2text(length(iconsetids) + 1)
 
 	//Generate a unique identifier for this image combination
 	var/identifier = iconsetids[iconset] + "_[iconstate]_[direction]_[col]_[piping_layer]"
@@ -264,14 +264,14 @@
 	if(!silent_crawl) //Xenos with silent crawl can silently enter/exit/move through vents.
 		visible_message(span_warning("You hear something squeezing through the ducts."))
 	to_chat(user, span_notice("You begin to climb out of [src]"))
-	if(!do_after(user, vent_crawl_exit_time, FALSE, src))
+	if(!do_after(user, vent_crawl_exit_time, IGNORE_HELD_ITEM, src))
 		return FALSE
 	user.remove_ventcrawl()
 	user.forceMove(T)
 	user.visible_message(span_warning("[user] climbs out of [src].</span>"), \
 	span_notice("You climb out of [src].</span>"))
 	if(!silent_crawl)
-		playsound(src, get_sfx("alien_ventpass"), 35, TRUE)
+		playsound(src, SFX_ALIEN_VENTPASS, 35, TRUE)
 
 
 /obj/machinery/atmospherics/relaymove(mob/living/user, direction)

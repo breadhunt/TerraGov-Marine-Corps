@@ -15,7 +15,7 @@
 	anchored = TRUE
 	coverage = 20
 
-/obj/structure/morgue/Initialize()
+/obj/structure/morgue/Initialize(mapload)
 	. = ..()
 	connected = new tray_path(src)
 
@@ -23,11 +23,12 @@
 	QDEL_NULL(connected)
 	return ..()
 
-/obj/structure/morgue/update_icon()
+/obj/structure/morgue/update_icon_state()
+	. = ..()
 	if (morgue_open)
 		icon_state = "[morgue_type]0"
 	else
-		if (contents.len > 1) //not counting the morgue tray
+		if (length(contents) > 1) //not counting the morgue tray
 			icon_state = "[morgue_type]2"
 		else
 			icon_state = "[morgue_type]1"
@@ -40,6 +41,8 @@
 		if(EXPLODE_LIGHT)
 			if(prob(95))
 				return
+		if(EXPLODE_WEAK)
+			return
 	for(var/atom/movable/A in src)
 		A.forceMove(loc)
 		ex_act(severity)
@@ -85,6 +88,8 @@
 
 /obj/structure/morgue/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(istype(I, /obj/item/tool/pen))
 		var/t = copytext(stripped_input(user, "What would you like the label to be?", name, null), 1, MAX_MESSAGE_LEN)
@@ -119,7 +124,6 @@
 	layer = OBJ_LAYER
 	var/obj/structure/morgue/linked_morgue = null
 	anchored = TRUE
-	throwpass = 1
 
 /obj/structure/morgue_tray/Initialize(mapload, obj/structure/morgue/morgue_source)
 	. = ..()
@@ -139,6 +143,7 @@
 
 
 /obj/structure/morgue_tray/MouseDrop_T(atom/movable/O, mob/user)
+	. = ..()
 	if (!istype(O) || O.anchored || !isturf(O.loc))
 		return
 	if (!ismob(O) && !istype(O, /obj/structure/closet/bodybag))
@@ -179,18 +184,16 @@
 
 
 /obj/structure/morgue/crematorium/update_icon()
+	. = ..()
 	if(cremating)
 		icon_state = "[morgue_type]_active"
-	else
-		..()
-
 
 /obj/structure/morgue/crematorium/proc/cremate(mob/user)
 	set waitfor = 0
 	if(cremating)
 		return
 
-	if(contents.len <= 1) //1 because the tray is inside.
+	if(length(contents) <= 1) //1 because the tray is inside.
 		visible_message(span_warning(" You hear a hollow crackle."))
 	else
 		visible_message(span_warning(" You hear a roar as the crematorium activates."))

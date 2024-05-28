@@ -24,13 +24,13 @@ GLOBAL_LIST_INIT(string_equip_flags, list("suit slot" = ITEM_SLOT_OCLOTHING,
 /obj/item/clothing/get_antag_info()
 	var/list/entries = SScodex.retrieve_entries_for_string(name)
 	var/datum/codex_entry/general_entry = LAZYACCESS(entries, 1)
-	if(general_entry && general_entry.antag_text)
+	if(general_entry?.antag_text)
 		return general_entry.antag_text
 
 /obj/item/clothing/get_lore_info()
 	var/list/entries = SScodex.retrieve_entries_for_string(name)
 	var/datum/codex_entry/general_entry = LAZYACCESS(entries, 1)
-	if(general_entry && general_entry.lore_text)
+	if(general_entry?.lore_text)
 		return general_entry.lore_text
 
 /obj/item/clothing/get_mechanics_info()
@@ -38,7 +38,7 @@ GLOBAL_LIST_INIT(string_equip_flags, list("suit slot" = ITEM_SLOT_OCLOTHING,
 
 	var/list/entries = SScodex.retrieve_entries_for_string(name)
 	var/datum/codex_entry/general_entry = LAZYACCESS(entries, 1)
-	if(general_entry && general_entry.mechanics_text)
+	if(general_entry?.mechanics_text)
 		armor_strings += general_entry.mechanics_text + "<br>"
 
 	var/mechanics_signal = SEND_SIGNAL(src, COMSIG_CLOTHING_MECHANICS_INFO)
@@ -68,13 +68,16 @@ GLOBAL_LIST_INIT(string_equip_flags, list("suit slot" = ITEM_SLOT_OCLOTHING,
 	if(mechanics_signal & COMPONENT_CLOTHING_MECHANICS_TINTED)
 		armor_strings += "<br>This will obstruct your vision."
 
+	if(mechanics_signal & COMPONENT_CLOTHING_BLUR_PROTECTION)
+		armor_strings += "<br>This will clarify your vision, removing all sources of blur."
+
 	if(accuracy_mod)
 		armor_strings += "<br>This will alter your shooting accuracy by up to [accuracy_mod]% when worn."
 
-	if(flags_inventory & NOPRESSUREDMAGE)
+	if(inventory_flags & NOPRESSUREDMAGE)
 		armor_strings += "Wearing this will protect you from the vacuum of space."
 
-	if(flags_inventory & BLOCKSHARPOBJ)
+	if(inventory_flags & BLOCKSHARPOBJ)
 		armor_strings += "The material is exceptionally thick."
 
 	if(max_heat_protection_temperature >= FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE)
@@ -88,16 +91,16 @@ GLOBAL_LIST_INIT(string_equip_flags, list("suit slot" = ITEM_SLOT_OCLOTHING,
 	var/list/covers = list()
 	var/list/slots = list()
 	for(var/name in GLOB.string_part_flags)
-		if(flags_armor_protection & GLOB.string_part_flags[name])
+		if(armor_protection_flags & GLOB.string_part_flags[name])
 			covers += name
 	for(var/name in GLOB.string_equip_flags)
-		if(flags_equip_slot & GLOB.string_equip_flags[name])
+		if(equip_slot_flags & GLOB.string_equip_flags[name])
 			slots += name
 
-	if(covers.len)
+	if(length(covers))
 		armor_strings += "<br>It covers the [english_list(covers)]."
 
-	if(slots.len)
+	if(length(slots))
 		armor_strings += "It can be worn on your [english_list(slots)]."
 
 	if(allowed)
@@ -111,22 +114,10 @@ GLOBAL_LIST_INIT(string_equip_flags, list("suit slot" = ITEM_SLOT_OCLOTHING,
 
 /obj/item/armor_module/storage/uniform/get_mechanics_info()
 	. = ..()
-	. += "<br>This item has an internal inventory of [storage.storage_slots] slots."
-	if(length(storage.bypass_w_limit))
+	. += "<br>This item has an internal inventory of [storage_datum.storage_slots] slots."
+	if(length(storage_datum.storage_type_limits))
 		. += "<br><br><U>You can also carry the following special items in this</U>:"
-		for(var/X in storage.bypass_w_limit)
-			var/obj/B = X
-			. += "<br>[initial(B.name)]"
-
-/obj/item/clothing/suit/storage/get_mechanics_info()
-	. = ..()
-	if(!pockets)
-		return
-	. += "<br><br>This item has an internal inventory of [pockets.storage_slots] slots."
-	. += "<br>It can carry weight [pockets.max_w_class] things or lighter."
-	if(length(pockets.bypass_w_limit))
-		. += "<br><U>You can also carry the following special items in this internal inventory</U>:"
-		for(var/X in pockets.bypass_w_limit)
+		for(var/X in storage_datum.storage_type_limits)
 			var/obj/B = X
 			. += "<br>[initial(B.name)]"
 

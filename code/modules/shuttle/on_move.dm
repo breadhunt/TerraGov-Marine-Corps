@@ -38,7 +38,7 @@ All ShuttleMove procs go here
 			continue
 		if(ismovable(thing))
 			var/atom/movable/movable_thing = thing
-			if(movable_thing.flags_atom & SHUTTLE_IMMUNE)
+			if(movable_thing.atom_flags & SHUTTLE_IMMUNE)
 				var/old_dir = movable_thing.dir
 				movable_thing.abstract_move(src)
 				movable_thing.setDir(old_dir)
@@ -55,7 +55,7 @@ All ShuttleMove procs go here
 	var/shuttle_boundary = baseturfs.Find(/turf/baseturf_skipover/shuttle)
 	if(!shuttle_boundary)
 		CRASH("A turf queued to move via shuttle somehow had no skipover in baseturfs. [src]([type]):[loc]")
-	var/depth = baseturfs.len - shuttle_boundary + 1
+	var/depth = length(baseturfs) - shuttle_boundary + 1
 	newT.CopyOnTop(src, 1, depth, TRUE)
 
 	return TRUE
@@ -68,7 +68,7 @@ All ShuttleMove procs go here
 
 	var/shuttle_boundary = baseturfs.Find(/turf/baseturf_skipover/shuttle)
 	if(shuttle_boundary)
-		oldT.ScrapeAway(baseturfs.len - shuttle_boundary + 1)
+		oldT.ScrapeAway(length(baseturfs) - shuttle_boundary + 1)
 
 	if(rotation)
 		shuttleRotate(rotation) //see shuttle_rotate.dm
@@ -98,7 +98,7 @@ All ShuttleMove procs go here
 	if(loc != oldT) // This is for multi tile objects
 		return
 
-	if(flags_atom & SHUTTLE_IMMUNE)
+	if(atom_flags & SHUTTLE_IMMUNE)
 		return
 
 	abstract_move(newT)
@@ -129,7 +129,7 @@ All ShuttleMove procs go here
 		return
 	var/turf/target = get_edge_target_turf(src, move_dir)
 	var/range = throw_force * 10
-	range = CEILING(rand(range-(range*0.1), range+(range*0.1)), 10)/10
+	range = CEILING(randfloat(range-(range*0.1), range+(range*0.1)), 10)/10
 	var/speed = range/5
 	safe_throw_at(target, range, speed, force = MOVE_FORCE_EXTREMELY_STRONG)
 
@@ -194,19 +194,16 @@ All ShuttleMove procs go here
 	. = ..()
 	if(. & MOVE_AREA)
 		. |= MOVE_CONTENTS
-		GLOB.cameranet.removeCamera(src)
+		parent_cameranet.removeCamera(src)
 
 /obj/machinery/camera/afterShuttleMove(turf/oldT, list/movement_force, shuttle_dir, shuttle_preferred_direction, move_dir, rotation)
 	. = ..()
-	GLOB.cameranet.addCamera(src)
+	parent_cameranet.addCamera(src)
 
 /obj/machinery/atmospherics/afterShuttleMove(turf/oldT, list/movement_force, shuttle_dir, shuttle_preferred_direction, move_dir, rotation)
 	. = ..()
 	if(pipe_vision_img)
 		pipe_vision_img.loc = loc
-
-/obj/machinery/atmospherics/afterShuttleMove(turf/oldT, list/movement_force, shuttle_dir, shuttle_preferred_direction, move_dir, rotation)
-	. = ..()
 	var/missing_nodes = FALSE
 	for(var/i in 1 to device_type)
 		if(nodes[i])

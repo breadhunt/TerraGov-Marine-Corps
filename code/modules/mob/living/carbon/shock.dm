@@ -2,30 +2,32 @@
 	return traumatic_shock
 
 /mob/living/carbon/proc/adjustTraumatic_Shock(amount)
-	if(status_flags & GODMODE)
-		return FALSE	//godmode
+	if(amount > 0 && (status_flags & GODMODE))
+		return FALSE
 	traumatic_shock = clamp(traumatic_shock+amount,-100,maxHealth*2)
 
 /mob/living/carbon/proc/setTraumatic_Shock(amount)
-	if(status_flags & GODMODE)
-		return FALSE	//godmode
+	if(traumatic_shock == amount)
+		return FALSE
 	traumatic_shock = amount
 
 /mob/living/carbon/proc/getShock_Stage()
 	return shock_stage
 
 /mob/living/carbon/proc/adjustShock_Stage(amount)
-	if(status_flags & GODMODE)
-		return FALSE	//godmode
+	if(amount > 0 && (status_flags & GODMODE))
+		return FALSE
 	. = shock_stage
-	shock_stage = clamp(shock_stage + (amount - shock_stage) * PAIN_REACTIVITY, 0, maxHealth * 2)
-	adjust_pain_speed_mod(.)
+	setShock_Stage(clamp(shock_stage + (amount - shock_stage) * PAIN_REACTIVITY, 0, maxHealth * 2))
 
 /mob/living/carbon/proc/setShock_Stage(amount)
-	if(status_flags & GODMODE)
-		return FALSE	//godmode
+	if(HAS_TRAIT(src, TRAIT_PAIN_IMMUNE))
+		amount = 0
+	if(shock_stage == amount)
+		return FALSE
 	. = shock_stage
 	shock_stage = amount
+	SEND_SIGNAL(src, COMSIG_MOB_SHOCK_STAGE_CHANGED, shock_stage)
 	adjust_pain_speed_mod(.)
 
 
@@ -51,14 +53,14 @@
 
 // proc to find out in how much pain the mob is at the moment
 /mob/living/carbon/proc/updateshock()
-	if(species && species.species_flags & NO_PAIN || stat == DEAD)
+	if(species?.species_flags & NO_PAIN || stat == DEAD)
 		traumatic_shock = 0
 		return
 
 	traumatic_shock = 			\
 	0.75	* getOxyLoss() + 		\
 	0.75	* getToxLoss() + 		\
-	1.20		* getFireLoss() + 		\
+	1.20	* getFireLoss() + 		\
 	1		* getBruteLoss() + 		\
 	1		* getCloneLoss()
 
@@ -68,6 +70,7 @@
 		traumatic_shock -= 10
 	if(analgesic)
 		traumatic_shock = 0
+		return traumatic_shock
 
 
 	//Broken or ripped off organs and limbs will add quite a bit of pain
@@ -92,6 +95,10 @@
 			traumatic_shock -= 20 + M.protection_aura * 20 //-40 pain for SLs, -80 for Commanders
 
 	traumatic_shock += reagent_pain_modifier
+	if(HAS_TRAIT(src, TRAIT_MEDIUM_PAIN_RESIST))
+		traumatic_shock += PAIN_REDUCTION_HEAVY
+	else if(HAS_TRAIT(src, TRAIT_LIGHT_PAIN_RESIST))
+		traumatic_shock += PAIN_REDUCTION_MEDIUM
 
 	return traumatic_shock
 

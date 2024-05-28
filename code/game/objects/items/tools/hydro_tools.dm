@@ -5,9 +5,9 @@
 
 /obj/item/tool/plantspray
 	icon = 'icons/obj/items/spray.dmi'
-	item_state = "spray"
-	flags_item = NOBLUDGEON
-	flags_equip_slot = ITEM_SLOT_BELT
+	worn_icon_state = "spray"
+	item_flags = NOBLUDGEON
+	equip_slot_flags = ITEM_SLOT_BELT
 	throwforce = 4
 	w_class = WEIGHT_CLASS_SMALL
 	throw_speed = 2
@@ -87,11 +87,11 @@
 	desc = "It's used for removing weeds or scratching your back."
 	icon = 'icons/obj/items/weapons.dmi'
 	icon_state = "hoe"
-	item_state = "hoe"
-	flags_atom = CONDUCT
-	flags_item = NOBLUDGEON
-	force = 5.0
-	throwforce = 7.0
+	worn_icon_state = "hoe"
+	atom_flags = CONDUCT
+	item_flags = NOBLUDGEON
+	force = 5
+	throwforce = 7
 	w_class = WEIGHT_CLASS_SMALL
 	attack_verb = list("slashed", "sliced", "cut", "clawed")
 
@@ -104,10 +104,10 @@
 	desc = "A sharp hand hatchet, commonly used to cut things apart, be it timber or other objects. Often found in the hands of woodsmen, scouts, and looters."
 	icon = 'icons/obj/items/weapons.dmi'
 	icon_state = "hatchet"
-	flags_atom = CONDUCT
-	force = 25.0
+	atom_flags = CONDUCT
+	force = 25
 	w_class = WEIGHT_CLASS_SMALL
-	throwforce = 20.0
+	throwforce = 20
 	throw_speed = 4
 	throw_range = 4
 	sharp = IS_SHARP_ITEM_BIG
@@ -124,13 +124,13 @@
 	desc = "A sharp and curved blade on a long fibremetal handle, this tool makes it easy to reap what you sow."
 	icon = 'icons/obj/items/weapons.dmi'
 	icon_state = "scythe"
-	force = 13.0
-	throwforce = 5.0
+	force = 13
+	throwforce = 5
 	throw_speed = 1
 	throw_range = 3
 	w_class = WEIGHT_CLASS_BULKY
-	flags_atom = CONDUCT
-	flags_equip_slot = ITEM_SLOT_BACK
+	atom_flags = CONDUCT
+	equip_slot_flags = ITEM_SLOT_BACK
 	attack_verb = list("chopped", "sliced", "cut", "reaped")
 
 /obj/item/tool/scythe/afterattack(atom/A, mob/user as mob, proximity)

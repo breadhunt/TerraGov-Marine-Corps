@@ -1,6 +1,17 @@
 import { useBackend } from '../../backend';
-import { Button, Section, LabeledList, Grid, ColorBox } from '../../components';
-import { ToggleFieldPreference, TextFieldPreference, SelectFieldPreference, LoopingSelectionPreference } from './FieldPreferences';
+import {
+  Button,
+  ColorBox,
+  LabeledList,
+  Section,
+  Stack,
+} from '../../components';
+import {
+  LoopingSelectionPreference,
+  SelectFieldPreference,
+  TextFieldPreference,
+  ToggleFieldPreference,
+} from './FieldPreferences';
 
 const ParallaxNumToString = (integer) => {
   let returnval = '';
@@ -26,13 +37,14 @@ const ParallaxNumToString = (integer) => {
   return returnval;
 };
 
-export const GameSettings = (props, context) => {
-  const { act, data } = useBackend<GameSettingData>(context);
-  const { ui_style_color, scaling_method, pixel_size, parallax } = data;
+export const GameSettings = (props) => {
+  const { act, data } = useBackend<GameSettingData>();
+  const { ui_style_color, scaling_method, pixel_size, parallax, is_admin } =
+    data;
   return (
     <Section title="Game Settings">
-      <Grid>
-        <Grid.Column>
+      <Stack fill>
+        <Stack.Item grow>
           <Section title="Window settings">
             <LabeledList>
               <ToggleFieldPreference
@@ -55,6 +67,15 @@ export const GameSettings = (props, context) => {
                 action="mute_xeno_health_alert_messages"
                 leftLabel={'Muted'}
                 rightLabel={'Enabled'}
+              />
+              <SelectFieldPreference
+                label="Play Text-to-Speech"
+                value="sound_tts"
+                action="sound_tts"
+              />
+              <TextFieldPreference
+                label="Text to speech volume"
+                value="volume_tts"
               />
               <ToggleFieldPreference
                 label="Fullscreen mode"
@@ -115,10 +136,24 @@ export const GameSettings = (props, context) => {
                 leftLabel={'Enabled'}
                 rightLabel={'Disabled'}
               />
+              <ToggleFieldPreference
+                label="Auto interact with Deployables"
+                value="autointeractdeployablespref"
+                action="autointeractdeployablespref"
+                leftLabel={'Enabled'}
+                rightLabel={'Disabled'}
+              />
+              <ToggleFieldPreference
+                label="Use directional attacks"
+                value="directional_attacks"
+                action="directional_attacks"
+                leftLabel={'Enabled'}
+                rightLabel={'Disabled'}
+              />
             </LabeledList>
           </Section>
-        </Grid.Column>
-        <Grid.Column>
+        </Stack.Item>
+        <Stack.Item grow>
           <Section title="Message settings">
             <LabeledList>
               <ToggleFieldPreference
@@ -181,10 +216,10 @@ export const GameSettings = (props, context) => {
               />
             </LabeledList>
           </Section>
-        </Grid.Column>
-      </Grid>
-      <Grid>
-        <Grid.Column>
+        </Stack.Item>
+      </Stack>
+      <Stack>
+        <Stack.Item grow>
           <Section title="UI settings">
             <LabeledList>
               <SelectFieldPreference
@@ -229,6 +264,13 @@ export const GameSettings = (props, context) => {
                 leftLabel={'Enabled'}
                 rightLabel={'Disabled'}
               />
+              <ToggleFieldPreference
+                label="Radial laser gun wheel"
+                value="radiallasersgunpref"
+                action="radiallasersgunpref"
+                leftLabel={'Enabled'}
+                rightLabel={'Disabled'}
+              />
               <LoopingSelectionPreference
                 label="Scaling Method"
                 value={scaling_method}
@@ -246,24 +288,32 @@ export const GameSettings = (props, context) => {
               />
             </LabeledList>
           </Section>
-        </Grid.Column>
-        <Grid.Column>
-          <Section title="Keybinding Settings">
-            <LabeledList>
-              <SelectFieldPreference
-                label={'Quick equip slot'}
-                value={'preferred_slot'}
-                action={'preferred_slot_select'}
-              />
-              <SelectFieldPreference
-                label={'Alternate quick equip slot'}
-                value={'preferred_slot_alt'}
-                action={'preferred_slot_alt_select'}
-              />
-            </LabeledList>
-          </Section>
-        </Grid.Column>
-      </Grid>
+        </Stack.Item>
+      </Stack>
+      {!!is_admin && (
+        <Stack>
+          <Stack.Item grow>
+            <Section title="Administration (admin only)">
+              <LabeledList>
+                <ToggleFieldPreference
+                  label="Fast MC Refresh"
+                  value="fast_mc_refresh"
+                  action="fast_mc_refresh"
+                  leftLabel={'Enabled'}
+                  rightLabel={'Disabled'}
+                />
+                <ToggleFieldPreference
+                  label="Split admin tabs"
+                  value="split_admin_tabs"
+                  action="split_admin_tabs"
+                  leftLabel={'Enabled'}
+                  rightLabel={'Disabled'}
+                />
+              </LabeledList>
+            </Section>
+          </Stack.Item>
+        </Stack>
+      )}
     </Section>
   );
 };

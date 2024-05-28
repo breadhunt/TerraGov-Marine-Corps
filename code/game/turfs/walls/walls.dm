@@ -3,14 +3,12 @@
 /turf/closed/wall
 	name = "wall"
 	desc = "A huge chunk of metal used to seperate rooms."
-	icon = 'icons/turf/walls.dmi'
-	icon_state = "metal"
+	icon = 'icons/turf/walls/regular_wall.dmi'
+	icon_state = "metal-0"
 	baseturfs = /turf/open/floor/plating
 	opacity = TRUE
 	explosion_block = 2
 
-	smoothing_behavior = CARDINAL_SMOOTHING
-	smoothing_groups = SMOOTH_GENERAL_STRUCTURES|SMOOTH_XENO_STRUCTURES
 	walltype = "metal"
 
 	soft_armor = list(MELEE = 0, BULLET = 50, LASER = 50, ENERGY = 100, BOMB = 0, BIO = 0, FIRE = 0, ACID = 0)
@@ -18,13 +16,9 @@
 	var/wall_integrity
 	var/max_integrity = 1000 //Wall will break down to girders if damage reaches this point
 
-	var/damage_overlay
 	var/global/damage_overlays[8]
 
-	var/current_bulletholes = 0
-	var/bullethole_increment = 1
-	var/bullethole_state = 0
-	var/image/bullethole_overlay
+	base_icon_state = "metal"
 
 	var/max_temperature = 1800 //K, walls will take damage if they're next to a fire hotter than this
 
@@ -32,6 +26,34 @@
 
 	var/obj/effect/acid_hole/acided_hole //the acid hole inside the wall
 
+	///The current number of bulletholes in this turf
+	var/current_bulletholes = 0
+	///A reference to the current bullethole overlay image, this is added and deleted as needed
+	var/image/bullethole_overlay
+	/**
+	 * The variation set we're using
+	 * There are 10 sets and it gets picked randomly the first time a wall is shot
+	 * It corresponds to the first number in the icon_state (bhole_[**bullethole_variation**]_[current_bulletholes])
+	 * Gets reset to 0 if the wall reaches maximum health, so a new variation is picked when the wall gets shot again
+	 */
+	var/bullethole_variation = 0
+
+	smoothing_flags = SMOOTH_BITMASK
+	smoothing_groups = list(
+		SMOOTH_GROUP_CLOSED_TURFS,
+		SMOOTH_GROUP_SURVIVAL_TITANIUM_WALLS,
+	)
+	canSmoothWith = list(
+		SMOOTH_GROUP_SURVIVAL_TITANIUM_WALLS,
+		SMOOTH_GROUP_AIRLOCK,
+		SMOOTH_GROUP_WINDOW_FRAME,
+		SMOOTH_GROUP_WINDOW_FULLTILE,
+		SMOOTH_GROUP_SHUTTERS,
+		SMOOTH_GROUP_GIRDER,
+	)
+
+/turf/closed/wall/add_debris_element()
+	AddElement(/datum/element/debris, DEBRIS_SPARKS, -15, 8, 1)
 
 /turf/closed/wall/Initialize(mapload, ...)
 	. = ..()
@@ -44,6 +66,10 @@
 			visible_message(span_warning("\The [M] is sealed inside the wall as it is built"))
 			qdel(M)
 
+/turf/closed/wall/Destroy(force)
+	QDEL_NULL(acided_hole)
+	QDEL_NULL(bullethole_overlay)
+	return ..()
 
 /turf/closed/wall/ChangeTurf(newtype)
 	if(acided_hole)
@@ -58,8 +84,8 @@
 			T = get_step(src, i)
 
 			//update junction type of nearby walls
-			if(T.smoothing_behavior)
-				T.smooth_self()
+			if(smoothing_flags)
+				QUEUE_SMOOTH(T)
 
 			//nearby glowshrooms updated
 			for(var/obj/structure/glowshroom/shroom in T)
@@ -86,11 +112,11 @@
 	..()
 
 
-/turf/closed/wall/attack_alien(mob/living/carbon/xenomorph/X, damage_amount = X.xeno_caste.melee_damage, damage_type = BRUTE, damage_flag = "", effects = TRUE, armor_penetration = 0, isrightclick = FALSE)
-	if(X.status_flags & INCORPOREAL)
+/turf/closed/wall/attack_alien(mob/living/carbon/xenomorph/xeno_attacker, damage_amount = xeno_attacker.xeno_caste.melee_damage, damage_type = BRUTE, armor_type = MELEE, effects = TRUE, armor_penetration = xeno_attacker.xeno_caste.melee_ap, isrightclick = FALSE)
+	if(xeno_attacker.status_flags & INCORPOREAL)
 		return
-	if(acided_hole && (X.mob_size == MOB_SIZE_BIG || X.xeno_caste.caste_flags & CASTE_IS_STRONG)) //Strong and/or big xenos can tear open acided walls
-		acided_hole.expand_hole(X)
+	if(acided_hole && (xeno_attacker.mob_size == MOB_SIZE_BIG || xeno_attacker.xeno_caste.caste_flags & CASTE_IS_STRONG)) //Strong and/or big xenos can tear open acided walls
+		acided_hole.expand_hole(xeno_attacker)
 	else
 		return ..()
 
@@ -135,80 +161,47 @@
 		if(7)
 			. += span_info("The inner sheath is gone. A blowtorch should finish off this wall.")
 
-#define BULLETHOLE_STATES 10 //How many variations of bullethole patterns there are
-#define BULLETHOLE_MAX 8 * 3 //Maximum possible bullet holes.
-//Formulas. These don't need to be defines, but helpful green. Should likely reuse these for a base 8 icon system.
-#define cur_increment(v) round((v-1)/8)+1
-#define base_dir(v,i) v-(i-1)*8
-#define cur_dir(v) round(v+round(v)/3)
-
-/turf/closed/wall/update_icon()
-	if(!damage_overlays[1]) //list hasn't been populated
-		generate_overlays()
-
-	if(wall_integrity == max_integrity) //If the thing was healed for damage; otherwise update_icon() won't run at all, unless it was strictly damaged.
-		overlays.Cut()
-		damage_overlay = initial(damage_overlay)
-		current_bulletholes = initial(current_bulletholes)
-		bullethole_increment = initial(current_bulletholes)
-		bullethole_state = initial(current_bulletholes)
-		qdel(bullethole_overlay)
-		bullethole_overlay = null
+/turf/closed/wall/update_overlays()
+	. = ..()
+	if(wall_integrity == max_integrity)
+		current_bulletholes = 0
+		bullethole_variation = 0
+		QDEL_NULL(bullethole_overlay)
 		return
 
-	var/overlay = round((max_integrity - wall_integrity) / max_integrity * damage_overlays.len) + 1
-	if(overlay > damage_overlays.len) overlay = damage_overlays.len
+	if(!damage_overlays[1]) //list hasn't been populated
+		var/alpha_inc = 256 / length(damage_overlays)
 
-	if(!damage_overlay || overlay != damage_overlay)
-		overlays -= damage_overlays[damage_overlay]
-		damage_overlay = overlay
-		overlays += damage_overlays[damage_overlay]
+		for(var/i = 1; i <= length(damage_overlays); i++)
+			var/image/img = image(icon = 'icons/turf/walls.dmi', icon_state = "overlay_damage")
+			img.blend_mode = BLEND_MULTIPLY
+			img.alpha = (i * alpha_inc) - 1
+			damage_overlays[i] = img
 
-		if(current_bulletholes > BULLETHOLE_MAX) //Could probably get away with a unique layer, but let's keep it standardized.
-			overlays -= bullethole_overlay //We need this to be the top layer, no matter what, but only if the layer is at max bulletholes.
-			overlays += bullethole_overlay
+	var/overlay = round((max_integrity - wall_integrity) / max_integrity * length(damage_overlays)) + 1
+	if(overlay > length(damage_overlays))
+		overlay = length(damage_overlays)
+
+	. += damage_overlays[overlay]
 
 	if(current_bulletholes && current_bulletholes <= BULLETHOLE_MAX)
-		overlays -= bullethole_overlay
-		if(!bullethole_overlay)
-			bullethole_state = rand(1, BULLETHOLE_STATES)
-			bullethole_overlay = image('icons/effects/bulletholes.dmi', src, "bhole_[bullethole_state]_[bullethole_increment]")
-			//for(var/mob/M in view(7)) to_chat(M, bullethole_overlay)
-		if(cur_increment(current_bulletholes) > bullethole_increment) bullethole_overlay.icon_state = "bhole_[bullethole_state]_[++bullethole_increment]"
+		if(!bullethole_variation)
+			bullethole_variation = rand(1, BULLETHOLE_STATES)
+		bullethole_overlay = image('icons/effects/bulletholes.dmi', src, "bhole_[bullethole_variation]_[current_bulletholes]")
+	. += bullethole_overlay
 
-		var/base_direction = base_dir(current_bulletholes,bullethole_increment)
-		var/current_direction = cur_dir(base_direction)
-		setDir(current_direction)
-		/*Hack. Image overlays behave as the parent object, so that means they are also attached to it and follow its directional.
-		Luckily, it doesn't matter what direction the walls are set to, they link together via icon_state it seems.
-		But I haven't thoroughly tested it.*/
-		overlays += bullethole_overlay
-		//to_chat(world, span_debuginfo("Increment: <b>[bullethole_increment]</b>, Direction: <b>[current_direction]</b>"))
-
-#undef BULLETHOLE_STATES
-#undef BULLETHOLE_MAX
-#undef cur_increment
-#undef base_dir
-#undef cur_dir
-
-/turf/closed/wall/proc/generate_overlays()
-	var/alpha_inc = 256 / damage_overlays.len
-
-	for(var/i = 1; i <= damage_overlays.len; i++)
-		var/image/img = image(icon = 'icons/turf/walls.dmi', icon_state = "overlay_damage")
-		img.blend_mode = BLEND_MULTIPLY
-		img.alpha = (i * alpha_inc) - 1
-		damage_overlays[i] = img
-
-//Damage
-/turf/closed/wall/proc/take_damage(damage)
+///Applies damage to the wall
+/turf/closed/wall/proc/take_damage(damage_amount, damage_type = BRUTE, armor_type = null, armour_penetration = 0)
 	if(resistance_flags & INDESTRUCTIBLE) //Hull is literally invincible
 		return
 
-	if(!damage)
+	if(!damage_amount)
 		return
 
-	wall_integrity = max(0, wall_integrity - damage)
+	if(armor_type)
+		damage_amount = modify_by_armor(damage_amount, armor_type, armour_penetration)
+
+	wall_integrity = max(0, wall_integrity - damage_amount)
 
 	if(wall_integrity <= 0)
 		// Xenos used to be able to crawl through the wall, should suggest some structural damage to the girder
@@ -219,21 +212,25 @@
 	else
 		update_icon()
 
-
-/turf/closed/wall/proc/repair_damage(repair_amount)
+///Repairs the wall by an amount
+/turf/closed/wall/proc/repair_damage(repair_amount, mob/user)
 	if(resistance_flags & INDESTRUCTIBLE) //Hull is literally invincible
 		return
 
 	if(!repair_amount)
 		return
 
-	wall_integrity = min(max_integrity, wall_integrity + repair_amount)
+	repair_amount = min(repair_amount, max_integrity - wall_integrity)
+	if(user?.client)
+		var/datum/personal_statistics/personal_statistics = GLOB.personal_statistics_list[user.ckey]
+		personal_statistics.integrity_repaired += repair_amount
+		personal_statistics.times_repaired++
+	wall_integrity += repair_amount
 	update_icon()
 
 
 /turf/closed/wall/proc/make_girder(destroyed_girder = FALSE)
 	var/obj/structure/girder/G = new /obj/structure/girder(src)
-	G.icon_prefix = "girder[junctiontype]"
 	G.update_icon()
 
 	if(destroyed_girder)
@@ -265,11 +262,13 @@
 			dismantle_wall(FALSE, TRUE)
 		if(EXPLODE_HEAVY)
 			if(prob(75))
-				take_damage(rand(150, 250))
+				take_damage(rand(150, 250), BRUTE, BOMB)
 			else
 				dismantle_wall(TRUE, TRUE)
 		if(EXPLODE_LIGHT)
-			take_damage(rand(0, 250))
+			take_damage(rand(0, 250), BRUTE, BOMB)
+		if(EXPLODE_WEAK)
+			take_damage(rand(0, 50), BRUTE, BOMB)
 
 /turf/closed/wall/attack_animal(mob/living/M as mob)
 	if(M.wall_smash)
@@ -291,6 +290,8 @@
 
 /turf/closed/wall/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(!ishuman(user))
 		to_chat(user, span_warning("You don't have the dexterity to do this!"))
@@ -298,23 +299,19 @@
 
 	else if(istype(I, /obj/item/frame/apc))
 		var/obj/item/frame/apc/AH = I
-		AH.try_build(src)
-
-	else if(istype(I, /obj/item/frame/air_alarm))
-		var/obj/item/frame/air_alarm/AH = I
-		AH.try_build(src)
+		AH.try_build(src, user)
 
 	else if(istype(I, /obj/item/frame/fire_alarm))
 		var/obj/item/frame/fire_alarm/AH = I
-		AH.try_build(src)
+		AH.try_build(src, user)
 
 	else if(istype(I, /obj/item/frame/light_fixture))
 		var/obj/item/frame/light_fixture/AH = I
-		AH.try_build(src)
+		AH.try_build(src, user)
 
 	else if(istype(I, /obj/item/frame/light_fixture/small))
 		var/obj/item/frame/light_fixture/small/AH = I
-		AH.try_build(src)
+		AH.try_build(src, user)
 
 	else if(istype(I, /obj/item/frame/camera))
 		var/obj/item/frame/camera/AH = I
@@ -327,7 +324,7 @@
 	else if(resistance_flags & INDESTRUCTIBLE)
 		to_chat(user, "[span_warning("[src] is much too tough for you to do anything to it with [I]")].")
 
-	else if(istype(I, /obj/item/tool/pickaxe/plasmacutter) && !user.do_actions)
+	else if(isplasmacutter(I) && !user.do_actions)
 		return
 
 	else if(wall_integrity < max_integrity && iswelder(I))
@@ -340,14 +337,14 @@
 		span_notice("You start repairing the damage to [src]."))
 		add_overlay(GLOB.welding_sparks)
 		playsound(src, 'sound/items/welder.ogg', 25, 1)
-		if(!do_after(user, 5 SECONDS, TRUE, src, BUSY_ICON_FRIENDLY) || !iswallturf(src) || !WT?.isOn())
+		if(!do_after(user, 5 SECONDS, NONE, src, BUSY_ICON_FRIENDLY) || !iswallturf(src) || !WT?.isOn())
 			cut_overlay(GLOB.welding_sparks)
 			return
 
 		user.visible_message(span_notice("[user] finishes repairing the damage to [src]."),
 		span_notice("You finish repairing the damage to [src]."))
 		cut_overlay(GLOB.welding_sparks)
-		repair_damage(250)
+		repair_damage(250, user)
 
 	else
 		//DECONSTRUCTION
@@ -360,7 +357,7 @@
 					span_notice("You begin slicing through the outer plating."))
 					add_overlay(GLOB.welding_sparks)
 
-					if(!do_after(user, 60, TRUE, src, BUSY_ICON_BUILD))
+					if(!do_after(user, 6 SECONDS, NONE, src, BUSY_ICON_BUILD))
 						cut_overlay(GLOB.welding_sparks)
 						return
 
@@ -378,7 +375,7 @@
 					span_notice("You begin removing the support lines."))
 					playsound(src, 'sound/items/screwdriver.ogg', 25, 1)
 
-					if(!do_after(user, 60, TRUE, src, BUSY_ICON_BUILD))
+					if(!do_after(user, 6 SECONDS, NONE, src, BUSY_ICON_BUILD))
 						return
 
 					if(!iswallturf(src))
@@ -395,7 +392,7 @@
 					add_overlay(GLOB.welding_sparks)
 					playsound(src, 'sound/items/welder.ogg', 25, 1)
 
-					if(!do_after(user, 60, TRUE, src, BUSY_ICON_BUILD))
+					if(!do_after(user, 6 SECONDS, NONE, src, BUSY_ICON_BUILD))
 						cut_overlay(GLOB.welding_sparks)
 						return
 
@@ -413,7 +410,7 @@
 					span_notice("You struggle to pry off the cover."))
 					playsound(src, 'sound/items/crowbar.ogg', 25, 1)
 
-					if(!do_after(user, 60, TRUE, src, BUSY_ICON_BUILD))
+					if(!do_after(user, 6 SECONDS, NONE, src, BUSY_ICON_BUILD))
 						return
 
 					if(!iswallturf(src))
@@ -428,7 +425,7 @@
 					span_notice("You start loosening the anchoring bolts securing the support rods."))
 					playsound(src, 'sound/items/ratchet.ogg', 25, 1)
 
-					if(!do_after(user, 60, TRUE, src, BUSY_ICON_BUILD))
+					if(!do_after(user, 6 SECONDS, NONE, src, BUSY_ICON_BUILD))
 						return
 
 					if(!iswallturf(src))
@@ -443,7 +440,7 @@
 					span_notice("You begin uncrimping the hydraulic lines."))
 					playsound(src, 'sound/items/wirecutter.ogg', 25, 1)
 
-					if(!do_after(user, 60, TRUE, src, BUSY_ICON_BUILD))
+					if(!do_after(user, 6 SECONDS, NONE, src, BUSY_ICON_BUILD))
 						return
 
 					if(!iswallturf(src))
@@ -458,7 +455,7 @@
 					span_notice("You struggle to pry off the inner sheath."))
 					playsound(src, 'sound/items/crowbar.ogg', 25, 1)
 
-					if(!do_after(user, 60, TRUE, src, BUSY_ICON_BUILD))
+					if(!do_after(user, 6 SECONDS, NONE, src, BUSY_ICON_BUILD))
 						return
 
 					if(!iswallturf(src))
@@ -475,7 +472,7 @@
 					playsound(src, 'sound/items/welder.ogg', 25, 1)
 					add_overlay(GLOB.welding_sparks)
 
-					if(!do_after(user, 60, TRUE, src, BUSY_ICON_BUILD))
+					if(!do_after(user, 6 SECONDS, NONE, src, BUSY_ICON_BUILD))
 						cut_overlay(GLOB.welding_sparks)
 						return
 
@@ -491,5 +488,39 @@
 
 		return attack_hand(user)
 
-/turf/closed/wall/can_be_dissolved()
-	return !(resistance_flags & INDESTRUCTIBLE)
+/turf/closed/wall/get_acid_delay()
+	return 5 SECONDS
+
+/turf/closed/wall/dissolvability(acid_strength)
+	return 0.5
+
+/turf/closed/wall/grab_interact(obj/item/grab/grab, mob/user, base_damage = BASE_WALL_SLAM_DAMAGE, is_sharp = FALSE)
+	if(!isliving(grab.grabbed_thing))
+		return
+
+	var/mob/living/grabbed_mob = grab.grabbed_thing
+	step_towards(grabbed_mob, src)
+	var/damage = (user.skills.getRating(SKILL_CQC) * CQC_SKILL_DAMAGE_MOD)
+	var/state = user.grab_state
+	switch(state)
+		if(GRAB_PASSIVE)
+			damage += base_damage
+			grabbed_mob.visible_message(span_warning("[user] slams [grabbed_mob] against [src]!"))
+			log_combat(user, grabbed_mob, "slammed", "", "against [src]")
+		if(GRAB_AGGRESSIVE)
+			damage += base_damage * 1.5
+			grabbed_mob.visible_message(span_danger("[user] bashes [grabbed_mob] against [src]!"))
+			log_combat(user, grabbed_mob, "bashed", "", "against [src]")
+			if(prob(50))
+				grabbed_mob.Paralyze(2 SECONDS)
+				user.drop_held_item()
+		if(GRAB_NECK)
+			damage += base_damage * 2
+			grabbed_mob.visible_message(span_danger("<big>[user] crushes [grabbed_mob] against [src]!</big>"))
+			log_combat(user, grabbed_mob, "crushed", "", "against [src]")
+			grabbed_mob.Paralyze(2 SECONDS)
+			user.drop_held_item()
+	grabbed_mob.apply_damage(damage, blocked = MELEE, updating_health = TRUE)
+	take_damage(damage, BRUTE, MELEE)
+	playsound(src, SFX_SLAM, 40)
+	return TRUE

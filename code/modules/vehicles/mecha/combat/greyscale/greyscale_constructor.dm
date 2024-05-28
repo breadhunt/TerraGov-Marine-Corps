@@ -71,7 +71,7 @@ GLOBAL_LIST_INIT(greyscale_weapons_data, generate_greyscale_weapons_data())
 	///list of plane masters to apply to owners
 	var/list/plane_masters = list()
 
-/atom/movable/screen/mech_builder_view/Initialize(mapload)
+/atom/movable/screen/mech_builder_view/Initialize(mapload, datum/hud/hud_owner)
 	. = ..()
 	assigned_map = "mech_preview_[REF(src)]"
 	set_position(1, 1)
@@ -86,9 +86,10 @@ GLOBAL_LIST_INIT(greyscale_weapons_data, generate_greyscale_weapons_data())
 
 /obj/machinery/computer/mech_builder
 	name = "mech computer"
-	icon_state = "mech_computer"
+	screen_overlay = "mech_computer"
 	dir = EAST // determines where the mech will pop out, NOT where the computer faces
 	interaction_flags = INTERACT_OBJ_UI
+	req_access = list(ACCESS_MARINE_MECH)
 
 	///current selected name for the mech
 	var/selected_name = "TGMC Combat Mech"
@@ -130,8 +131,6 @@ GLOBAL_LIST_INIT(greyscale_weapons_data, generate_greyscale_weapons_data())
 	var/equipment_max = MECH_GREYSCALE_MAX_EQUIP
 	///reference to the mech screen object
 	var/atom/movable/screen/mech_builder_view/mech_view
-	///bool if the mech is currently assembling, stops Ui actions
-	var/currently_assembling = FALSE
 	///list of stat data that will be sent to the UI
 	var/list/current_stats
 
@@ -140,7 +139,7 @@ GLOBAL_LIST_INIT(greyscale_weapons_data, generate_greyscale_weapons_data())
 	/// list(STRING-list(STRING-STRING)) of visor palettes. first string is category, second is name
 	var/static/list/available_visor_colors = VISOR_PALETTES_LIST
 
-/obj/machinery/computer/mech_builder/Initialize()
+/obj/machinery/computer/mech_builder/Initialize(mapload)
 	. = ..()
 	mech_view = new
 	update_ui_view()
@@ -177,12 +176,10 @@ GLOBAL_LIST_INIT(greyscale_weapons_data, generate_greyscale_weapons_data())
 	. = ..()
 	if(!.)
 		return
-	if(user.skills.getRating("large_vehicle") < SKILL_LARGE_VEHICLE_TRAINED)
+	if(user.skills.getRating(SKILL_LARGE_VEHICLE) < SKILL_LARGE_VEHICLE_VETERAN)
 		return FALSE
 
 /obj/machinery/computer/mech_builder/ui_interact(mob/user, datum/tgui/ui)
-	if(currently_assembling)
-		return
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(ui)
 		return
@@ -219,6 +216,7 @@ GLOBAL_LIST_INIT(greyscale_weapons_data, generate_greyscale_weapons_data())
 	data["selected_name"] = selected_name
 	data["selected_equipment"] = selected_equipment
 	data["current_stats"] = current_stats
+	data["cooldown_left"] = S_TIMER_COOLDOWN_TIMELEFT(src, COOLDOWN_MECHA)
 	return data
 
 /obj/machinery/computer/mech_builder/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
@@ -226,7 +224,7 @@ GLOBAL_LIST_INIT(greyscale_weapons_data, generate_greyscale_weapons_data())
 	if(.)
 		return
 
-	if(currently_assembling)
+	if(S_TIMER_COOLDOWN_TIMELEFT(src, COOLDOWN_MECHA))
 		return FALSE
 	var/selected_part = params["bodypart"]
 	if(selected_part && !(selected_part in selected_primary))
@@ -277,7 +275,7 @@ GLOBAL_LIST_INIT(greyscale_weapons_data, generate_greyscale_weapons_data())
 			var/new_name = params["new_name"]
 			if(!new_name)
 				return FALSE
-			if(CHAT_FILTER_CHECK(new_name) || NON_ASCII_CHECK(new_name))
+			if(is_ic_filtered(new_name) || NON_ASCII_CHECK(new_name))
 				tgui_alert(usr, "You cannot set a name that contains a word prohibited in IC chat!")
 				return
 			selected_name = new_name
@@ -291,11 +289,10 @@ GLOBAL_LIST_INIT(greyscale_weapons_data, generate_greyscale_weapons_data())
 					return FALSE
 			if(isnull(selected_visor))
 				return FALSE
-			currently_assembling = TRUE
-			addtimer(CALLBACK(src, .proc/deploy_mech), 1 SECONDS)
+			addtimer(CALLBACK(src, PROC_REF(deploy_mech)), 1 SECONDS)
 			playsound(get_step(src, dir), 'sound/machines/elevator_move.ogg', 50, 0)
-			ui.close()
-			return FALSE
+			S_TIMER_COOLDOWN_START(src, COOLDOWN_MECHA, 5 MINUTES)
+			return TRUE
 
 		if("add_weapon")
 			var/obj/item/mecha_parts/mecha_equipment/weapon/new_type = text2path(params["type"])
@@ -382,7 +379,6 @@ GLOBAL_LIST_INIT(greyscale_weapons_data, generate_greyscale_weapons_data())
 		var/datum/mech_limb/limb = new limb_type()
 		limb.update_colors(selected_primary[slot], selected_secondary[slot], selected_visor)
 		limb.attach(mech, slot)
-	currently_assembling = FALSE
 	if(selected_equipment[MECHA_L_ARM])
 		var/new_type = selected_equipment[MECHA_L_ARM]
 		var/obj/item/mecha_parts/mecha_equipment/weapon/new_gun = new new_type
@@ -397,6 +393,9 @@ GLOBAL_LIST_INIT(greyscale_weapons_data, generate_greyscale_weapons_data())
 
 	mech.pixel_y = 240
 	animate(mech, time=4 SECONDS, pixel_y=initial(mech.pixel_y), easing=SINE_EASING|EASE_OUT)
+
+	balloon_alert_to_viewers("Beep. Mecha ready for use.")
+	playsound(src, 'sound/machines/chime.ogg', 30, 1)
 
 ///updates the current_stats data for the UI
 /obj/machinery/computer/mech_builder/proc/update_stats(selected_part, old_bodytype, new_bodytype)

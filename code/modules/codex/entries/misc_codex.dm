@@ -1,13 +1,13 @@
 /obj/item/storage/get_antag_info()
 	var/list/entries = SScodex.retrieve_entries_for_string(name)
 	var/datum/codex_entry/general_entry = LAZYACCESS(entries, 1)
-	if(general_entry && general_entry.antag_text)
+	if(general_entry?.antag_text)
 		return general_entry.antag_text
 
 /obj/item/storage/get_lore_info()
 	var/list/entries = SScodex.retrieve_entries_for_string(name)
 	var/datum/codex_entry/general_entry = LAZYACCESS(entries, 1)
-	if(general_entry && general_entry.lore_text)
+	if(general_entry?.lore_text)
 		return general_entry.lore_text
 
 /obj/item/storage/get_mechanics_info()
@@ -15,44 +15,44 @@
 
 	var/list/entries = SScodex.retrieve_entries_for_string(name)
 	var/datum/codex_entry/general_entry = LAZYACCESS(entries, 1)
-	if(general_entry && general_entry.mechanics_text)
+	if(general_entry?.mechanics_text)
 		storage_strings += general_entry.mechanics_text + "<br>"
 
 	var/list/slots = list()
 	for(var/name in GLOB.string_equip_flags)
-		if(flags_equip_slot & GLOB.string_equip_flags[name])
+		if(equip_slot_flags & GLOB.string_equip_flags[name])
 			slots += name
 
-	if(slots.len)
+	if(length(slots))
 		storage_strings += "It can be worn on your [english_list(slots)]."
 
-	if(use_to_pickup)
+	if(storage_datum.use_to_pickup)
 		storage_strings += "It can be used to pickup objects."
 
-	if(storage_slots)
-		storage_strings += "It has [storage_slots] spaces for inventory."
+	if(storage_datum.storage_slots)
+		storage_strings += "It has [storage_datum.storage_slots] spaces for inventory."
 
-	if(max_storage_space)
-		storage_strings += "It can carry [max_storage_space] weight of stuff."
+	if(storage_datum.max_storage_space)
+		storage_strings += "It can carry [storage_datum.max_storage_space] weight of stuff."
 
-	if(max_w_class && !length(can_hold))
-		storage_strings += "It can carry weight [max_w_class] things or lighter."
+	if(storage_datum.max_w_class && !length(storage_datum.can_hold))
+		storage_strings += "It can carry weight [storage_datum.max_w_class] things or lighter."
 
-	if(length(can_hold))
+	if(length(storage_datum.can_hold))
 		storage_strings += "<br><U>You can only carry the following in this</U>:"
-		for(var/X in can_hold)
+		for(var/X in storage_datum.can_hold)
 			var/obj/item/A = X
 			storage_strings += "[initial(A.name)]"
 
-	if(length(bypass_w_limit))
+	if(length(storage_datum.storage_type_limits))
 		storage_strings += "<br><U>You can also carry the following special items in this</U>:"
-		for(var/X in bypass_w_limit)
+		for(var/X in storage_datum.storage_type_limits)
 			var/obj/item/A = X
 			storage_strings += "[initial(A.name)]"
 
-	if(length(cant_hold))
+	if(length(storage_datum.cant_hold))
 		storage_strings += "<br><U>You can specifically not carry these things in this</U>:"
-		for(var/X in cant_hold)
+		for(var/X in storage_datum.cant_hold)
 			var/obj/item/A = X
 			storage_strings += "[initial(A.name)]"
 
@@ -73,4 +73,4 @@
 	mechanics_text = "It's a belt for holding your tools"
 	lore_text = "Although it looks and feels like leather, the last cow was killed to make a steak dinner for the queen of France."
 	antag_text = "I don't see how this could be used for antagonistic purposes."
-	
+
