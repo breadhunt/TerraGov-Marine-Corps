@@ -3699,7 +3699,6 @@
 	},
 /obj/merge_conflict_marker{
 	name = "---Merge Conflict Marker---";
-	
 	desc = "A best-effort merge was performed. You must resolve this conflict yourself (manually) and remove this object once complete."
 	},
 /obj/structure/window/framed/mainship/requisitions,
@@ -7680,7 +7679,6 @@
 /obj/machinery/door/airlock/mainship/generic/bathroom,
 /obj/merge_conflict_marker{
 	name = "---Merge Conflict Marker---";
-	
 	desc = "A best-effort merge was performed. You must resolve this conflict yourself (manually) and remove this object once complete."
 	},
 /obj/structure/dropship_equipment/rappel_system,
@@ -12972,6 +12970,16 @@
 /obj/structure/window/framed/mainship,
 /turf/open/floor/plating,
 /area/mainship/living/cafeteria_port)
+"mNK" = (
+/obj/structure/cable,
+/obj/machinery/atmospherics/pipe/simple/supply/hidden/layer1,
+/obj/machinery/atmospherics/pipe/simple/scrubbers/hidden,
+/obj/machinery/light/mainship{
+	dir = 8
+	},
+/obj/machinery/computer/dropship_picker,
+/turf/open/floor/plating/plating_catwalk,
+/area/mainship/hallways/hangar)
 "mOA" = (
 /obj/effect/turf_decal/warning_stripes/thin{
 	dir = 4
@@ -15023,7 +15031,6 @@
 "pSQ" = (
 /obj/merge_conflict_marker{
 	name = "---Merge Conflict Marker---";
-	
 	desc = "A best-effort merge was performed. You must resolve this conflict yourself (manually) and remove this object once complete."
 	},
 /obj/effect/attach_point/weapon/dropship1{
@@ -17039,7 +17046,6 @@
 	},
 /obj/merge_conflict_marker{
 	name = "---Merge Conflict Marker---";
-	
 	desc = "A best-effort merge was performed. You must resolve this conflict yourself (manually) and remove this object once complete."
 	},
 /obj/structure/window/framed/mainship/requisitions,
@@ -17171,13 +17177,6 @@
 /obj/structure/cable,
 /turf/open/floor/mainship/floor,
 /area/mainship/living/cafeteria_starboard)
-"sTv" = (
-/obj/machinery/computer/dropship_picker,
-/obj/machinery/landinglight/tadpole{
-	dir = 4
-	},
-/turf/open/floor/mainship/mono,
-/area/mainship/hallways/hangar)
 "sVt" = (
 /turf/open/floor/mainship/purple{
 	dir = 1
@@ -17806,7 +17805,6 @@
 /obj/machinery/light/mainship,
 /obj/merge_conflict_marker{
 	name = "---Merge Conflict Marker---";
-	
 	desc = "A best-effort merge was performed. You must resolve this conflict yourself (manually) and remove this object once complete."
 	},
 /obj/machinery/light/mainship,
@@ -40623,7 +40621,7 @@ ixx
 ixx
 ixx
 ixx
-hRM
+mNK
 ixx
 eeX
 xGc
@@ -40864,15 +40862,9 @@ bbR
 iBW
 gUV
 lLF
-qbG
-lvI
-lvI
 lvI
 lvI
 qbG
-lvI
-lvI
-lvI
 lvI
 lvI
 qbG
@@ -40880,7 +40872,13 @@ lvI
 lvI
 lvI
 lvI
+lvI
 qbG
+lvI
+lvI
+qbG
+lvI
+lvI
 iBW
 gUV
 lLF
@@ -41121,9 +41119,9 @@ bbR
 qPM
 bGr
 eEV
-bgb
-oer
 lvI
+lvI
+bgb
 lvI
 bUE
 bgb
@@ -41135,9 +41133,9 @@ bUE
 bgb
 lvI
 lvI
-lvI
-lvI
 bgb
+lvI
+lvI
 qPM
 lvI
 wnq
@@ -41378,23 +41376,23 @@ bbR
 kVt
 wBa
 exc
+cEc
+cEc
+mjF
+cEc
+cEc
 mjF
 tNy
 cEc
 cEc
 cEc
-mjF
-tNy
-cEc
-cEc
-cEc
 cEc
 mjF
 uRv
 uRv
-uRv
-sTv
 eGS
+uRv
+uRv
 bnT
 xJe
 tRr

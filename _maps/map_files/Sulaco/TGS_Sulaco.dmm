@@ -12431,7 +12431,6 @@
 	},
 /obj/merge_conflict_marker{
 	name = "---Merge Conflict Marker---";
-	
 	desc = "A best-effort merge was performed. You must resolve this conflict yourself (manually) and remove this object once complete."
 	},
 /obj/effect/attach_point/weapon/dropship2{
@@ -19023,6 +19022,10 @@
 /obj/machinery/faxmachine/cic,
 /turf/open/floor/wood,
 /area/sulaco/cap_office)
+"nYk" = (
+/obj/machinery/telecomms/server/presets/alpha,
+/turf/open/floor/mainship/tcomms,
+/area/sulaco/telecomms)
 "nZw" = (
 /turf/open/floor/prison/darkyellow{
 	dir = 10
@@ -21917,7 +21920,6 @@
 	},
 /obj/merge_conflict_marker{
 	name = "---Merge Conflict Marker---";
-	
 	desc = "A best-effort merge was performed. You must resolve this conflict yourself (manually) and remove this object once complete."
 	},
 /obj/effect/attach_point/weapon/dropship1{
@@ -21970,7 +21972,6 @@
 	},
 /obj/merge_conflict_marker{
 	name = "---Merge Conflict Marker---";
-	
 	desc = "A best-effort merge was performed. You must resolve this conflict yourself (manually) and remove this object once complete."
 	},
 /obj/structure/closet/crate/construction,
@@ -24493,7 +24494,6 @@
 	},
 /obj/merge_conflict_marker{
 	name = "---Merge Conflict Marker---";
-	
 	desc = "A best-effort merge was performed. You must resolve this conflict yourself (manually) and remove this object once complete."
 	},
 /obj/effect/attach_point/weapon/dropship2{
@@ -25708,7 +25708,6 @@
 /obj/structure/closet/crate/construction,
 /obj/merge_conflict_marker{
 	name = "---Merge Conflict Marker---";
-	
 	desc = "A best-effort merge was performed. You must resolve this conflict yourself (manually) and remove this object once complete."
 	},
 /obj/structure/dropship_equipment/rappel_system,
@@ -68979,7 +68978,7 @@ aaV
 aYM
 bdx
 baz
-baz
+nYk
 baz
 bbs
 baz
