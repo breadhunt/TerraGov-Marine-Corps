@@ -765,6 +765,8 @@
 		return
 	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_STAGGER, amount, ignore_canstun) & COMPONENT_NO_STUN)
 		return
+	if(SEND_SIGNAL(src, COMSIG_CHARGING_CHECK_CANNOT_ADJUST_STAGGER))
+		return
 	if(absorb_stun(amount, ignore_canstun))
 		return
 
@@ -817,7 +819,7 @@
 	return slowdown
 
 /mob/living/carbon/xenomorph/add_slowdown(amount)
-	if(HAS_TRAIT(src, TRAIT_SLOWDOWNIMMUNE) || is_charging >= CHARGE_ON)
+	if(HAS_TRAIT(src, TRAIT_SLOWDOWNIMMUNE) || SEND_SIGNAL(src, COMSIG_CHARGING_CHECK_CANNOT_ADD_SLOWDOWN))
 		return
 	adjust_slowdown(amount * XENO_SLOWDOWN_REGEN)
 

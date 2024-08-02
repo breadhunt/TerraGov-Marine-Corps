@@ -82,13 +82,7 @@
 /datum/action/ability/xeno_action/ready_charge/behemoth_roll
 	name = "Roll"
 	desc = "Toggles Rolling on or off. This can be used to displace talls but won't deal any damage."
-	charge_type = CHARGE_BEHEMOTH
-	speed_per_step = 0.35
-	steps_for_charge = 4
-	max_steps_buildup = 4
-	crush_living_damage = 0
-	plasma_use_multiplier = 0
-	agile_charge = TRUE
+	charge_component = /datum/component/charging/xenomorph/behemoth
 	should_start_on = FALSE
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_BEHEMOTH_ROLL,
@@ -106,7 +100,6 @@
 	. = ..()
 	var/mob/living/carbon/xenomorph/xeno_owner = owner
 	xeno_owner.behemoth_charging = FALSE
-	REMOVE_TRAIT(xeno_owner, TRAIT_SILENT_FOOTSTEPS, XENO_TRAIT)
 	xeno_owner.update_icons()
 	add_cooldown(15 SECONDS)
 
@@ -114,11 +107,7 @@
 	. = ..()
 	var/mob/living/carbon/xenomorph/xeno_owner = owner
 	xeno_owner.behemoth_charging = TRUE
-	ADD_TRAIT(xeno_owner, TRAIT_SILENT_FOOTSTEPS, XENO_TRAIT)
 	xeno_owner.update_icons()
-	for(var/mob/living/rider AS in xeno_owner.buckled_mobs)
-		xeno_owner.unbuckle_mob(rider)
-
 
 // ***************************************
 // *********** Landslide

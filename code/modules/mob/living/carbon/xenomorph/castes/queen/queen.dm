@@ -35,12 +35,6 @@
 // *********** Mob overrides
 // ***************************************
 
-/mob/living/carbon/xenomorph/queen/handle_special_state()
-	if(is_charging >= CHARGE_ON)
-		icon_state = "Queen Charging"
-		return TRUE
-	return FALSE
-
 /mob/living/carbon/xenomorph/reset_perspective(atom/A)
 	if (!client)
 		return

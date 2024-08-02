@@ -10,10 +10,12 @@
 		overlays_standing[cache_index] = null
 
 /mob/living/carbon/xenomorph/proc/handle_special_state()
-	return FALSE
+	return SEND_SIGNAL(src, COMSIG_UPDATE_CHARGER_ICON)
 
-/mob/living/carbon/xenomorph/proc/handle_special_wound_states()
-	return FALSE
+/mob/living/carbon/xenomorph/proc/handle_special_wound_states(severity)
+	if(SEND_SIGNAL(src, COMSIG_UPDATE_CHARGER_WOUNDED_ICON))
+		return FALSE
+	return "wounded_charging_[severity]"
 
 /mob/living/carbon/xenomorph/toggle_move_intent(new_intent)
 	. = ..()

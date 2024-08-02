@@ -378,10 +378,6 @@ GLOBAL_LIST_INIT(strain_list, init_glob_strain_list())
 	///Multiplicative melee damage modifier; referenced by attack_alien.dm, most notably attack_alien_harm
 	var/xeno_melee_damage_modifier = 1
 
-	//Charge vars
-	///Will the mob charge when moving ? You need the charge verb to change this
-	var/is_charging = CHARGE_OFF
-
 	// Gorger vars
 	var/overheal = 0
 

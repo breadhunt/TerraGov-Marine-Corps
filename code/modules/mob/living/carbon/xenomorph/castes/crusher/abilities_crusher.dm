@@ -206,20 +206,7 @@
 		return fail_activate()
 	X.set_canmove(TRUE)
 
-	var/datum/action/ability/xeno_action/ready_charge/charge = X.actions_by_path[/datum/action/ability/xeno_action/ready_charge]
-	var/aimdir = get_dir(X, A)
-	if(charge)
-		charge.charge_on(FALSE)
-		charge.do_stop_momentum(FALSE) //Reset charge so next_move_limit check_momentum() does not cuck us and 0 out steps_taken
-		charge.do_start_crushing()
-		charge.valid_steps_taken = charge.max_steps_buildup - 1
-		charge.charge_dir = aimdir //Set dir so check_momentum() does not cuck us
-	for(var/i=0 to max(get_dist(X, A), advance_range))
-		if(i % 2)
-			playsound(X, SFX_ALIEN_CHARGE, 50)
-			new /obj/effect/temp_visual/after_image(get_turf(X), X)
-		X.Move(get_step(X, aimdir), aimdir)
-		aimdir = get_dir(X, A)
+	SEND_SIGNAL(X, COMSIG_XENOABILITY_CRUSHER_ADVANCE, A, advance_range)
 	succeed_activate()
 	add_cooldown()
 

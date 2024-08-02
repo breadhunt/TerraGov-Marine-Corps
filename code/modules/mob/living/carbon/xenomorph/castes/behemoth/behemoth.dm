@@ -20,22 +20,13 @@
 // ***************************************
 // *********** Special States
 // ***************************************
+
 /mob/living/carbon/xenomorph/behemoth/handle_special_state()
 	var/datum/action/ability/xeno_action/ready_charge/behemoth_roll/behemoth_roll_action = actions_by_path[/datum/action/ability/xeno_action/ready_charge/behemoth_roll]
 	if(!behemoth_roll_action || !behemoth_roll_action.charge_ability_on)
 		return FALSE
-	if(behemoth_roll_action.valid_steps_taken == behemoth_roll_action.max_steps_buildup)
-		icon_state = "Behemoth[(xeno_flags & XENO_ROUNY) ? " rouny" : ""] Charging"
-	else
-		icon_state = "Behemoth Rolling"
-	return TRUE
 
-/mob/living/carbon/xenomorph/behemoth/handle_special_wound_states(severity)
 	. = ..()
-	var/datum/action/ability/xeno_action/ready_charge/behemoth_roll/behemoth_roll_action = actions_by_path[/datum/action/ability/xeno_action/ready_charge/behemoth_roll]
-	if(behemoth_roll_action?.charge_ability_on)
-		return "wounded_charging_[severity]"
-
 /mob/living/carbon/xenomorph/behemoth/get_status_tab_items()
 	. = ..()
 	if(xeno_caste.wrath_max > 0)

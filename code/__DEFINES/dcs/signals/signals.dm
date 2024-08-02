@@ -647,6 +647,7 @@
 #define COMSIG_HIVE_XENO_MOTHER_CHECK "hive_xeno_mother_check"				//from /datum/hive_status/normal/proc/spawn_larva()
 
 #define COMSIG_XENOACTION_TOGGLECHARGETYPE "xenoaction_togglechargetype"
+#define COMSIG_XENOABILITY_CRUSHER_ADVANCE "xenoability_crusher_advance"
 
 #define COMSIG_WARRIOR_USED_GRAB "warrior_used_grab"
 #define COMSIG_WARRIOR_NECKGRAB "warrior_neckgrab"
@@ -838,3 +839,13 @@
 #define COMSIG_CAMPAIGN_ASSET_ACTIVATION "campaign_asset_activation"
 ///Campaign asset disabler activated
 #define COMSIG_CAMPAIGN_DISABLER_ACTIVATION "campaign_disabler_activation"
+
+//Charging signals
+#define COMSIG_ENABLE_CHARGING_MOVEMENT "enable_charging_movement"
+#define COMSIG_DISABLE_CHARGING_MOVEMENT "disable_charging_movement"
+#define COMSIG_UPDATE_CHARGER_ICON "update_charger_icon"
+#define COMSIG_UPDATE_CHARGER_WOUNDED_ICON "update_charger_wounded_icon"
+#define COMSIG_CHARGING_SNOW_PLOW "charging_snow_plow"
+#define COMSIG_CHARGING_CHECK_CANNOT_ADJUST_STAGGER "charging_check_cannot_adjust_stagger"
+#define COMSIG_CHARGING_CHECK_CANNOT_ADD_SLOWDOWN "charging_check_cannot_add_slowdown"
+#define COMSIG_CHARGING_UPDATE_TURNING_LOSS "charging_update_turning_loss"

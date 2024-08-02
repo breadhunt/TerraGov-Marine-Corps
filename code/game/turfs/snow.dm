@@ -89,12 +89,8 @@
 
 
 /turf/open/floor/plating/ground/snow/Entered(atom/movable/arrived, atom/old_loc, list/atom/old_locs)
-	if(slayer > 0 && isxeno(arrived))
-		var/mob/living/carbon/xenomorph/xeno = arrived
-		if(xeno.is_charging >= CHARGE_ON) // chargers = snow plows
-			slayer = 0
-			update_appearance()
-			update_sides()
+	if(slayer > 0)
+		SEND_SIGNAL(arrived, COMSIG_CHARGING_SNOW_PLOW, src)
 	return ..()
 
 
