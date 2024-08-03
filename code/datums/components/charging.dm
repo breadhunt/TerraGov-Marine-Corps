@@ -722,6 +722,12 @@
 	. = ..()
 	RegisterSignal(charger, COMSIG_XENOABILITY_CRUSHER_ADVANCE, PROC_REF(do_advance))
 
+/datum/component/charging/xenomorph/crusher/handle_momentum()
+	. = ..()
+	if(valid_steps_taken == max_steps_buildup)
+		if(isliving(charger))
+			addtimer(CALLBACK(charger, TYPE_PROC_REF(/mob/living, emote), "roar"), 0.05 SECONDS)
+
 /datum/component/charging/xenomorph/crusher/handle_special_momentum_effects()
 	. = ..()
 	if(MODULUS(valid_steps_taken, 4) == 0)
@@ -805,7 +811,7 @@
 
 /datum/component/charging/xenomorph/bull/handle_special_momentum_effects()
 	if(MODULUS(valid_steps_taken, 4) == 0)
-		playsound(charger, SFX_ALIEN_FOOTSTEP_LARGE, 50)
+		playsound(charger, stomp_sound, 50)
 
 
 /datum/component/charging/xenomorph/bull/pre_crush_living(mob/living/target)
@@ -951,9 +957,25 @@
 	xenomorph_charger.icon_state = "Queen Charging"
 	return TRUE
 
+// ***************************************
+// *********** Bike
+// ***************************************
+/datum/component/charging/bike
+	turning_speed_loss = 0
+	var/datum/component/riding/vehicle/bike_component
 
+/datum/component/charging/bike/Initialize(atom/movable/component_charger, verbosity, datum/component/riding/vehicle/component)
+	. = ..()
+	bike_component = component
 
+/datum/component/charging/bike/handle_momentum()
+	. = ..()
+	if(valid_steps_taken <= max_steps_buildup)
+		bike_component.vehicle_move_delay = initial(bike_component.vehicle_move_delay) - CHARGE_SPEED(src)
 
+/datum/component/charging/xenomorph/bike/handle_special_momentum_effects()
+	if(MODULUS(valid_steps_taken, 4) == 0)
+		playsound(charger, stomp_sound, 50)
 
 
 

@@ -1061,7 +1061,7 @@ modules/mob/living/carbon/human/life.dm if you die, you will be zoomed out.
 			var/movementdirection = REVERSE_DIR(direction)
 			if(C)
 				C.propelled = 4
-			B.Move(get_step(user,movementdirection), movementdirection)
+			B.Move(get_step(user,movementdirection), movementdirection) //ANCHOR holy mary mother of god this is horrific
 			sleep(0.1 SECONDS)
 			B.Move(get_step(user,movementdirection), movementdirection)
 			if(C)

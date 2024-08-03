@@ -171,6 +171,11 @@
 	vehicle_move_delay = 2
 	ride_check_flags = RIDER_NEEDS_LEGS | RIDER_NEEDS_ARMS | UNBUCKLE_DISABLED_RIDER
 
+/datum/component/riding/vehicle/Initialize(mob/living/riding_mob, force, ride_check_flags, potion_boost)
+	. = ..()
+	AddComponent(/datum/component/charging/bike, riding_mob, FALSE, src)
+	SEND_SIGNAL(src, COMSIG_ENABLE_CHARGING_MOVEMENT)
+
 /datum/component/riding/vehicle/motorbike/handle_specials()
 	. = ..()
 	set_riding_offsets(RIDING_OFFSET_ALL, list(TEXT_NORTH = list(0, 3), TEXT_SOUTH = list(0, 3), TEXT_EAST = list(-2, 3), TEXT_WEST = list(2, 3)))

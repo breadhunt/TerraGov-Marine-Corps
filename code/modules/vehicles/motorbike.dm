@@ -14,8 +14,8 @@
 	allow_pass_flags = PASSABLE
 	coverage = 30	//It's just a bike, not hard to shoot over
 	buckle_flags = CAN_BUCKLE|BUCKLE_PREVENTS_PULL|BUCKLE_NEEDS_HAND
-	attachments_by_slot = list(ATTACHMENT_SLOT_STORAGE)
-	attachments_allowed = list(/obj/item/vehicle_module/storage/motorbike)
+	attachments_by_slot = list(ATTACHMENT_SLOT_STORAGE, ATTACHMENT_SLOT_WEAPON)
+	attachments_allowed = list(/obj/item/vehicle_module/storage/motorbike, /obj/item/vehicle_module/mounted_gun/minigun)
 	starting_attachments = list(/obj/item/vehicle_module/storage/motorbike)
 
 	///Mutable appearance overlay that covers up the mob with the bike as needed
@@ -26,6 +26,8 @@
 	var/fuel_max = 1000
 	///reference to the attached sidecar, if present
 	var/obj/item/sidecar/attached_sidecar
+	///Reference to the attached bike module, if present
+	var/obj/item/bike_module/current_module
 	COOLDOWN_DECLARE(enginesound_cooldown)
 
 /obj/vehicle/ridden/motorbike/Initialize(mapload)
@@ -90,6 +92,7 @@
 		playsound(loc, 'sound/effects/refill.ogg', 25, 1, 3)
 		balloon_alert(user, "[fuel_count/fuel_max*100]%")
 		return TRUE
+
 	if(istype(I, /obj/item/sidecar))
 		if(user.do_actions)
 			balloon_alert(user, "Already busy!")
@@ -115,7 +118,29 @@
 		max_buckled_mobs = 2
 		max_occupants = 2
 		return TRUE
-	return ..()
+
+	/*if(istype(I, /obj/item/bike_module))
+		if(user.do_actions)
+			balloon_alert(user, "Already busy!")
+			return FALSE
+		if(LAZYLEN(buckled_mobs))
+			balloon_alert("Cannot modify a bike being ridden!")
+			return TRUE
+		balloon_alert(user, "You start attaching the [I]...")
+		if(!do_after(user, 3 SECONDS, NONE, src))
+			return TRUE
+
+		//ANCHOR change icon_state
+		user.temporarilyRemoveItemFromInventory(I)
+		I.forceMove(src)
+
+		if(current_module)
+			user.put_in_hands(current_module) //Get rid of active module
+		var/obj/item/bike_module = I
+		bike_module.attached = src
+		current_module = bike_module
+			//ANCHOR  how to give bike module action to any new riders?
+	return ..()*/
 
 /obj/vehicle/ridden/motorbike/proc/sidecar_dir_change(datum/source, dir, newdir)
 	SIGNAL_HANDLER
@@ -190,6 +215,98 @@
 	desc = "A detached sidecar for TGMC motorbikes, which can be attached to them, allowing a second passenger. Use a wrench to dettach the sidecar."
 	icon = 'icons/obj/vehicles.dmi'
 	icon_state = "sidecar"
+
+
+
+/**
+ * Vehicle modules give an action to their rider, if any, which can be activated
+ */
+/obj/item/vehicle_module/module
+	icon = 'icons/obj/vehicles.dmi'
+	icon_state = ""
+	slot = ATTACHMENT_SLOT_MODULE
+	w_class = WEIGHT_CLASS_BULKY
+	// The action given to the player riding the bike
+	var/datum/action/ability/activable/module_action
+
+/obj/item/vehicle_module/module/on_buckle(datum/source, mob/living/buckling_mob, force, check_loc, lying_buckle, hands_needed, target_hands_needed, silent)
+	. = ..()
+	//find out how mounted guns add action & figure that out!
+
+/obj/item/vehicle_module/module/on_unbuckle(datum/source, mob/living/unbuckled_mob, force)
+	. = ..()
+
+
+
+
+
+
+
+
+
+
+
+/obj/item/vehicle_module/mounted_gun/on_unbuckle(datum/source, mob/living/unbuckled_mob, force = FALSE)
+	if(mounted_gun.loc == unbuckled_mob)
+		unbuckled_mob.dropItemToGround(mounted_gun, TRUE)
+	return ..()
+
+
+
+/obj/item/vehicle_module/mounted_gun/activate(mob/living/user)
+	if(mounted_gun.loc == user)
+		user.dropItemToGround(mounted_gun, TRUE)
+		return FALSE
+	if(!user.put_in_active_hand(mounted_gun) && !user.put_in_inactive_hand(mounted_gun))
+		to_chat(user, span_warning("Could not equip weapon! Click [parent] with a free hand to equip."))
+		return FALSE
+	return TRUE
+
+
+	name = "mounted Demi-Culverin"
+	desc = "A paired set of volkite weapons mounted into light vehicles such as SOM hover bikes. While they lack the raw power of some other volkite weapons, they make up for this through sheer volume of fire and integrate recharging power source."
+	icon = 'icons/obj/vehicles/hover_bike.dmi'
+	icon_state = "bike_volkite"
+	should_use_obj_appeareance = FALSE
+	mounted_gun = /obj/item/weapon/gun/energy/lasgun/lasrifle/volkite/demi_culverin
+
+/obj/item/vehicle_module/mounted_gun/volkite/Initialize(mapload)
+	. = ..()
+	action_icon = mounted_gun.icon
+	action_icon_state = mounted_gun.icon_state
+
+
+
+
+/*
+//Attachments to the bike
+/obj/item/bike_module
+	// The bike this module is attached to, if any
+	var/obj/vehicle/ridden/motorbike/attached
+
+
+/obj/item/bike_module/proc/activate() //ANCHOR maybe do this through
+	return
+
+/obj/item/bike_module/Destroy()
+	. = ..()
+	if(attached.bike_module == src)
+		attached.bike_module = null //Clean vars
+
+
+/obj/item/bike_module/nitro
+	name = "nitro module"
+	desc = "An additional module for TGMC motorbikes which propels the bike forward at the cost of fuel and turning control."
+
+/obj/item/bike_module/jump_jet
+	name = "jump jet module"
+	desc = "An additional module for TGMC motorbikes which propels the bike into the air, allowing it to skip over objects."
+
+/obj/item/bike_module/jump_jet
+
+/obj/item/bike_module/saddle_bag
+	name = "satchel bag module"
+	desc = "An additional module for TGMC motorbikes which provides additional storage."*/
 
 #undef FUEL_PER_CAN_POUR
 #undef LOW_FUEL_LEFT_MESSAGE
