@@ -14,9 +14,9 @@
 	allow_pass_flags = PASSABLE
 	coverage = 30	//It's just a bike, not hard to shoot over
 	buckle_flags = CAN_BUCKLE|BUCKLE_PREVENTS_PULL|BUCKLE_NEEDS_HAND
-	attachments_by_slot = list(ATTACHMENT_SLOT_STORAGE, ATTACHMENT_SLOT_WEAPON)
-	attachments_allowed = list(/obj/item/vehicle_module/storage/motorbike, /obj/item/vehicle_module/mounted_gun/minigun)
-	starting_attachments = list(/obj/item/vehicle_module/storage/motorbike)
+	attachments_by_slot = list(ATTACHMENT_SLOT_MODULE, ATTACHMENT_SLOT_WEAPON)
+	attachments_allowed = list(/obj/item/vehicle_module/storage/saddle_bag, /obj/item/vehicle_module/module/nitro, /obj/item/vehicle_module/module/jump_jet, /obj/item/vehicle_module/mounted_gun/minigun)
+	starting_attachments = list(//ANCHOR obj/item/vehicle_module/storage/motorbike)
 
 	///Mutable appearance overlay that covers up the mob with the bike as needed
 	var/mutable_appearance/motorbike_cover
@@ -26,8 +26,6 @@
 	var/fuel_max = 1000
 	///reference to the attached sidecar, if present
 	var/obj/item/sidecar/attached_sidecar
-	///Reference to the attached bike module, if present
-	var/obj/item/bike_module/current_module
 	COOLDOWN_DECLARE(enginesound_cooldown)
 
 /obj/vehicle/ridden/motorbike/Initialize(mapload)
@@ -42,6 +40,10 @@
 		return
 	. += "To access internal storage click with an empty hand or drag the bike onto self."
 	. += "The fuel gauge on the bike reads \"[fuel_count/fuel_max*100]%\""
+
+/obj/vehicle/ridden/motorbike/update_icon()
+	. = ..()
+	switch(attachments_by_slot[])
 
 /obj/vehicle/ridden/motorbike/post_buckle_mob(mob/living/M)
 	add_overlay(motorbike_cover)
@@ -201,12 +203,6 @@
 	STOP_PROCESSING(SSobj,src)
 	return ..()
 
-//internal storage
-/obj/item/vehicle_module/storage/motorbike
-	name = "internal storage"
-	desc = "A set of handy compartments to store things in."
-	storage_type = /datum/storage/internal/motorbike_pack
-
 /**
  * Sidecar that when attached lets you put two people on the bike
  */
@@ -226,87 +222,60 @@
 	icon_state = ""
 	slot = ATTACHMENT_SLOT_MODULE
 	w_class = WEIGHT_CLASS_BULKY
-	// The action given to the player riding the bike
-	var/datum/action/ability/activable/module_action
 
-/obj/item/vehicle_module/module/on_buckle(datum/source, mob/living/buckling_mob, force, check_loc, lying_buckle, hands_needed, target_hands_needed, silent)
-	. = ..()
-	//find out how mounted guns add action & figure that out!
+/obj/item/vehicle_module/module/nitro
+	name = "nitrous oxide system module"
+	desc = "A vehicle module which allows for the use of \"nitro boosting\" - rapid bursts of speed at the cost of fuel and cooldown."
+	icon_state = "nitros_inhand"
+	attach_icon = "motorbike_nitros"
 
-/obj/item/vehicle_module/module/on_unbuckle(datum/source, mob/living/unbuckled_mob, force)
-	. = ..()
-
+/obj/item/vehicle_module/module/nitro/activate(mob/living/user)
 
 
+#define TRIGGER_JUMP_JET_SIGNAL "trigger_jump_jet_signal"
+/obj/item/vehicle_module/module/jump_jet
+	name = "jump jet module"
+	desc = "A specialised module for motorbikes. Once attached, it can be activated to send the bike flying over obstacles towards a target, at the cost of fuel!"
+	icon_state = "jumpjet_inhand"
+	attach_icon = "motorbike_jumpjet"
+	toggle_signal = TRIGGER_JUMP_JET_SIGNAL
 
+/obj/item/vehicle_module/module/jump_jet/Initialize()
+	RegisterSignal(src, TRIGGER_JUMP_JET_SIGNAL, PROC_REF(use_jets))
 
+/obj/item/vehicle_module/module/jump_jet/Destroy()
+	UnregisterSignal(src, TRIGGER_JUMP_JET_SIGNAL)
 
+///obj/item/vehicle_module/module/jump_jet/activate(mob/living/user)
 
+/obj/item/vehicle_module/module/jump_jet/proc/use_jets(atom/A, mob/living/user)
+	SIGNAL HANDLER
 
+	//TODO: add fuel, cooldown, etc. checks
 
-
-
-/obj/item/vehicle_module/mounted_gun/on_unbuckle(datum/source, mob/living/unbuckled_mob, force = FALSE)
-	if(mounted_gun.loc == unbuckled_mob)
-		unbuckled_mob.dropItemToGround(mounted_gun, TRUE)
-	return ..()
-
-
-
-/obj/item/vehicle_module/mounted_gun/activate(mob/living/user)
-	if(mounted_gun.loc == user)
-		user.dropItemToGround(mounted_gun, TRUE)
+	if(human_user.do_actions)
 		return FALSE
-	if(!user.put_in_active_hand(mounted_gun) && !user.put_in_inactive_hand(mounted_gun))
-		to_chat(user, span_warning("Could not equip weapon! Click [parent] with a free hand to equip."))
+	if(!do_after(human_user, 0.3 SECONDS, IGNORE_HELD_ITEM|IGNORE_LOC_CHANGE, A))
 		return FALSE
+	S_TIMER_COOLDOWN_START(src, COOLDOWN_JETPACK, cooldown_time)
+	playsound(human_user,'sound/items/jetpack_sound.ogg',45)
+	parent.fuel_count = max(parent.fuel_count - FUEL_USE, 0)
+
+	new /obj/effect/temp_visual/smoke(get_turf(human_user))
+	RegisterSignal(human_user, COMSIG_MOVABLE_POST_THROW, PROC_REF(reset_flame))
+	human_user.fly_at(A, calculate_range(human_user), speed)
 	return TRUE
 
 
-	name = "mounted Demi-Culverin"
-	desc = "A paired set of volkite weapons mounted into light vehicles such as SOM hover bikes. While they lack the raw power of some other volkite weapons, they make up for this through sheer volume of fire and integrate recharging power source."
-	icon = 'icons/obj/vehicles/hover_bike.dmi'
-	icon_state = "bike_volkite"
-	should_use_obj_appeareance = FALSE
-	mounted_gun = /obj/item/weapon/gun/energy/lasgun/lasrifle/volkite/demi_culverin
+/obj/item/vehicle_module/storage/saddle_bag
+	name = "saddle bag"
+	desc = "A small bag which can be attached to the saddle of a motorbike for extra storage."
+	icon_state = "saddlebag_inhand"
+	slot = ATTACHMENT_SLOT_MODULE
+	storage_type = /datum/storage/internal/motorbike_pack
+	attach_icon = "motorbike_saddlebag"
 
-/obj/item/vehicle_module/mounted_gun/volkite/Initialize(mapload)
-	. = ..()
-	action_icon = mounted_gun.icon
-	action_icon_state = mounted_gun.icon_state
-
-
-
-
-/*
-//Attachments to the bike
-/obj/item/bike_module
-	// The bike this module is attached to, if any
-	var/obj/vehicle/ridden/motorbike/attached
-
-
-/obj/item/bike_module/proc/activate() //ANCHOR maybe do this through
-	return
-
-/obj/item/bike_module/Destroy()
-	. = ..()
-	if(attached.bike_module == src)
-		attached.bike_module = null //Clean vars
-
-
-/obj/item/bike_module/nitro
-	name = "nitro module"
-	desc = "An additional module for TGMC motorbikes which propels the bike forward at the cost of fuel and turning control."
-
-/obj/item/bike_module/jump_jet
-	name = "jump jet module"
-	desc = "An additional module for TGMC motorbikes which propels the bike into the air, allowing it to skip over objects."
-
-/obj/item/bike_module/jump_jet
-
-/obj/item/bike_module/saddle_bag
-	name = "satchel bag module"
-	desc = "An additional module for TGMC motorbikes which provides additional storage."*/
+//ANCHOR todo: remove motorbike from attach icons, if all it does is plaster the sprite on top of the motorbike
 
 #undef FUEL_PER_CAN_POUR
 #undef LOW_FUEL_LEFT_MESSAGE
