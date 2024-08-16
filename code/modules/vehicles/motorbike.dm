@@ -12,11 +12,10 @@
 	key_type = null
 	integrity_failure = 0.5
 	allow_pass_flags = PASSABLE
-	coverage = 30	//It's just a bike, not hard to shoot over
+	coverage = 0 //Prevents unintentional friendly fire
 	buckle_flags = CAN_BUCKLE|BUCKLE_PREVENTS_PULL|BUCKLE_NEEDS_HAND
 	attachments_by_slot = list(ATTACHMENT_SLOT_MODULE, ATTACHMENT_SLOT_WEAPON)
 	attachments_allowed = list(/obj/item/vehicle_module/storage/saddle_bag, /obj/item/vehicle_module/module/nitro, /obj/item/vehicle_module/module/jump_jet, /obj/item/vehicle_module/mounted_gun/minigun)
-	starting_attachments = list(//ANCHOR obj/item/vehicle_module/storage/motorbike)
 
 	///Mutable appearance overlay that covers up the mob with the bike as needed
 	var/mutable_appearance/motorbike_cover
@@ -27,6 +26,7 @@
 	///reference to the attached sidecar, if present
 	var/obj/item/sidecar/attached_sidecar
 	COOLDOWN_DECLARE(enginesound_cooldown)
+	//COOLDOWN_DECLARE() all of the cooldowns
 
 /obj/vehicle/ridden/motorbike/Initialize(mapload)
 	. = ..()
@@ -40,10 +40,6 @@
 		return
 	. += "To access internal storage click with an empty hand or drag the bike onto self."
 	. += "The fuel gauge on the bike reads \"[fuel_count/fuel_max*100]%\""
-
-/obj/vehicle/ridden/motorbike/update_icon()
-	. = ..()
-	switch(attachments_by_slot[])
 
 /obj/vehicle/ridden/motorbike/post_buckle_mob(mob/living/M)
 	add_overlay(motorbike_cover)
@@ -142,7 +138,8 @@
 		bike_module.attached = src
 		current_module = bike_module
 			//ANCHOR  how to give bike module action to any new riders?
-	return ..()*/
+	*/
+	return ..()
 
 /obj/vehicle/ridden/motorbike/proc/sidecar_dir_change(datum/source, dir, newdir)
 	SIGNAL_HANDLER
@@ -203,6 +200,12 @@
 	STOP_PROCESSING(SSobj,src)
 	return ..()
 
+//internal storage
+/obj/item/vehicle_module/storage/motorbike
+	name = "internal storage"
+	desc = "A set of handy compartments to store things in."
+	storage_type = /datum/storage/internal/motorbike_pack
+
 /**
  * Sidecar that when attached lets you put two people on the bike
  */
@@ -219,61 +222,73 @@
  */
 /obj/item/vehicle_module/module
 	icon = 'icons/obj/vehicles.dmi'
+	attach_icon = 'icons/obj/vehicles_overlay.dmi'
 	icon_state = ""
 	slot = ATTACHMENT_SLOT_MODULE
 	w_class = WEIGHT_CLASS_BULKY
+	attach_features_flags = ATTACH_REMOVABLE|ATTACH_NO_HANDS
+	/// How long the module takes to recharge, if any
+	var/cooldown_time
 
 /obj/item/vehicle_module/module/nitro
 	name = "nitrous oxide system module"
 	desc = "A vehicle module which allows for the use of \"nitro boosting\" - rapid bursts of speed at the cost of fuel and cooldown."
-	icon_state = "nitros_inhand"
-	attach_icon = "motorbike_nitros"
+	icon_state = "nitro"
 
 /obj/item/vehicle_module/module/nitro/activate(mob/living/user)
 
 
 #define TRIGGER_JUMP_JET_SIGNAL "trigger_jump_jet_signal"
+#define JUMP_JET_MAX_DISTANCE 5
+#define JUMP_JET_SPEED 2
+
 /obj/item/vehicle_module/module/jump_jet
 	name = "jump jet module"
 	desc = "A specialised module for motorbikes. Once attached, it can be activated to send the bike flying over obstacles towards a target, at the cost of fuel!"
-	icon_state = "jumpjet_inhand"
-	attach_icon = "motorbike_jumpjet"
+	icon_state = "jumpjet"
 	toggle_signal = TRIGGER_JUMP_JET_SIGNAL
 
 /obj/item/vehicle_module/module/jump_jet/Initialize()
+	. = ..()
 	RegisterSignal(src, TRIGGER_JUMP_JET_SIGNAL, PROC_REF(use_jets))
 
 /obj/item/vehicle_module/module/jump_jet/Destroy()
+	. = ..()
 	UnregisterSignal(src, TRIGGER_JUMP_JET_SIGNAL)
 
 ///obj/item/vehicle_module/module/jump_jet/activate(mob/living/user)
 
 /obj/item/vehicle_module/module/jump_jet/proc/use_jets(atom/A, mob/living/user)
-	SIGNAL HANDLER
+	SIGNAL_HANDLER
 
 	//TODO: add fuel, cooldown, etc. checks
 
-	if(human_user.do_actions)
+	if(user.do_actions)
 		return FALSE
-	if(!do_after(human_user, 0.3 SECONDS, IGNORE_HELD_ITEM|IGNORE_LOC_CHANGE, A))
-		return FALSE
-	S_TIMER_COOLDOWN_START(src, COOLDOWN_JETPACK, cooldown_time)
-	playsound(human_user,'sound/items/jetpack_sound.ogg',45)
-	parent.fuel_count = max(parent.fuel_count - FUEL_USE, 0)
+	//if(!do_after(user, 0.3 SECONDS, IGNORE_HELD_ITEM|IGNORE_LOC_CHANGE, A))
+	//	return FALSE
+	if(cooldown_time)
+		S_TIMER_COOLDOWN_START(src, COOLDOWN_JUMP_JET, cooldown_time)
+	playsound(user,'sound/items/jetpack_sound.ogg',45)
 
-	new /obj/effect/temp_visual/smoke(get_turf(human_user))
-	RegisterSignal(human_user, COMSIG_MOVABLE_POST_THROW, PROC_REF(reset_flame))
-	human_user.fly_at(A, calculate_range(human_user), speed)
+	if(istype(parent, /obj/vehicle/ridden/motorbike))
+		var/obj/vehicle/ridden/motorbike/attached_bike
+		attached_bike.fuel_count = max(attached_bike.fuel_count - FUEL_USE, 0)
+
+	new /obj/effect/temp_visual/smoke(get_turf(user))
+	//RegisterSignal(user, COMSIG_MOVABLE_POST_THROW, PROC_REF(reset_flame))
+	user.fly_at(A, JUMP_JET_MAX_DISTANCE, JUMP_JET_SPEED)
 	return TRUE
 
 
 /obj/item/vehicle_module/storage/saddle_bag
 	name = "saddle bag"
 	desc = "A small bag which can be attached to the saddle of a motorbike for extra storage."
-	icon_state = "saddlebag_inhand"
+	icon_state = "saddlebag"
 	slot = ATTACHMENT_SLOT_MODULE
 	storage_type = /datum/storage/internal/motorbike_pack
-	attach_icon = "motorbike_saddlebag"
+	attach_icon = 'icons/obj/vehicles_overlay.dmi'
+	attach_features_flags = ATTACH_REMOVABLE|ATTACH_NO_HANDS
 
 //ANCHOR todo: remove motorbike from attach icons, if all it does is plaster the sprite on top of the motorbike
 

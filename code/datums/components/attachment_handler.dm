@@ -211,7 +211,7 @@
 
 ///Checks if you are actually able to detach an item or not
 /datum/component/attachment_handler/proc/detach_check(mob/user)
-	if(user.get_active_held_item() != parent && user.get_inactive_held_item() != parent)
+	if(user.get_active_held_item() != parent && user.get_inactive_held_item() != parent && !isobj(parent))
 		to_chat(user, span_warning("You must be holding [parent] to field strip it!"))
 		return FALSE
 	if((user.get_active_held_item() == parent && user.get_inactive_held_item()) || (user.get_inactive_held_item() == parent && user.get_active_held_item()))
