@@ -247,16 +247,24 @@
 	desc = "A specialised module for motorbikes. Once attached, it can be activated to send the bike flying over obstacles towards a target, at the cost of fuel!"
 	icon_state = "jumpjet"
 	toggle_signal = TRIGGER_JUMP_JET_SIGNAL
+	var/is_active = FALSE
 
 /obj/item/vehicle_module/module/jump_jet/Initialize()
 	. = ..()
-	RegisterSignal(src, TRIGGER_JUMP_JET_SIGNAL, PROC_REF(use_jets))
+
 
 /obj/item/vehicle_module/module/jump_jet/Destroy()
 	. = ..()
 	UnregisterSignal(src, TRIGGER_JUMP_JET_SIGNAL)
 
-///obj/item/vehicle_module/module/jump_jet/activate(mob/living/user)
+/obj/item/vehicle_module/module/jump_jet/activate(mob/living/user)
+	if(!is_active) //Check if signal
+		RegisterSignal(src, TRIGGER_JUMP_JET_SIGNAL, PROC_REF(use_jets))
+		is_active = TRUE
+		return TRUE
+	is_active = FALSE //Todo: Reset on unbuckle
+	UnregisterSignal(src, TRIGGER_JUMP_JET_SIGNAL)
+	return FALSE
 
 /obj/item/vehicle_module/module/jump_jet/proc/use_jets(atom/A, mob/living/user)
 	SIGNAL_HANDLER
