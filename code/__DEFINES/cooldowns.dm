@@ -29,6 +29,7 @@
 #define COOLDOWN_JETPACK "jetpack"
 #define COOLDOWN_NITRO "nitro"
 #define COOLDOWN_JUMP_JET "jump_jet"
+#define COOLDOWN_SKILL_ORDERS "skill_orders"
 #define COOLDOWN_CIC_ORDERS "cic_orders"
 #define COOLDOWN_HUD_ORDER "hud_order"
 #define COOLDOWN_CLOAK_IMPLANT "cloak_implant"
