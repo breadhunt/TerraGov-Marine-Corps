@@ -949,14 +949,6 @@
 
 /datum/component/charging/xenomorph/crusher/queen
 
-
-/datum/component/charging/xenomorph/crusher/queen/update_charger_icon(datum/source)
-	if(!..())
-		return FALSE
-	var/mob/living/carbon/xenomorph/xenomorph_charger = source
-	xenomorph_charger.icon_state = "Queen Charging"
-	return TRUE
-
 // ***************************************
 // *********** Bike
 // ***************************************
