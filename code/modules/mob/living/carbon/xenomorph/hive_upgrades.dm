@@ -309,6 +309,93 @@ GLOBAL_LIST_INIT(tier_to_primo_upgrade, list(
 			to_chat(buyer, span_xenowarning("You cannot build in a dense location!"))
 		return FALSE
 
+// SIPHON TOWER
+
+/datum/hive_upgrade/building/siphon_tower
+	name = "Siphon Tower"
+	desc = "Siphons energy out of nearby marine objectives, halting their progress until the siphon tower is destroyed. Can only be placed in open areas. Provides a 15x15 area immune to air support."
+
+//Disks?
+//Gens?
+//Figure this shit out!!
+
+
+// RECONSTRUCTION NODE
+
+GLOBAL_LIST_INIT(active_reconstruction_nodes)
+
+/datum/hive_upgrade/building/reconstruction_node
+	name = "Reconstruction Node"
+	desc = "Constructs a reconstruction node, which will copy a blueprint of all weeds and resin structures nearby. When Reconstruction Pulse is activated, all reconstruction nodes will rebuild its immediate area to back when it was placed. Can copy "
+	category = "Defences
+	icon = ""
+	gamemode_flags = ABILITY_NUCLEARWAR
+	upgrade_flags = UPGRADE_FLAG_USES_TACTICAL
+	building_type = /obj/structure/xeno/reconstruction_node
+	psypoint_cost = 100
+	/// A list of all xeno weeds/buildings, by turf, around the node when it was first placed. Ordered by distance from the node, and stores objects as types, not as references
+	var/list/assoc/construction_list
+	/// If any special structures are part of the construction_list, they're included in the cost
+	var/additional_psypoint_cost
+
+/obj/structure/xeno/reconstruction_node
+	name = "Reconstruction Node"
+	desc = "A collection of gross tendrils peer out at you from small, ominous cracks in the floor."
+
+/obj/structure/xeno/reconstruction_node/Initialize
+	RegisterSignal(SSdcs, COMSIG_GLOB_RECONSTRUCTION_PULSE_TRIGGERED)
+	GLOB.active_reconstruction_nodes += src
+	
+	//Get a list of turfs
+	var/list/turfs_to_find
+	var/list/turfs_already_found
+	for(var/dir in cardinals)
+		turfs_to_find += get_step(src, dir)
+
+	while(length(turfs_to_find))
+		var/turf/this_turf
+		var/list/found_this_turf
+
+		for(/obj/alien)
+			found_this_turf += get_type()
+		for(/obj/structure/mineral_door/resin)
+			found_this_turf += get_type
+		for(/turf/closed/wall/resin)
+			found_this_turf += get_type
+		for(tactical structure)
+			additional_psypoint_cost += ??
+			//we might also need distinctions for psypoint/tacpoints
+
+		construction_list[get_dist(src, this_turf)] += found_this_turf
+		
+		turfs_found += this_turf
+
+/obj/structure/xeno/reconstruction_node/Destroy
+	UnregisterSignal(SSdcs, COMSIG_GLOB_RECONSTRUCTION_PULSE_TRIGGERED)
+
+/obj/structure/xeno/reconstruction_node/proc/pulse_heard()
+
+/obj/structure/xeno/reconstruction_node/proc/begin_reconstruction()
+	//spawn tunnel
+
+	for(var/iteration in range(1, length(construction_list)))
+		//addtimer(call reconstruct) -- args is the iteration, and time is iteration SECONDS (i.e 1 SECONDS, 2 SECONDS)
+
+/obj/structure/xeno/reconstruction_node/proc/reconstruct()
+	//for each tile:
+		//make sound on each tile (might need a separate list for this?)
+	//for each object: 
+		//if we can't find the type specified add the type specified
+		//probably also throw anyone on the tile away from the center so they don't get stuck in walls
+
+/datum/hive_upgrade/defence/reconstruction_pulse
+	name = "Reconstruction Pulse"
+	desc = "Sends a pulse of psychic energy throughout the hivemind, activating any dormant reconstruction nodes. Pricing scales with how many reconstruction nodes have been placed."
+
+/datum/hive_upgrade/defence/reconstruction_pulse/on_buy(mob/living/carbon/xenomorph/buyer)
+	hive_announce
+	SEND_GLOB_SIGNAL(COMSIG_GLOB_RECONSTRUCTION_PULSE_TRIGGERED)
+
 
 /datum/hive_upgrade/defence
 	category = "Defences"
