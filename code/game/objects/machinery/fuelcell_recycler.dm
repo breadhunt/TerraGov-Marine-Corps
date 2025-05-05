@@ -96,46 +96,12 @@
 
 /obj/machinery/fuelcell_recycler/update_overlays()
 	. = ..()
-
-	if(machine_stat & (BROKEN|NOPOWER))
-		if(cell_left != null)
-			src.overlays += "recycler-left-cell"
-		if(cell_right != null)
-			src.overlays += "recycler-right-cell"
-		return
-
-	var/overlay_builder = "recycler-"
-	if(cell_left == null && cell_right == null)
-		return
-	if(cell_right == null)
-		if(cell_left.is_regenerated())
-			overlay_builder += "left-charged"
-		else
-			overlay_builder += "left-charging"
-
-		. += overlay_builder
+	if(cell_left)
 		. += "recycler-left-cell"
-		return
-	else if(cell_left == null)
-		if(cell_right.is_regenerated())
-			overlay_builder += "right-charged"
-		else
-			overlay_builder += "right-charging"
+		if(machine_stat & (BROKEN|NOPOWER))
+			. += "recycler-left-" + (cell_left.is_regenerated() ? "charged" : "charging")
 
-		. += overlay_builder
+	if(cell_right)
 		. += "recycler-right-cell"
-		return
-	else // both left and right cells are there
-		if(cell_left.is_regenerated())
-			overlay_builder += "left-charged"
-		else
-			overlay_builder += "left-charging"
-
-		if(cell_right.is_regenerated())
-			overlay_builder += "-right-charged"
-		else
-			overlay_builder += "-right-charging"
-
-		. += overlay_builder
-		. += "recycler-left-cell"
-		. += "recycler-right-cell"
+		if(machine_stat & (BROKEN|NOPOWER))
+			. += "recycler_right-" + (cell_right.is_regenerated() ? "charged" : "charging")
