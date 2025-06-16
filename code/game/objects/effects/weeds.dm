@@ -359,10 +359,10 @@
 /obj/alien/weeds/node/rapid
 	node_range = 8
 
-/obj/alien/weeds/node/Initialize(mapload, obj/alien/weeds/node/node)
+/obj/alien/weeds/node/rapid/Initialize(mapload, obj/alien/weeds/node/node)
 	. = ..()
 	START_PROCESSING(SSfastprocess, src)
 
-/obj/alien/weeds/node/Destroy()
+/obj/alien/weeds/node/rapid/Destroy()
 	STOP_PROCESSING(SSfastprocess, src)
 	return ..()

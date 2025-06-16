@@ -21,12 +21,18 @@ GLOBAL_VAR_INIT(active_bluespace_generators, 0)
 	anchored = TRUE
 	density = TRUE
 	resistance_flags = RESIST_ALL | DROPSHIP_IMMUNE
-	var/power_gen_percent = 0 //100,000W at full capacity
-	var/power_generation_max = 100000 //Full capacity
-	var/buildstate = GENERATOR_HEAVY_DAMAGE //What state of building it are we on, 0-3, 1 is "broken", the default
-	var/is_on = FALSE  //Is this damn thing on or what?
-	var/time_to_break = 1.5 SECONDS //How long it takes to break each stage of the generator
-	var/minimap_icon = 'icons/UI_icons/map_blips.dmi' //The icon shown on the minimap
+	///100,000W at full capacity
+	var/power_gen_percent = 0
+	///Full capacity
+	var/power_generation_max = 100000
+	///What state of building it are we on, 0-3, 1 is "broken", the default
+	var/buildstate = GENERATOR_HEAVY_DAMAGE
+	///Is this damn thing on or what?
+	var/is_on = FALSE
+	///How long it takes to break each stage of the generator
+	var/time_to_break = 1.5 SECONDS
+	///The icon shown on the minimap
+	var/minimap_icon = 'icons/UI_icons/map_blips.dmi'
 
 /obj/machinery/power/geothermal/Initialize(mapload)
 	. = ..()
@@ -92,7 +98,6 @@ GLOBAL_VAR_INIT(active_bluespace_generators, 0)
 	if(power_gen_percent < 100)
 		power_gen_percent++
 		update_icon()
-		update_minimap_icon()
 		switch(power_gen_percent)
 			if(10)
 				balloon_alert_to_viewers("begins to whirr as it powers up.")
@@ -174,6 +179,7 @@ GLOBAL_VAR_INIT(active_bluespace_generators, 0)
 		return FALSE
 	is_on = TRUE
 	update_icon()
+	update_minimap_icon()
 	update_desc()
 	start_processing()
 	return TRUE
@@ -183,6 +189,7 @@ GLOBAL_VAR_INIT(active_bluespace_generators, 0)
 	is_on = FALSE
 	power_gen_percent = 0
 	update_icon()
+	update_minimap_icon()
 	update_desc()
 	stop_processing()
 

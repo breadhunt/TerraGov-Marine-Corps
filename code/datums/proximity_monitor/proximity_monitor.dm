@@ -13,7 +13,7 @@
 		COMSIG_ATOM_EXITED = PROC_REF(on_uncrossed),
 		COMSIG_ATOM_INITIALIZED_ON = PROC_REF(on_initialized),
 	)
-	///A list of all mobs within this radius, to track what signals are already registered
+	///A list of all mobs in radius. Used to track any deaths/revives within the radius.
 	var/list/mobs_in_range
 
 /datum/proximity_monitor/New(atom/_host, range, _ignore_if_not_on_turf = TRUE)
@@ -80,29 +80,29 @@
 /datum/proximity_monitor/proc/on_uncrossed(atom/movable/mover, direction)
 	SIGNAL_HANDLER
 	if(ismob(mover))
-		mob_exited_radius(mover)
+		unregister_stat_changes(mover)
 
 /datum/proximity_monitor/proc/on_entered(atom/source, atom/movable/arrived, turf/old_loc)
 	SIGNAL_HANDLER
 	if(source != host)
 		hasprox_receiver?.HasProximity(arrived)
 		if(ismob(arrived))
-			mob_entered_radius(arrived)
+			register_stat_changes(arrived)
 
 /datum/proximity_monitor/proc/on_initialized(turf/location, atom/created, init_flags)
 	SIGNAL_HANDLER
 	if(location != host)
 		hasprox_receiver?.HasProximity(created)
 		if(ismob(created))
-			mob_entered_radius(created)
+			register_stat_changes(created)
 
 
-/datum/proximity_monitor/proc/mob_entered_radius(mob/entered)
+/datum/proximity_monitor/proc/register_stat_changes(mob/entered)
 	if(!(entered in mobs_in_range))
 		RegisterSignal(entered, COMSIG_MOB_STAT_CHANGED, PROC_REF(on_stat_changed))
 		mobs_in_range += list(entered)
 
-/datum/proximity_monitor/proc/mob_exited_radius(mob/exited)
+/datum/proximity_monitor/proc/unregister_stat_changes(mob/exited)
 	if(exited in mobs_in_range)
 		UnregisterSignal(exited, COMSIG_MOB_STAT_CHANGED)
 		mobs_in_range -= exited
