@@ -94,8 +94,8 @@
 		/mob/living/carbon/human/species/zombie/ai/tank/stay = 4,
 		/mob/living/carbon/human/species/zombie/ai/smoker/patrol = 1,
 		/mob/living/carbon/human/species/zombie/ai/smoker/stay = 4,
-		/mob/living/carbon/human/species/zombie/ai/strong/patrol = 1,
-		/mob/living/carbon/human/species/zombie/ai/strong/stay = 4,
+		/mob/living/carbon/human/species/zombie/ai/elite/patrol = 1,
+		/mob/living/carbon/human/species/zombie/ai/elite/stay = 4,
 	))
 	var/mob/living/carbon/human/victim = new spawntype(loc)
 	SSspawning.totalspawned++

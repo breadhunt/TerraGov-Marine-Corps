@@ -32,13 +32,13 @@
 /mob/living/carbon/human/species/zombie/ai/tank/patrol
 	ai_type = /datum/ai_behavior/xeno/zombie/patrolling
 
-/mob/living/carbon/human/species/zombie/ai/strong
-	race = "Strong zombie"
+/mob/living/carbon/human/species/zombie/ai/elite
+	race = "Elite zombie"
 
-/mob/living/carbon/human/species/zombie/ai/strong/stay
+/mob/living/carbon/human/species/zombie/ai/elite/stay
 	ai_type = /datum/ai_behavior/xeno/zombie/idle
 
-/mob/living/carbon/human/species/zombie/ai/strong/patrol
+/mob/living/carbon/human/species/zombie/ai/elite/patrol
 	ai_type = /datum/ai_behavior/xeno/zombie/patrolling
 
 /mob/living/carbon/human/species/zombie/ai/smoker

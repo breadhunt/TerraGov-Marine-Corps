@@ -47,11 +47,11 @@
 	race = "Skeleton"
 
 /mob/living/carbon/human/species/zombie
-	race = "Strong zombie"
+	race = "Elite zombie"
 
 /mob/living/carbon/human/species/zombie/Initialize(mapload)
 	. = ..()
-	var/datum/outfit/outfit = pick(GLOB.survivor_outfits)
+	var/datum/outfit/outfit = pick(GLOB.zombie_outfits)
 	outfit = new outfit()
 	INVOKE_ASYNC(outfit, TYPE_PROC_REF(/datum/outfit, equip), src)
 	a_intent = INTENT_HARM
