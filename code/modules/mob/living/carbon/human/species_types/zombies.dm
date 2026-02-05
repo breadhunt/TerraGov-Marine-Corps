@@ -169,18 +169,18 @@
 	REMOVE_TRAIT(H, TRAIT_STUNIMMUNE, ZOMBIE_TRAIT)
 	H.move_resist = initial(H.move_resist)
 
-/datum/species/zombie/strong
-	name = "Strong zombie" //These are zombies created from marines, they are stronger, but of course rarer
+/datum/species/zombie/elite
+	name = "Elite zombie" //These are zombies created from marines, they are stronger, but of course rarer
 	slowdown = -0.5
 	heal_rate = 20
 	total_health = 200
 	claw_type = /obj/item/weapon/zombie_claw/strong
 
-/datum/species/zombie/strong/on_species_gain(mob/living/carbon/human/H, datum/species/old_species)
+/datum/species/zombie/elite/on_species_gain(mob/living/carbon/human/H, datum/species/old_species)
 	. = ..()
 	H.add_atom_colour(COLOR_DARK_BROWN, FIXED_COLOR_PRIORITY)
 
-/datum/species/zombie/strong/post_species_loss(mob/living/carbon/human/H, datum/species/old_species)
+/datum/species/zombie/elite/post_species_loss(mob/living/carbon/human/H, datum/species/old_species)
 	. = ..()
 	H.remove_atom_colour(COLOR_DARK_BROWN, FIXED_COLOR_PRIORITY)
 

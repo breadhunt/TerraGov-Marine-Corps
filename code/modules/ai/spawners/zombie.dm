@@ -13,7 +13,7 @@
 			/mob/living/carbon/human/species/zombie/ai/smoker/patrol = 1,
 			/mob/living/carbon/human/species/zombie/ai/hunter/patrol = 1,
 			/mob/living/carbon/human/species/zombie/ai/boomer/patrol = 1,
-			/mob/living/carbon/human/species/zombie/ai/strong/patrol = 1,
+			/mob/living/carbon/human/species/zombie/ai/elite/patrol = 1,
 		) = 5,
 	)
 	spawnamount = 2
