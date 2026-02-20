@@ -68,6 +68,16 @@
 /mob/living/carbon/human/species/zombie/ai/boomer/patrol
 	ai_type = /datum/ai_behavior/xeno/zombie/patrolling
 
+/mob/living/carbon/human/species/zombie/ai/exploder
+	race = "Exploder zombie"
+
+/mob/living/carbon/human/species/zombie/ai/exploder/stay
+	ai_type = /datum/ai_behavior/xeno/zombie/idle
+
+/mob/living/carbon/human/species/zombie/ai/exploder/patrol
+	ai_type = /datum/ai_behavior/xeno/zombie/patrolling
+	
+
 /obj/effect/zombie_pack
 	name = "spawns a pack of zombies, plus a leader"
 	///Leader zombie typepath

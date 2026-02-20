@@ -246,3 +246,23 @@
 /datum/species/zombie/boomer/post_species_loss(mob/living/carbon/human/H, datum/species/old_species)
 	. = ..()
 	H.remove_atom_colour(COLOR_TOXIN_HUSKPOWDER, FIXED_COLOR_PRIORITY)
+
+/datum/species/zombie/exploder
+	name = "Exploder zombie"
+	slowdown = 1
+	heal_rate = 5
+	total_health = 30
+	idle_sounds = list('sound/zombies/exploder_idle_silent.ogg') //Exploders are silent until they start beeping
+	action_list = list(
+		/datum/action/ability/self_destruct,
+	)
+
+/datum/species/zombie/exploder/on_species_gain(mob/living/carbon/human/H, datum/species/old_species)
+	. = ..()
+	H.add_atom_colour(COLOR_MOSTLY_PURE_RED, FIXED_COLOR_PRIORITY)
+	H.transform = matrix().Scale(0.8, 0.8)
+
+/datum/species/zombie/exploder/post_species_loss(mob/living/carbon/human/H, datum/species/old_species)
+	. = ..()
+	H.remove_atom_colour(COLOR_MOSTLY_PURE_RED, FIXED_COLOR_PRIORITY)
+	H.transform = matrix().Scale(1/(0.8), 1/(0.8))

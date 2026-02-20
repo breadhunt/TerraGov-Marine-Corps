@@ -282,3 +282,90 @@
 	if(!can_use_ability(target, override_flags = ABILITY_IGNORE_SELECTED_ABILITY))
 		return FALSE
 	return TRUE
+
+#define EXPLODER_TICKING_ANIMATION_LENGTH 0.2 SECONDS
+
+// ***************************************
+// *********** Exploder
+// ***************************************
+/datum/action/ability/self_destruct
+	name = "Self destruct"
+	action_icon_state = "baneling_explode"
+	action_icon = 'icons/Xeno/actions/baneling.dmi'
+	desc = "Explode. That's it, that's the ability."
+	cooldown_duration = 7 SECONDS
+	///Are we trying to explode right now?
+	var/activated = FALSE
+	///How long is the timer until exploding?
+	var/explode_delay = 13 SECONDS
+	var/detonation_timer
+	var/list/ticking_timers
+
+/datum/action/ability/self_destruct/action_activate()
+	if(activated)
+		owner.balloon_alert(owner, "already activated!")
+		return FALSE
+
+	activated = TRUE
+	owner.add_atom_colour(COLOR_RED, FIXED_COLOR_PRIORITY)
+	RegisterSignal(owner, COMSIG_MOB_DEATH, PROC_REF(cancel_self_destruct))
+	RegisterSignal(owner, COMSIG_LIVING_IGNITED, PROC_REF(self_destruct))
+
+	detonation_timer = addtimer(CALLBACK(src, PROC_REF(self_destruct)), explode_delay, TIMER_STOPPABLE)
+
+	var/next_tick_time = 0.5 SECONDS
+	while(next_tick_time < explode_delay)
+		LAZYADD(ticking_timers, addtimer(CALLBACK(src, PROC_REF(ticking_effect)), explode_delay - next_tick_time, TIMER_STOPPABLE))
+		next_tick_time = round((next_tick_time*1.2 + 0.5 SECONDS), 0.1 SECONDS)
+	LAZYADD(ticking_timers, addtimer(CALLBACK(src, PROC_REF(final_tick)), explode_delay - 0.5 SECONDS, TIMER_STOPPABLE))
+
+	succeed_activate()
+	add_cooldown()
+
+/datum/action/ability/self_destruct/ai_should_start_consider()
+	return TRUE
+
+/datum/action/ability/self_destruct/ai_should_use(atom/target)
+	if(!iscarbon(target))
+		return FALSE
+	var/mob/living/carbon/carbon_target = target
+	if(carbon_target.faction == owner.faction)
+		return FALSE
+	if(get_dist(target, owner) > 7)
+		return FALSE
+	if(!line_of_sight(owner, target))
+		return FALSE
+	return TRUE
+
+/// Plays a ticking sound that increases in speed as the exploder gets closer to blowing up
+/datum/action/ability/self_destruct/proc/ticking_effect()
+	playsound(owner, 'sound/zombies/ticking_beep.ogg', 50)
+	owner.set_light(2, 4, LIGHT_COLOR_RED)
+	addtimer(CALLBACK(owner, TYPE_PROC_REF(/atom, set_light), 0), EXPLODER_TICKING_ANIMATION_LENGTH)
+
+/// We're about to explode! Play a more intense ticking sound
+/datum/action/ability/self_destruct/proc/final_tick()
+	UnregisterSignal(owner, COMSIG_MOB_DEATH) //The explosion can no longer be stopped
+	owner.set_light(3, 6, LIGHT_COLOR_RED)
+	playsound(owner, 'sound/zombies/ticking_beep_about_to_explode.ogg', 60)
+
+/// Kaboom, exploder blows up either because time ran out or someone set it on fire
+/datum/action/ability/self_destruct/proc/self_destruct()
+	SIGNAL_HANDLER
+	activated = FALSE
+	reset_timers()
+	explosion(owner, 0, 2, 3, 3, 0, flame_range = 2, adminlog = FALSE)
+	owner.gib()
+
+/// Cancels the self destruct, this happens if the exploder dies before time is up
+/datum/action/ability/self_destruct/proc/cancel_self_destruct()
+	SIGNAL_HANDLER
+	reset_timers()
+	activated = FALSE
+
+/// Cancels the explosion timers
+/datum/action/ability/self_destruct/proc/reset_timers()
+	for(var/timer in ticking_timers)
+		deltimer(timer)
+	LAZYNULL(ticking_timers)
+	deltimer(detonation_timer)
