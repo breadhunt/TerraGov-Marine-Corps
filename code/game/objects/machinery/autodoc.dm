@@ -1435,3 +1435,4 @@
 //Autodoc but faster
 /obj/machinery/autodoc/crash
 	surgery_time_multiplier = 0.5
+	active_power_usage = 200
