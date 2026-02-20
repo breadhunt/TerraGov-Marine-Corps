@@ -248,6 +248,9 @@
 	icon = 'icons/obj/clothing/hats.dmi'
 	soft_armor = list(MELEE = 15, BULLET = 25, LASER = 20, ENERGY = 20, BOMB = 5, BIO = 5, FIRE = 15, ACID = 5)
 
+/obj/item/clothing/head/securitycap/zombie
+	soft_armour = list(MELEE = 15, BULLET = 75, LASER = 10, ENERGY = 5, BOMB = 5, BIO = 5, FIRE = 10, ACID = 0)
+
 /*============================BERETS=================================*/
 //Berets have armor, so they have their own category. PMC caps are helmets, so they're in helmets.dm.
 

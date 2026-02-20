@@ -81,6 +81,10 @@
 	desc = "A Trooper-pattern Jaeger combat exoskeleton made to work with modular attachments for the ability to function in many enviroments. This one seems to have a light amount of armor plating. Alt-Click to remove attached items. Use it to toggle the built-in flashlight."
 	greyscale_config = /datum/greyscale_config/armor_mk2/trooper
 
+//Used for zombie crash, see outfits/zombies.dm
+/obj/item/clothing/suit/modular/jaeger/light/zombie
+	starting_attachments = list(/obj/item/armor_module/module/eshield)
+
 // Heavy
 /obj/item/clothing/suit/modular/jaeger/heavy
 	name = "\improper Jaeger Gungnir heavy exoskeleton"

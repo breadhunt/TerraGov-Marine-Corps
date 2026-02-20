@@ -89,6 +89,10 @@
 		/obj/item/storage/holster/belt/m44,
 	)
 
+/obj/item/clothing/suit/armor/bulletproof/zombie
+	armor_protection_flags = CHEST|GROIN|ARMS
+	hard_armor = list(MELEE = 0, BULLET = 5, LASER = 0, ENERGY = 0, BOMB = 0, BIO = 0, FIRE = 0, ACID = 5)
+
 /obj/item/clothing/suit/armor/riot
 	name = "riot suit"
 	desc = "A suit of armor with heavy padding to protect against melee attacks. Looks like it might impair movement."
@@ -144,6 +148,9 @@
 	armor_protection_flags = CHEST|GROIN
 	item_flags = SYNTH_RESTRICTED
 	soft_armor = list(MELEE = 50, BULLET = 15, LASER = 50, ENERGY = 10, BOMB = 25, BIO = 0, FIRE = 10, ACID = 10)
+
+/obj/item/clothing/suit/armor/det_suit/zombie
+	soft_armor = list(MELEE = 5, BULLET = 5, LASER = 50, ENERGY = 50, BOMB = 15, BIO = 0, FIRE = 0, ACID = 5)
 
 /obj/item/clothing/suit/armor/rugged
 	name = "rugged armor"

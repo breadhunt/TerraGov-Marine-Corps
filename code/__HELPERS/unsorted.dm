@@ -1192,6 +1192,7 @@ GLOBAL_DATUM_INIT(dview_mob, /mob/dview, new)
 	return	cone_turfs
 
 GLOBAL_LIST_INIT(survivor_outfits, typecacheof(/datum/outfit/job/survivor))
+GLOBAL_LIST_INIT(zombie_outfits, typecacheof(/datum/outfit/job/zombie))
 
 /**
  * Draws a line between two atoms, then checks if the path is blocked
