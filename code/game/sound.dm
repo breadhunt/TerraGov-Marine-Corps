@@ -443,4 +443,11 @@ A good representation is: 'byond applies a volume reduction to the sound every X
 		if(SFX_ROBOT_WARCRY)
 			soundin = pick('sound/voice/robot/robot_warcry1.ogg', 'sound/voice/robot/robot_warcry2.ogg', 'sound/voice/robot/robot_warcry3.ogg')
 
+		//zombies
+		if(SFX_ZOMBIE_IDLE)
+			soundin = pick('sound/zombies/growl1.ogg', 'sound/zombies/growl2.ogg', 'sound/zombies/growl3.ogg')
+		if(SFX_ZOMBIE_ROAR)
+			soundin = list('sound/zombies/zombie_roar_1.ogg', 'sound/zombies/zombie_roar_2.ogg', 'sound/zombies/zombie_roar_3.ogg', 'sound/zombies/zombie_roar_4.ogg', 'sound/zombies/zombie_roar_5.ogg')
+		if(SFX_ZOMBIE_SCREAM)
+			soundin = pick('sound/zombies/zombie_set_on_fire.ogg', 'sound/zombies/zombie_set_on_fire_2.ogg')
 	return soundin

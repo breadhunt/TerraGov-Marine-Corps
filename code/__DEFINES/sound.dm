@@ -166,3 +166,6 @@
 #define SFX_ROBOT_SCREAM "robot_scream"
 #define SFX_ROBOT_PAIN "robot_pain"
 #define SFX_ROBOT_WARCRY "robot_warcry"
+#define SFX_ZOMBIE_IDLE "sfx_zombie_idle"
+#define SFX_ZOMBIE_SCREAM "sfx_zombie_scream"
+#define SFX_ZOMBIE_ROAR "sfx_zombie_roar"

@@ -28,6 +28,19 @@
 /datum/ai_behavior/xeno/zombie/try_to_heal()
 	return //Zombies don't need to do anything to heal
 
+/datum/ai_behavior/xeno/zombie/set_combat_target(atom/new_target)
+	var/previous_target = combat_target
+	. = ..()
+
+	if(!.)
+		return
+	if(previous_target == new_target)
+		return
+	if(!iscarbon(new_target))
+		return
+
+	playsound(mob_parent, SFX_ZOMBIE_ROAR, 50)
+
 ///Rallies the zombie to a target
 /datum/ai_behavior/xeno/zombie/proc/rally_zombie(datum/source, atom/atom_to_escort, global_rally = FALSE)
 	SIGNAL_HANDLER

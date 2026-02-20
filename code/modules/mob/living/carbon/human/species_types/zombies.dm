@@ -18,8 +18,9 @@
 		"eyes" = /datum/internal_organ/eyes
 	)
 	death_message = "seizes up and falls limp..."
-	///Sounds made randomly by the zombie
-	var/list/sounds = list('sound/hallucinations/growl1.ogg','sound/hallucinations/growl2.ogg','sound/hallucinations/growl3.ogg','sound/hallucinations/veryfar_noise.ogg','sound/hallucinations/wail.ogg')
+	///Sounds made by the zombie
+	var/list/idle_sounds = SFX_ZOMBIE_IDLE
+
 	///Time before resurrecting if dead
 	var/revive_time = 1 MINUTES
 	///How much burn and burn damage can you heal every Life tick (half a sec)
@@ -38,6 +39,8 @@
 			continue
 		limb.vital = FALSE
 		break
+
+	playsound(get_turf(H), pick(idle_sounds), 50, TRUE)
 
 	H.set_undefibbable()
 	H.faction = faction
@@ -74,6 +77,8 @@
 		var/datum/action/action = new action_type()
 		action.give_action(H)
 
+	RegisterSignal(H, COMSIG_LIVING_IGNITED, PROC_REF(zombie_ignited))
+
 /datum/species/zombie/post_species_loss(mob/living/carbon/human/H)
 	. = ..()
 	for(var/datum/limb/limb AS in H.limbs)
@@ -91,9 +96,11 @@
 	if(can_jump)
 		H.set_jump_component()
 
+	UnregisterSignal(H, COMSIG_LIVING_IGNITED)
+
 /datum/species/zombie/handle_unique_behavior(mob/living/carbon/human/H)
-	if(prob(10))
-		playsound(get_turf(H), pick(sounds), 50)
+	if(prob(20))
+		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(playsound), get_turf(H), pick(idle_sounds), 50, TRUE), rand(0.1 SECONDS, 4 SECONDS))
 	for(var/datum/limb/limb AS in H.limbs) //Regrow some limbs
 		if(limb.limb_status & LIMB_DESTROYED && !(limb.parent?.limb_status & LIMB_DESTROYED) && prob(4))
 			limb.remove_limb_flags(LIMB_DESTROYED)
@@ -135,6 +142,11 @@
 	GLOB.round_statistics.zombies_permad++
 	fade_out(H)
 	QDEL_IN(H, time)
+
+/// Zombies are particularly susceptible to being set on fire
+/datum/species/zombie/proc/zombie_ignited(datum/source)
+	SIGNAL_HANDLER
+	playsound(source, SFX_ZOMBIE_SCREAM, 70)
 
 /datum/species/zombie/fast
 	name = "Fast zombie"
