@@ -66,6 +66,9 @@
 /obj/machinery/loadout_vendor/crash
 	faction = VENDOR_FACTION_CRASH
 
+/obj/machinery/loadout_vendor/crash/zombie
+	faction = VENDOR_FACTION_ZOMBIE_CRASH
+
 /obj/machinery/loadout_vendor/valhalla
 	resistance_flags = INDESTRUCTIBLE
 	faction = VENDOR_FACTION_VALHALLA

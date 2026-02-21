@@ -28,6 +28,7 @@
 
 #define VENDOR_FACTION_NEUTRAL "Neutral"
 #define VENDOR_FACTION_CRASH "Crash"
+#define VENDOR_FACTION_ZOMBIE_CRASH "Zombie Crash"
 #define VENDOR_FACTION_VALHALLA "Valhalla"
 
 GLOBAL_LIST_INIT(marine_selector_cats, list(
@@ -264,6 +265,15 @@ GLOBAL_LIST_INIT(loadout_linked_vendor, list(
 	),
 	VENDOR_FACTION_CRASH = list(
 		/obj/machinery/vending/weapon/crash,
+		/obj/machinery/vending/uniform_supply,
+		/obj/machinery/vending/armor_supply,
+		/obj/machinery/vending/marineFood,
+		/obj/machinery/vending/MarineMed,
+		/obj/machinery/vending/cigarette,
+		/obj/machinery/vending/tool,
+	),
+	VENDOR_FACTION_ZOMBIE_CRASH = list(
+		/obj/machinery/vending/weapon/crash/zombie,
 		/obj/machinery/vending/uniform_supply,
 		/obj/machinery/vending/armor_supply,
 		/obj/machinery/vending/marineFood,

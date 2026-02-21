@@ -851,3 +851,60 @@
 	Because of this, you should exclusively reload when it is completely safe to do so, as other marines are counting on you to protect them.<BR>
 	<BR>
 	Your minigun boasts an incredibly high amount of armor piercing. Aim for particularly durable targets, like Crushers and Kings, as you'll likely do a lot more damage."}
+
+
+/obj/item/paper/tutorial/zombie
+	name = "Z-243 'Zombie' PSA Pamphlet"
+	info = {"Good morning, marine. \
+	<BR>
+	TGMC intelligence has discovered that the Xenomorphs have created a new monstrosity - the Zombie. Fighting zombies is nothing like the Xenomorphs, so be ready. To keep in mind:\
+	<BR>
+	<HR>
+	One - these things regenerate. Fast. \
+	Even when dead, they'll recover unless you <b>set them on fire</b> or <b>stab their heart out</b> with a knife or bayonet. \
+	<BR>
+	<BR>
+	You'll need to dispatch them quick, before their buddies come along. <b>Flamerthrowers</b> and <b>plasma pistols</b> are quick, but of course a <b>combat knife</b> won't run dry of ammo. \
+	<BR>
+	<HR>
+	Second thing - these things are poisonous. Zombie claws transmit <b>'Zombium'</b>, a toxic compound which rots your insides and eventually your organs. \
+	<BR>
+	<BR>
+	Medical says do <b>not</b> underestimate Zombium. \
+	If you get slashed by a zombie, <b>drink water from a canteen, or take either dylovene or hypervene</b>. That should purge the compound from your system. \
+	<BR>
+	I hear Neurokiller chemrettes do the trick, too. \
+	<BR>
+	<HR>
+	Finally - there's a lot of them. Especially when you get near their tunnels, then they start coming in <b>swarms</b>. You'll want someone with <b>crowd control weaponry</b> to slow the horde down, so that you have time to shoot 'em before they eat you alive. \
+	<BR>
+	My personal favourite is good ol' buckshot. Just make sure there's some of you with ballistics to deal out some damage, too. \
+	<BR>
+	<HR>
+	Remember. You're down there to either blow up the <b>nuke</b>, or blow up all of the zombie's spawning tunnels with <b>plastique explosives</b>. \
+	If you need a break, use <b>metal foam grenades</b> and <b>barricade capsules</b> for temporary defenses. \
+	<BR>
+	Whichever way you go - good luck down there, marine. \
+	<BR>
+	<BR>
+	And.. don't split up. \
+	<BR>
+	<HR>
+	CMDR Jones, USS Torchwick
+	"}
+
+/obj/item/paper/tutorial/zombie_vali
+	name = "NOTICE - Harvester Users, Read Me!"
+	info = {"<i>Attention:</i> Marines trained on the Harvester line of weaponry. <BR>
+	<BR>
+	Zombies <b>do not contain green blood</b>. This means that you will not be able to charge your premium(TM) Vali(TM) module, and as such will not benefit from most of the benefits of the module.<BR>
+	<BR>
+	Why not explore our variety of other features, such as:<BR>
+	<BR>
+	- A free health scanner! <BR>
+	- Tramadol, to slow those pesky zombies down! <BR>
+	- Kelotane, to set those pesky zombies on fire! <BR>
+	- Bicaridine, to set those pesky comrades back on their feet! <BR>
+	<BR>
+	<BR>
+	<i> Harvester Productions Corp. accepts no liability for injury of death resulting from the failure of premium(TM) Vali(TM) systems."}
