@@ -245,7 +245,7 @@
 /turf/open/floor/mainship/orange/full,
 /area/shuttle/canterbury)
 "aO" = (
-/obj/machinery/loadout_vendor/crash,
+/obj/machinery/loadout_vendor/crash/zombie,
 /turf/open/floor/mainship/cargo,
 /area/shuttle/canterbury)
 "aP" = (
@@ -303,7 +303,7 @@
 /obj/structure/window/reinforced/toughened{
 	dir = 4
 	},
-/obj/machinery/vending/weapon/crash,
+/obj/machinery/vending/weapon/crash/zombie,
 /turf/open/floor/mainship/cargo,
 /area/shuttle/canterbury)
 "be" = (
@@ -375,7 +375,7 @@
 /obj/structure/window/reinforced{
 	dir = 4
 	},
-/obj/machinery/vending/weapon/crash,
+/obj/machinery/vending/weapon/crash/zombie,
 /turf/open/floor/mainship/mono,
 /area/shuttle/canterbury)
 "bt" = (

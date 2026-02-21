@@ -4,6 +4,8 @@
 	round_type_flags = MODE_ALLOW_MARINE_QUICKBUILD
 	xeno_abilities_flags = ABILITY_CRASH
 	required_players = 1
+	shuttle_id = SHUTTLE_CANTERBURY_ZOMBIE
+	big_shuttle_id = SHUTTLE_BIGBURY_ZOMBIE
 	valid_job_types = list(
 		/datum/job/terragov/squad/standard = -1,
 		/datum/job/terragov/squad/engineer = 3,

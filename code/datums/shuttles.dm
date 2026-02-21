@@ -209,9 +209,15 @@
 	shuttle_id = SHUTTLE_CANTERBURY
 	name = "Canterbury"
 
+/datum/map_template/shuttle/tgs_canterbury/zombie
+	shuttle_id = SHUTTLE_CANTERBURY_ZOMBIE
+
 /datum/map_template/shuttle/tgs_bigbury
 	shuttle_id = SHUTTLE_BIGBURY
 	name = "Bigbury"
+
+/datum/map_template/shuttle/tgs_bigbury/zombie
+	shuttle_id = SHUTTLE_BIGBURY_ZOMBIE
 
 /datum/map_template/shuttle/escape_shuttle
 	shuttle_id = SHUTTLE_ESCAPE_SHUTTLE
