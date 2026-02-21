@@ -793,6 +793,7 @@
 #include "code\datums\outfits\upp_commando.dm"
 #include "code\datums\outfits\vsd.dm"
 #include "code\datums\outfits\vv_outfit.dm"
+#include "code\datums\outfits\zombies.dm"
 #include "code\datums\proximity_monitor\field.dm"
 #include "code\datums\proximity_monitor\proximity_monitor.dm"
 #include "code\datums\status_effects\debuffs.dm"
