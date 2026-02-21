@@ -117,6 +117,11 @@
 	grow = list(0, 0.01)
 	gravity = list(0, -1.25)
 
+/particles/dirt_kickup/spawning
+	position = generator(GEN_SPHERE, 10, 10)
+	spawning = 2
+	fadein = 1
+
 /particles/water_splash
 	icon = 'icons/effects/96x157.dmi'
 	icon_state = "smoke2"
@@ -195,6 +200,17 @@
 /particles/falling_debris/small
 	count = 40
 	spawning = 40
+
+/particles/falling_debris/small/spawning
+	spawning = 1
+	lifespan = 5
+	fade = 3
+
+/particles/falling_debris/small/spawning/base
+	color = COLOR_GRAY
+	spawning = 0.5
+	velocity = list(0, 5)
+	gravity = list(0, -2)
 
 /particles/water_falling
 	icon = 'icons/effects/particles/generic_particles.dmi'

@@ -30,3 +30,24 @@
 ///This proc runs on the created mobs if use_postspawn   is enabled, use this to equip humans and such
 /obj/effect/ai_node/spawner/proc/postspawn(list/squad)
 	return
+
+/// Spawn objects/datums/whatever with a fancy spawning animation
+/obj/effect/spawn_group_with_animation
+	/// How long should we wait to run spawning logic?
+	var/spawn_effect_time = 2.5 SECONDS
+
+/obj/effect/spawn_group_with_animation/Initialize(mapload, spawn_amount)
+	. = ..()
+	do_spawning_effect()
+	addtimer(CALLBACK(src, PROC_REF(spawn_group), spawn_amount), spawn_effect_time)
+	addtimer(CALLBACK(src, PROC_REF(cleanup_self)), spawn_effect_time + 1 SECONDS) //wait a second for spawning to finish
+
+/// Spawning animation logic here, length of animation until spawning is defined by spawn_effect_time
+/obj/effect/spawn_group_with_animation/proc/do_spawning_effect()
+
+/// Spawning logic; override and spawn whatever you want.
+/obj/effect/spawn_group_with_animation/proc/spawn_group(spawn_amount)
+
+/// Clean up after ourselves once the spawning is complete
+/obj/effect/spawn_group_with_animation/proc/cleanup_self()
+	qdel(src)

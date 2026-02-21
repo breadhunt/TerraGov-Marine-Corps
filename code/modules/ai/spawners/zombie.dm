@@ -6,15 +6,7 @@
 	invisibility = 0
 	resistance_flags = UNACIDABLE|PLASMACUTTER_IMMUNE|PROJECTILE_IMMUNE
 	spawntypes = list(
-		list(/mob/living/carbon/human/species/zombie/ai/patrol = 85,
-			/mob/living/carbon/human/species/zombie/ai/fast/patrol = 15,
-		) = 95,
-		list(/mob/living/carbon/human/species/zombie/ai/tank/patrol = 2,
-			/mob/living/carbon/human/species/zombie/ai/smoker/patrol = 1,
-			/mob/living/carbon/human/species/zombie/ai/hunter/patrol = 1,
-			/mob/living/carbon/human/species/zombie/ai/boomer/patrol = 1,
-			/mob/living/carbon/human/species/zombie/ai/strong/patrol = 1,
-		) = 5,
+		/obj/effect/spawn_group_with_animation/zombie_spawn/random,
 	)
 	spawnamount = 2
 	spawndelay = 25 SECONDS
@@ -42,6 +34,7 @@
 /obj/effect/ai_node/spawner/zombie/plastique_act()
 	spawn_defenders()
 	playsound(loc, 'sound/effects/meteorimpact.ogg', 35, 1)
+	playsound(loc, pick('sound/hallucinations/far_noise.ogg', 'sound/hallucinations/veryfar_noise.ogg'), 50, 1)
 	qdel(src)
 
 /obj/effect/ai_node/spawner/zombie/examine(mob/user)
@@ -50,11 +43,8 @@
 
 ///Called by a proximity alert, spawns defenders when a threat is detected
 /obj/effect/ai_node/spawner/zombie/proc/spawn_defenders()
-	for(var/i in 1 to ZOMBIE_DEFENDER_AMOUNT)
-		var/spawn_type = pickweight(spawntypes)
-		if(islist(spawn_type)) //for nested spawn options
-			spawn_type = pickweight(spawn_type)
-		new spawn_type(loc)
+	var/spawn_animation = pickweight(spawntypes)
+	new spawn_animation(loc, ZOMBIE_DEFENDER_AMOUNT)
 
 /obj/effect/ai_node/spawner/zombie/HasProximity(atom/movable/hostile)
 	if(iszombie(hostile))
@@ -90,3 +80,75 @@
 /obj/effect/ai_node/spawner/zombie/proc/update_minimap_icon()
 	SSminimaps.remove_marker(src)
 	SSminimaps.add_marker(src, MINIMAP_FLAG_ALL, image('icons/UI_icons/map_blips_large.dmi', null, "zombie_spawner[threat_warning ? "_warn" : "_clear"]"))
+
+
+
+/obj/effect/spawn_group_with_animation/zombie_spawn
+	/// Particle holders
+	var/obj/effect/abstract/particle_holder/spawning_dirt_kickup
+	var/obj/effect/abstract/particle_holder/spawning_debris
+	var/obj/effect/abstract/particle_holder/spawning_debris_base
+
+/obj/effect/spawn_group_with_animation/zombie_spawn/do_spawning_effect()
+	spawning_dirt_kickup = new(get_turf(src), /particles/dirt_kickup/spawning)
+	spawning_debris = new(get_turf(src), /particles/falling_debris/small/spawning)
+	spawning_debris_base = new(get_turf(src), /particles/falling_debris/small/spawning/base)
+	playsound(loc, 'sound/zombies/tunnel_dig.ogg', 100)
+
+/obj/effect/spawn_group_with_animation/zombie_spawn/cleanup_self()
+	QDEL_NULL(spawning_dirt_kickup)
+	QDEL_NULL(spawning_debris)
+	QDEL_NULL(spawning_debris_base)
+	return ..()
+
+/obj/effect/spawn_group_with_animation/zombie_spawn/random
+	var/spawntypes = list(list(/mob/living/carbon/human/species/zombie/ai/patrol = 85,
+							/mob/living/carbon/human/species/zombie/ai/fast/patrol = 15,
+							) = 95, list(/mob/living/carbon/human/species/zombie/ai/tank/patrol = 2,
+							/mob/living/carbon/human/species/zombie/ai/smoker/patrol = 1,
+							/mob/living/carbon/human/species/zombie/ai/hunter/patrol = 1,
+							/mob/living/carbon/human/species/zombie/ai/boomer/patrol = 1,
+							/mob/living/carbon/human/species/zombie/ai/elite/patrol = 1,
+							) = 5,
+						)
+
+/obj/effect/spawn_group_with_animation/zombie_spawn/random/spawn_group(spawn_amount)
+	var/spawntype
+	for(var/i in 1 to spawn_amount)
+		spawntype = pickweight(spawntypes)
+		if(islist(spawntype)) //for nested spawn options
+			spawntype = pickweight(spawntype)
+		new spawntype(get_turf(src))
+
+// Spawns a pack of zombies, plus a leader
+/obj/effect/spawn_group_with_animation/zombie_spawn/zombie_pack
+	///Leader zombie typepath
+	var/leader_type = /mob/living/carbon/human/species/zombie/ai/patrol
+	///Minion zombie typepath
+	var/minion_type = /mob/living/carbon/human/species/zombie/ai/patrol
+	///Default number of minion zombies
+	var/minion_number = 6
+
+/obj/effect/spawn_group_with_animation/zombie_spawn/zombie_pack/spawn_group(spawn_amount = 0)
+	if(!spawn_amount)
+		spawn_amount = minion_number
+
+	var/leader = new leader_type(loc)
+	for(var/i in 1 to spawn_amount)
+		new minion_type(loc, leader)
+
+/obj/effect/spawn_group_with_animation/zombie_spawn/zombie_pack/tank
+	leader_type = /mob/living/carbon/human/species/zombie/ai/tank/patrol
+
+/obj/effect/spawn_group_with_animation/zombie_spawn/zombie_pack/smoker
+	leader_type = /mob/living/carbon/human/species/zombie/ai/smoker/patrol
+
+/obj/effect/spawn_group_with_animation/zombie_spawn/zombie_pack/hunter
+	leader_type = /mob/living/carbon/human/species/zombie/ai/hunter/patrol
+
+/obj/effect/spawn_group_with_animation/zombie_spawn/zombie_pack/boomer
+	leader_type = /mob/living/carbon/human/species/zombie/ai/boomer/patrol
+
+/obj/effect/spawn_group_with_animation/zombie_spawn/zombie_pack/fast_pack
+	leader_type = /mob/living/carbon/human/species/zombie/ai/fast/patrol
+	minion_type = /mob/living/carbon/human/species/zombie/ai/fast/patrol
