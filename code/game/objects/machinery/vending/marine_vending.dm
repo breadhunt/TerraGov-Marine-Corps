@@ -622,7 +622,6 @@
 
 	seasonal_items = list(
 		SEASONAL_GUNS = "Seasonal",
-		SEASONAL_HEAVY = "Operational Weapons",
 		)
 
 
