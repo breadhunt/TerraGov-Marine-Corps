@@ -654,22 +654,34 @@
 	. = ..()
 	if(prob(10))
 		L.emote("cough")
+	L.jitter(4)
 
 /datum/reagent/zombium/on_overdose_start(mob/living/L, metabolism)
 	RegisterSignal(L, COMSIG_HUMAN_SET_UNDEFIBBABLE, PROC_REF(zombify))
+	RegisterSignal(L, COMSIG_MOB_REVIVE, PROC_REF(purge_zombium_overdose))
+	custom_metabolism = REAGENTS_METABOLISM * 2
+	C.emote("me", 1, "coughs up blood!")
+	C.drip(10)
 
 /datum/reagent/zombium/on_overdose_stop(mob/living/L, metabolism)
 	UnregisterSignal(L, COMSIG_HUMAN_SET_UNDEFIBBABLE)
+	UnregisterSignal(L, COMSIG_MOB_REVIVE)
+	custom_metabolism = initial(custom_metabolism)
 
 /datum/reagent/zombium/overdose_process(mob/living/L, metabolism)
 	if(prob(5))
-		L.emote("gasp")
+		C.emote("me", 1, "coughs up blood!")
+		C.drip(10)
+	L.jitter(8)
 	L.adjustOxyLoss(1.5)
 	L.adjustToxLoss(1.5)
 
 /datum/reagent/zombium/overdose_crit_process(mob/living/L, metabolism)
 	if(prob(50))
-		L.emote("gasp")
+		C.emote("me", 1, "coughs up blood!")
+		C.drip(10)
+	L.jitter(10)
+	L.hallucination += 10
 	L.adjustOxyLoss(5)
 	L.adjustToxLoss(5)
 
@@ -682,6 +694,10 @@
 	H.do_jitter_animation(1000)
 	addtimer(CALLBACK(H, TYPE_PROC_REF(/mob/living/carbon/human, revive_to_crit), TRUE, TRUE), SSticker.mode?.zombie_transformation_time)
 
+/datum/reagent/zombium/proc/purge_zombium_overdose()
+	SIGNAL_HANDLER
+	if(volume > 20)
+		volume = 20
 
 //SOM nerve agent
 /datum/reagent/toxin/satrapine
