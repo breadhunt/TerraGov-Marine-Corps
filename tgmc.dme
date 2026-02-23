@@ -943,6 +943,7 @@
 #include "code\game\objects\effects\landmarks\marine_spawns.dm"
 #include "code\game\objects\effects\landmarks\mob_spawner.dm"
 #include "code\game\objects\effects\landmarks\mode.dm"
+#include "code\game\objects\effects\landmarks\vending.dm"
 #include "code\game\objects\effects\landmarks\gamemode\campaign_reward_spawns.dm"
 #include "code\game\objects\effects\landmarks\gamemode\campaign_vehicle_spawners.dm"
 #include "code\game\objects\effects\landmarks\gamemode\crash_spawns.dm"

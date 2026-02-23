@@ -47,6 +47,10 @@
 
 	for(var/i in GLOB.xeno_resin_silo_turfs)
 		new /obj/effect/ai_node/spawner/zombie(i)
+
+	for(var/i in GLOB.supply_vendor_turfs)
+		new /obj/machinery/vending/cargo_supply(i)
+
 	addtimer(CALLBACK(src, PROC_REF(balance_scales)), 1 SECONDS)
 	RegisterSignal(SSdcs, COMSIG_GLOB_ZOMBIE_TUNNEL_DESTROYED, PROC_REF(check_finished))
 

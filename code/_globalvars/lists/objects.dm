@@ -121,6 +121,9 @@ GLOBAL_LIST_EMPTY(xeno_acid_jaws_by_hive)
 
 GLOBAL_LIST_EMPTY(zombie_spawner_turfs)
 
+///Lists of different mode-dependent vendors to initialise
+GLOBAL_LIST_EMPTY(supply_vendor_turfs)
+
 GLOBAL_LIST_EMPTY(shuttle_controls_list)
 
 GLOBAL_LIST_EMPTY(fob_sentries_loc)

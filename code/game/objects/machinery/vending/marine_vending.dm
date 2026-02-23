@@ -835,6 +835,26 @@
 		)
 	)
 
+/obj/machinery/vending/cargo_supply/zombie
+	name = "Zombie Supplies Vendor"
+	desc = "Contains various supplies to deal with a zombie-infested planet. Available to all marines."
+	req_one_access = list(ACCESS_MARINE_PREP)
+
+	products = list("Zombie Essentials" = list(
+			/obj/item/explosive/plastique = 12,
+			/obj/item/paper/tutorial/zombie = -1,
+			/obj/item/paper/tutorial/zombie_vali = -1,
+			/obj/item/weapon/combat_knife = -1,
+			/obj/item/weapon/gun/pistol/plasma_pistol = -1,
+			/obj/item/ammo_magazine/pistol/plasma_pistol = -1,
+			/obj/item/reagent_containers/hypospray/autoinjector/dylovene = -1,
+			/obj/item/reagent_containers/hypospray/autoinjector/hypervene = -1,
+			/obj/item/reagent_containers/food/drinks/flask/marine = -1,
+			/obj/item/explosive/grenade/chem_grenade/metalfoam = 3,
+			/obj/item/deploy_capsule/barricade = 2,
+		),
+	)
+
 /obj/machinery/vending/lasgun
 	name = "\improper Terra Experimental cell field charger"
 	desc = "An automated power cell dispenser and charger. Used to recharge energy weapon power cells, including in the field. Has an internal battery that charges off the power grid when wrenched down."
